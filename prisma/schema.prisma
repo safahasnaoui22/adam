@@ -1,0 +1,149 @@
+generator client {
+  provider = "prisma-client-js"
+   previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+  
+
+}
+
+model User {
+  id          String   @id @default(cuid())
+  name        String?
+  email       String   @unique
+  password    String // Hashed password
+  phoneNumber String?
+  role        Role     @default(RESTAURANT_OWNER)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  restaurant      Restaurant?
+  customerProfile CustomerProfile?
+}
+
+model Restaurant {
+  id               String         @id @default(cuid())
+  name             String
+  description      String?
+  logo             String?        // Will store the image path/URL
+  address          String?
+  phoneNumber      String?
+  email            String?
+  website          String?
+  
+  // Opening hours stored as JSON
+  openingHours     Json?          // Will store like: { "monday": { "open": "09:00", "close": "18:00", "closed": false } }
+  
+  // Social media stored as JSON
+  socialMedia      Json?          // Will store like: { "facebook": "username", "instagram": "@handle" }
+  
+  termsConditions  String?        // Store the terms text
+  howToUse         String?        // Store the how-to-use text
+  
+  // Revenue tracking settings
+  revenueSettings  Json?          // Will store: { "avgSpend": 10.00, "baseVisits": 1, "inactiveDays": 90 }
+  
+  // Theme settings
+  theme            Json?          // Will store color theme preferences
+  backgroundPattern String?       // Selected pattern
+  
+  // Brand & Identity
+  appName          String         @unique
+  urlSlug          String         @unique
+  
+  qrCode           String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  
+  // Relations
+  ownerId          String         @unique
+  owner            User           @relation(fields: [ownerId], references: [id])
+  loyaltyProgram   LoyaltyProgram?
+  customers        CustomerProfile[]
+}
+
+model LoyaltyProgram {
+  id                    String   @id @default(cuid())
+  spendThreshold        Float    @default(1) // 1 DT = points
+  pointsEarned          Int      @default(1) // Points per threshold
+  autoPushNotifications Boolean  @default(true)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  // Relations
+  restaurantId String     @unique
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  rewards      Reward[]
+}
+
+model CustomerProfile {
+  id               String         @id @default(cuid())
+  name             String
+  customerId       String         @unique // Display ID like "CUST001"
+  points           Int            @default(0)
+  stamps           Int            @default(0)
+  createdAt        DateTime       @default(now())
+  lastVisit        DateTime?
+  
+  // Relations
+  userId           String         @unique
+  user             User           @relation(fields: [userId], references: [id])
+  restaurantId     String
+  restaurant       Restaurant     @relation(fields: [restaurantId], references: [id])
+  visits           Visit[]
+  earnedRewards    EarnedReward[]
+}
+
+// Add this model for tracking visits
+model Visit {
+  id               String         @id @default(cuid())
+  date             DateTime       @default(now())
+  amount           Float?
+  pointsEarned     Int            @default(0)
+  stampsEarned     Int            @default(0)
+  
+  // Relations
+  customerId       String
+  customer         CustomerProfile @relation(fields: [customerId], references: [id])
+}
+
+model Reward {
+  id             String   @id @default(cuid())
+  name           String
+  pointsRequired Int
+  description    String?
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  loyaltyProgramId String
+  loyaltyProgram   LoyaltyProgram @relation(fields: [loyaltyProgramId], references: [id])
+
+  // ADD THIS LINE - the missing opposite relation
+  earnedRewards EarnedReward[]
+}
+
+model EarnedReward {
+  id        String    @id @default(cuid())
+  rewardId  String
+  earnedAt  DateTime  @default(now())
+  usedAt    DateTime?
+  expiresAt DateTime?
+
+  // Relations
+  customerId String
+  customer   CustomerProfile @relation(fields: [customerId], references: [id])
+
+  // Fix this relation - make sure it matches
+  reward Reward @relation(fields: [rewardId], references: [id])
+}
+
+enum Role {
+  RESTAURANT_OWNER
+  CUSTOMER
+  ADMIN
+}

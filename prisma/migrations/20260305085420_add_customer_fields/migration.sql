@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Visit" ALTER COLUMN "amount" DROP NOT NULL,
+ALTER COLUMN "pointsEarned" SET DEFAULT 0;
