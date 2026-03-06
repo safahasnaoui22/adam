@@ -1,39 +1,39 @@
 import { NextRequest, NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
+import { prisma } from "@/app/lib/prisma"
 
 export async function GET(
-  request: NextRequest,
-  context: { params: Promise<{ clientId: string }> }
+    request: NextRequest,
+    context: { params: Promise<{ clientId: string }> }
 ) {
-  const { clientId } = await context.params;
+    const { clientId } = await context.params;
 
-  try {
-    const client = await prisma.customerProfile.findUnique({
-      where: { id: clientId },
-      include: {
-        visits: {
-          orderBy: { date: "desc" },
-          take: 10,
-        },
-        earnedRewards: {
-          include: { reward: true },
-          where: { usedAt: null },
-        },
-      },
-    });
+    try {
+        const client = await prisma.customerProfile.findUnique({
+            where: { id: clientId },
+            include: {
+                visits: {
+                    orderBy: { date: "desc" },
+                    take: 10,
+                },
+                earnedRewards: {
+                    include: { reward: true },
+                    where: { usedAt: null },
+                },
+            },
+        });
 
-    if (!client) {
-      return NextResponse.json({ error: "Client not found" }, { status: 404 });
+        if (!client) {
+            return NextResponse.json({ error: "Client not found" }, { status: 404 });
+        }
+
+        return NextResponse.json({
+            ...client,
+            visits: client.visits.length,
+        });
+    } catch (error) {
+        return NextResponse.json(
+            { error: "Failed to fetch client" },
+            { status: 500 }
+        );
     }
-
-    return NextResponse.json({
-      ...client,
-      visits: client.visits.length,
-    });
-  } catch (error) {
-    return NextResponse.json(
-      { error: "Failed to fetch client" },
-      { status: 500 }
-    );
-  }
 }

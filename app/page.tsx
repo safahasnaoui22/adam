@@ -1,6 +1,24 @@
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/lib/auth";
+import { redirect } from "next/navigation";
 import Link from "next/link";
 
-export default function HomePage() {
+export default async function HomePage() {
+  // Check if user is already logged in
+  const session = await getServerSession(authOptions);
+
+  // If user is logged in, redirect to their appropriate dashboard
+  if (session?.user) {
+    if (session.user.role === "ADMIN") {
+      redirect("/admin");
+    } else if (session.user.role === "RESTAURANT_OWNER") {
+      redirect("/dashboard");
+    } else if (session.user.role === "CUSTOMER") {
+      redirect("/client/dashboard");
+    }
+  }
+
+  // If not logged in, show the landing page
   return (
     <div className="min-h-screen bg-gradient-to-b from-indigo-50 to-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">

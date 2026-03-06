@@ -1,19 +1,14 @@
-import { auth } from "@/auth"
+import { authOptions } from "@/app/lib/auth"
+import { getServerSession } from "next-auth"
+
 import { redirect } from "next/navigation"
 
 export default async function Dashboard() {
-  const session = await auth()
+  const session = await getServerSession(authOptions)
 
   if (!session) {
-    redirect("/login")
+    redirect("/auth/signin")
   }
 
-  return (
-    <div>
-      <h1 className="text-2xl font-bold">
-        Tableau de bord
-      </h1>
-      <p>Bienvenue sur votre tableau de bord de fidélité</p>
-    </div>
-  )
+  return <div>Dashboard</div>
 }

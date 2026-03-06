@@ -1,27 +1,18 @@
 import { NextResponse } from "next/server";
 import { hash } from "bcrypt";
-import prisma from "@/lib/prisma"; // Fixed: removed curly braces
+import { prisma } from "@/app/lib/prisma";
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    console.log("Received signup data:", body);
+    console.log("📝 New restaurant signup:", body.email);
 
     const { cafeName, email, password, phoneNumber } = body;
 
     // Validate required fields
     if (!cafeName || !email || !password) {
       return NextResponse.json(
-        { error: "Missing required fields: cafeName, email, and password are required" },
-        { status: 400 }
-      );
-    }
-
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return NextResponse.json(
-        { error: "Invalid email format" },
+        { error: "Missing required fields" },
         { status: 400 }
       );
     }
@@ -33,7 +24,7 @@ export async function POST(request: Request) {
 
     if (existingUser) {
       return NextResponse.json(
-        { error: "User with this email already exists" },
+        { error: "User already exists" },
         { status: 400 }
       );
     }
@@ -45,9 +36,9 @@ export async function POST(request: Request) {
     const urlSlug = cafeName
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-|-$/g, '');
+      .replace(/^-|-$/g, '') || "cafe";
 
-    // Create user with restaurant
+    // Create user with restaurant - status PENDING by default
     const user = await prisma.user.create({
       data: {
         email,
@@ -62,6 +53,7 @@ export async function POST(request: Request) {
             urlSlug: urlSlug,
             phoneNumber,
             email,
+            accountStatus: "PENDING", // Explicitly set to PENDING
           },
         },
       },
@@ -70,11 +62,31 @@ export async function POST(request: Request) {
       },
     });
 
-    console.log("User created successfully:", user.id);
+    console.log("✅ New restaurant created:", {
+      id: user.restaurant?.id,
+      name: cafeName,
+      status: "PENDING"
+    });
+
+    // Optional: Create an admin notification
+    await prisma.adminLog.create({
+      data: {
+        adminId: "", // This will be handled by a trigger or leave empty
+        action: "NEW_RESTAURANT_SIGNUP",
+        targetType: "RESTAURANT",
+        targetId: user.restaurant?.id || "",
+        details: {
+          restaurantName: cafeName,
+          email: email,
+          phone: phoneNumber,
+          signedUpAt: new Date().toISOString()
+        },
+      },
+    });
 
     return NextResponse.json(
       {
-        message: "User created successfully",
+        message: "Restaurant account created successfully. Waiting for admin approval.",
         user: {
           id: user.id,
           email: user.email,
@@ -85,9 +97,9 @@ export async function POST(request: Request) {
       { status: 201 }
     );
   } catch (error) {
-    console.error("Signup error details:", error);
+    console.error("❌ Signup error:", error);
     return NextResponse.json(
-      { error: "Internal server error: " + (error instanceof Error ? error.message : "Unknown error") },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }
