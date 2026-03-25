@@ -411,7 +411,7 @@ export default function ClientDashboard() {
             <span>Ajouter à l'écran d'accueil</span>
           </button>
           <p className="text-xs text-center text-gray-500 mt-3">
-            Powered by Stampi · Mentions légales
+            Powered by adam · Mentions légales
           </p>
         </div>
 

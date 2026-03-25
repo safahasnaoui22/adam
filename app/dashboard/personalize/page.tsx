@@ -305,7 +305,7 @@ export default function PersonalizePage() {
                 type="email"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                placeholder="Email (ex : contact@stampi.tn)"
+                placeholder="Email (ex : contact@adam.tn)"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
               />
             </div>

@@ -9,148 +9,153 @@ datasource db {
 }
 
 model User {
-  id          String   @id @default(cuid())
-  name        String?
-  email       String   @unique
-  password    String // Hashed password
-  phoneNumber String?
-  role        Role     @default(RESTAURANT_OWNER)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Relations
-  restaurant      Restaurant?
+  id              String           @id @default(cuid())
+  name            String?
+  email           String           @unique
+  password        String
+  phoneNumber     String?
+  role            Role             @default(RESTAURANT_OWNER)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  adminLogs       AdminLog[]       @relation("AdminActions")
   customerProfile CustomerProfile?
-  adminLogs       AdminLog[]       @relation("AdminActions") // This matches the relation name
+  restaurant      Restaurant?
 }
 
 model Restaurant {
-  id          String  @id @default(cuid())
-  name        String
-  description String?
-  logo        String? // Will store the image path/URL
-  address     String?
-  phoneNumber String?
-  email       String?
-  website     String?
-
-  // Opening hours stored as JSON
-  openingHours Json? // Will store like: { "monday": { "open": "09:00", "close": "18:00", "closed": false } }
-
-  // Social media stored as JSON
-  socialMedia Json? // Will store like: { "facebook": "username", "instagram": "@handle" }
-
-  termsConditions String? // Store the terms text
-  howToUse        String? // Store the how-to-use text
-
-  // Revenue tracking settings
-  revenueSettings Json? // Will store: { "avgSpend": 10.00, "baseVisits": 1, "inactiveDays": 90 }
-
-  // Theme settings
-  theme             Json? // Will store color theme preferences
-  backgroundPattern String? // Selected pattern
-
-  // Brand & Identity
-  appName String @unique
-  urlSlug String @unique
-
-  qrCode    String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  ownerId        String            @unique
-  owner          User              @relation(fields: [ownerId], references: [id])
-  loyaltyProgram LoyaltyProgram?
-  customers      CustomerProfile[]
-  subscription   Subscription?
-  accountStatus  AccountStatus     @default(PENDING)
-
-  suspendedAt     DateTime?
-  suspendedReason String?
-  activatedAt     DateTime?
-  lastLoginAt     DateTime?
-
-  // Admin notes (for internal use)
-  adminNotes String?
-  stats      RestaurantStats?
+  id                String            @id @default(cuid())
+  name              String
+  description       String?
+  logo              String?
+  address           String?
+  phoneNumber       String?
+  email             String?
+  website           String?
+  openingHours      Json?
+  socialMedia       Json?
+  termsConditions   String?
+  howToUse          String?
+  revenueSettings   Json?
+  theme             Json?
+  backgroundPattern String?
+  appName           String            @unique
+  urlSlug           String            @unique
+  qrCode            String?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  ownerId           String            @unique
+  accountStatus     AccountStatus     @default(PENDING)
+  suspendedAt       DateTime?
+  suspendedReason   String?
+  activatedAt       DateTime?
+  lastLoginAt       DateTime?
+  adminNotes        String?
+  customers         CustomerProfile[]
+  loyaltyProgram    LoyaltyProgram?
+  owner             User              @relation(fields: [ownerId], references: [id])
+  stats             RestaurantStats?
+  subscription      Subscription?
 }
 
 model LoyaltyProgram {
-  id                    String   @id @default(cuid())
-  spendThreshold        Float    @default(1) // 1 DT = points
-  pointsEarned          Int      @default(1) // Points per threshold
-  autoPushNotifications Boolean  @default(true)
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
-
-  // Relations
-  restaurantId String     @unique
-  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
-  rewards      Reward[]
+  id                    String     @id @default(cuid())
+  spendThreshold        Float      @default(1)
+  pointsEarned          Int        @default(1)
+  autoPushNotifications Boolean    @default(true)
+  createdAt             DateTime   @default(now())
+  updatedAt             DateTime   @updatedAt
+  restaurantId          String     @unique
+  restaurant            Restaurant @relation(fields: [restaurantId], references: [id])
+  rewards               Reward[]
 }
 
 model CustomerProfile {
-  id         String    @id @default(cuid())
-  name       String
-  customerId String    @unique // Display ID like "CUST001"
-  points     Int       @default(0)
-  stamps     Int       @default(0)
-  createdAt  DateTime  @default(now())
-  lastVisit  DateTime?
-
-  // Relations
+  id            String         @id @default(cuid())
+  name          String
+  customerId    String         @unique
+  points        Int            @default(0)
+  stamps        Int            @default(0)
+  createdAt     DateTime       @default(now())
+  lastVisit     DateTime?
   userId        String         @unique
-  user          User           @relation(fields: [userId], references: [id])
   restaurantId  String
   restaurant    Restaurant     @relation(fields: [restaurantId], references: [id])
-  visits        Visit[]
+  user          User           @relation(fields: [userId], references: [id])
   earnedRewards EarnedReward[]
+  visits        Visit[]
 }
 
-// Add this model for tracking visits
 model Visit {
-  id           String   @id @default(cuid())
-  date         DateTime @default(now())
+  id           String          @id @default(cuid())
+  date         DateTime        @default(now())
   amount       Float?
-  pointsEarned Int      @default(0)
-  stampsEarned Int      @default(0)
-
-  // Relations
-  customerId String
-  customer   CustomerProfile @relation(fields: [customerId], references: [id])
+  pointsEarned Int             @default(0)
+  stampsEarned Int             @default(0)
+  customerId   String
+  customer     CustomerProfile @relation(fields: [customerId], references: [id])
 }
 
 model Reward {
-  id             String   @id @default(cuid())
-  name           String
-  pointsRequired Int
-  description    String?
-  isActive       Boolean  @default(true)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  // Relations
+  id               String         @id @default(cuid())
+  name             String
+  pointsRequired   Int
+  description      String?
+  isActive         Boolean        @default(true)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
   loyaltyProgramId String
+  earnedRewards    EarnedReward[]
   loyaltyProgram   LoyaltyProgram @relation(fields: [loyaltyProgramId], references: [id])
-
-  // ADD THIS LINE - the missing opposite relation
-  earnedRewards EarnedReward[]
 }
 
 model EarnedReward {
-  id        String    @id @default(cuid())
-  rewardId  String
-  earnedAt  DateTime  @default(now())
-  usedAt    DateTime?
-  expiresAt DateTime?
-
-  // Relations
+  id         String          @id @default(cuid())
+  rewardId   String
+  earnedAt   DateTime        @default(now())
+  usedAt     DateTime?
+  expiresAt  DateTime?
   customerId String
   customer   CustomerProfile @relation(fields: [customerId], references: [id])
+  reward     Reward          @relation(fields: [rewardId], references: [id])
+}
 
-  // Fix this relation - make sure it matches
-  reward Reward @relation(fields: [rewardId], references: [id])
+model Subscription {
+  id            String           @id @default(cuid())
+  plan          SubscriptionPlan @default(FREE)
+  startDate     DateTime         @default(now())
+  endDate       DateTime?
+  autoRenew     Boolean          @default(true)
+  price         Float?
+  paymentMethod String?
+  restaurantId  String           @unique
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  restaurant    Restaurant       @relation(fields: [restaurantId], references: [id])
+}
+
+model AdminLog {
+  id         String   @id @default(cuid())
+  adminId    String?
+  action     String
+  targetType String
+  targetId   String
+  details    Json?
+  createdAt  DateTime @default(now())
+  admin      User?    @relation("AdminActions", fields: [adminId], references: [id])
+}
+
+model RestaurantStats {
+  id              String     @id @default(cuid())
+  restaurantId    String     @unique
+  totalCustomers  Int        @default(0)
+  activeCustomers Int        @default(0)
+  totalVisits     Int        @default(0)
+  totalPoints     Int        @default(0)
+  totalRewards    Int        @default(0)
+  totalRevenue    Float?     @default(0)
+  lastUpdated     DateTime   @default(now())
+  monthlyStats    Json?
+  restaurant      Restaurant @relation(fields: [restaurantId], references: [id])
 }
 
 enum Role {
@@ -170,51 +175,4 @@ enum SubscriptionPlan {
   BASIC
   PREMIUM
   ENTERPRISE
-}
-
-model Subscription {
-  id            String           @id @default(cuid())
-  plan          SubscriptionPlan @default(FREE)
-  startDate     DateTime         @default(now())
-  endDate       DateTime?
-  autoRenew     Boolean          @default(true)
-  price         Float?
-  paymentMethod String?
-
-  // Relations
-  restaurantId String     @unique
-  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model AdminLog {
-  id         String   @id @default(cuid())
-  adminId    String
-  admin      User     @relation(fields: [adminId], references: [id], name: "AdminActions") // FIXED: Added the relation name
-  action     String // e.g., "SUSPEND_RESTAURANT", "ACTIVATE_RESTAURANT", "DELETE_RESTAURANT"
-  targetType String // "RESTAURANT", "USER", etc.
-  targetId   String
-  details    Json? // Store additional details
-  createdAt  DateTime @default(now())
-}
-
-// Add Restaurant Statistics
-model RestaurantStats {
-  id           String     @id @default(cuid())
-  restaurantId String     @unique
-  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
-
-  totalCustomers  Int    @default(0)
-  activeCustomers Int    @default(0)
-  totalVisits     Int    @default(0)
-  totalPoints     Int    @default(0)
-  totalRewards    Int    @default(0)
-  totalRevenue    Float? @default(0)
-
-  lastUpdated DateTime @default(now())
-
-  // Monthly stats stored as JSON for flexibility
-  monthlyStats Json?
 }
