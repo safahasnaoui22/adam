@@ -49,7 +49,7 @@ export default function BrandIdentity({
             onChange={(e) => onUrlSlugChange(e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, '-'))}
             className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
           />
-          <span className="ml-2 text-gray-500">.stampi.tn</span>
+          <span className="ml-2 text-gray-500">.adam.tn</span>
         </div>
         <p className="mt-1 text-xs text-gray-500">
           Cette URL permet à vos clients d'accéder à votre carte de fidélité depuis leur navigateur.

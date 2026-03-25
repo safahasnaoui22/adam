@@ -114,8 +114,8 @@ export default function PersonalizePage() {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mb-4"></div>
-          <p>Chargement de vos paramètres...</p>
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#fe5502] mb-4"></div>
+          <p className="text-[#7f8489]">Chargement de vos paramètres...</p>
         </div>
       </div>
     );
@@ -123,80 +123,80 @@ export default function PersonalizePage() {
 
   return (
     <div className="max-w-4xl mx-auto py-8 px-4">
-      <h1 className="text-3xl font-bold text-gray-900 mb-2">Personnalisez votre carte</h1>
-      <p className="text-gray-600 mb-8">
+      <h1 className="text-3xl font-bold text-[#282424] mb-2">Personnalisez votre carte</h1>
+      <p className="text-[#7f8489] mb-8">
         Rendez votre carte de fidélité unique. Ces paramètres aident les clients à reconnaître votre commerce.
       </p>
 
       {/* Tabs */}
-      <div className="border-b border-gray-200 mb-8">
+      <div className="border-b border-[#c6c9c8] mb-8">
         <nav className="flex -mb-px space-x-8 overflow-x-auto">
           <button
             onClick={() => setActiveTab("business")}
-            className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
+            className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
               activeTab === "business"
-                ? "border-indigo-500 text-indigo-600"
-                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                ? "border-[#fe5502] text-[#fe5502]"
+                : "border-transparent text-[#7f8489] hover:text-[#282424] hover:border-[#c6c9c8]"
             }`}
           >
             Contact & Business
           </button>
           <button
             onClick={() => setActiveTab("hours")}
-            className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
+            className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
               activeTab === "hours"
-                ? "border-indigo-500 text-indigo-600"
-                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                ? "border-[#fe5502] text-[#fe5502]"
+                : "border-transparent text-[#7f8489] hover:text-[#282424] hover:border-[#c6c9c8]"
             }`}
           >
             Horaires
           </button>
           <button
             onClick={() => setActiveTab("social")}
-            className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
+            className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
               activeTab === "social"
-                ? "border-indigo-500 text-indigo-600"
-                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                ? "border-[#fe5502] text-[#fe5502]"
+                : "border-transparent text-[#7f8489] hover:text-[#282424] hover:border-[#c6c9c8]"
             }`}
           >
             Réseaux sociaux
           </button>
           <button
             onClick={() => setActiveTab("legal")}
-            className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
+            className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
               activeTab === "legal"
-                ? "border-indigo-500 text-indigo-600"
-                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                ? "border-[#fe5502] text-[#fe5502]"
+                : "border-transparent text-[#7f8489] hover:text-[#282424] hover:border-[#c6c9c8]"
             }`}
           >
             Conditions
           </button>
           <button
             onClick={() => setActiveTab("revenue")}
-            className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
+            className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
               activeTab === "revenue"
-                ? "border-indigo-500 text-indigo-600"
-                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                ? "border-[#fe5502] text-[#fe5502]"
+                : "border-transparent text-[#7f8489] hover:text-[#282424] hover:border-[#c6c9c8]"
             }`}
           >
             Suivi des revenus
           </button>
           <button
             onClick={() => setActiveTab("brand")}
-            className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
+            className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
               activeTab === "brand"
-                ? "border-indigo-500 text-indigo-600"
-                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                ? "border-[#fe5502] text-[#fe5502]"
+                : "border-transparent text-[#7f8489] hover:text-[#282424] hover:border-[#c6c9c8]"
             }`}
           >
             Brand & Identity
           </button>
           <button
             onClick={() => setActiveTab("theme")}
-            className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
+            className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
               activeTab === "theme"
-                ? "border-indigo-500 text-indigo-600"
-                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                ? "border-[#fe5502] text-[#fe5502]"
+                : "border-transparent text-[#7f8489] hover:text-[#282424] hover:border-[#c6c9c8]"
             }`}
           >
             Thème
@@ -208,10 +208,10 @@ export default function PersonalizePage() {
         {/* Business Details Tab */}
         {activeTab === "business" && (
           <div className="bg-white shadow rounded-lg p-6 space-y-6">
-            <h2 className="text-xl font-semibold">Contact & Business Details</h2>
+            <h2 className="text-xl font-semibold text-[#282424]">Contact & Business Details</h2>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-[#282424] mb-1">
                 Nom du commerce *
               </label>
               <input
@@ -219,22 +219,22 @@ export default function PersonalizePage() {
                 required
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full px-3 py-2 border border-[#c6c9c8] rounded-md focus:outline-none focus:ring-[#fe5502] focus:border-[#fe5502] text-[#282424]"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-[#282424] mb-1">
                 Logo du commerce
               </label>
               <div className="flex items-center space-x-4">
                 {formData.logo && (
-                  <div className="w-20 h-20 relative rounded-lg overflow-hidden border">
+                  <div className="w-20 h-20 relative rounded-lg overflow-hidden border border-[#c6c9c8]">
                     <Image src={formData.logo} alt="Logo" fill className="object-cover" />
                   </div>
                 )}
                 <div className="flex-1">
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-indigo-500 transition">
+                  <div className="border-2 border-dashed border-[#c6c9c8] rounded-lg p-4 text-center hover:border-[#fe5502] transition">
                     <input
                       type="file"
                       accept="image/*"
@@ -245,13 +245,13 @@ export default function PersonalizePage() {
                       }}
                     />
                     <label htmlFor="logo-upload" className="cursor-pointer">
-                      <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                      <svg className="mx-auto h-12 w-12 text-[#7f8489]" stroke="currentColor" fill="none" viewBox="0 0 48 48">
                         <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H8a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                       </svg>
-                      <p className="mt-1 text-sm text-gray-600">
-                        <span className="text-indigo-600">Importer un logo</span>
+                      <p className="mt-1 text-sm text-[#7f8489]">
+                        <span className="text-[#fe5502]">Importer un logo</span>
                       </p>
-                      <p className="text-xs text-gray-500">PNG, JPG, GIF up to 2MB</p>
+                      <p className="text-xs text-[#7f8489]">PNG, JPG, GIF up to 2MB</p>
                     </label>
                   </div>
                 </div>
@@ -259,7 +259,7 @@ export default function PersonalizePage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-[#282424] mb-1">
                 Description du commerce
               </label>
               <textarea
@@ -267,12 +267,12 @@ export default function PersonalizePage() {
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 placeholder="Présentez votre commerce à vos clients..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full px-3 py-2 border border-[#c6c9c8] rounded-md focus:outline-none focus:ring-[#fe5502] focus:border-[#fe5502] text-[#282424]"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-[#282424] mb-1">
                 Adresse du commerce
               </label>
               <input
@@ -280,12 +280,12 @@ export default function PersonalizePage() {
                 value={formData.address}
                 onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                 placeholder="Rue, Ville, Code postal"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full px-3 py-2 border border-[#c6c9c8] rounded-md focus:outline-none focus:ring-[#fe5502] focus:border-[#fe5502] text-[#282424]"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-[#282424] mb-1">
                 Numéro de téléphone
               </label>
               <input
@@ -293,12 +293,12 @@ export default function PersonalizePage() {
                 value={formData.phoneNumber}
                 onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
                 placeholder="Téléphone (ex : +216 XX XXX XXX)"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full px-3 py-2 border border-[#c6c9c8] rounded-md focus:outline-none focus:ring-[#fe5502] focus:border-[#fe5502] text-[#282424]"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-[#282424] mb-1">
                 Adresse email
               </label>
               <input
@@ -306,12 +306,12 @@ export default function PersonalizePage() {
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 placeholder="Email (ex : contact@adam.tn)"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full px-3 py-2 border border-[#c6c9c8] rounded-md focus:outline-none focus:ring-[#fe5502] focus:border-[#fe5502] text-[#282424]"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-[#282424] mb-1">
                 Site web
               </label>
               <input
@@ -319,7 +319,7 @@ export default function PersonalizePage() {
                 value={formData.website}
                 onChange={(e) => setFormData({ ...formData, website: e.target.value })}
                 placeholder="Site web (optionnel)"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full px-3 py-2 border border-[#c6c9c8] rounded-md focus:outline-none focus:ring-[#fe5502] focus:border-[#fe5502] text-[#282424]"
               />
             </div>
           </div>
@@ -370,31 +370,30 @@ export default function PersonalizePage() {
         )}
 
         {/* Theme Tab */}
-     {/* Theme Tab */}
-{activeTab === "theme" && (
-  <div className="bg-white shadow rounded-lg p-6">
-    <ThemeSelector
-      theme={formData.theme}
-      pattern={formData.backgroundPattern}
-      onThemeChange={(theme) => setFormData({ ...formData, theme })}
-      onPatternChange={(pattern) => setFormData({ ...formData, backgroundPattern: pattern })}
-    />
-  </div>
-)}
+        {activeTab === "theme" && (
+          <div className="bg-white shadow rounded-lg p-6">
+            <ThemeSelector
+              theme={formData.theme}
+              pattern={formData.backgroundPattern}
+              onThemeChange={(theme) => setFormData({ ...formData, theme })}
+              onPatternChange={(pattern) => setFormData({ ...formData, backgroundPattern: pattern })}
+            />
+          </div>
+        )}
 
         {/* Save Button */}
         <div className="flex justify-end space-x-4">
           <button
             type="button"
             onClick={() => router.back()}
-            className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+            className="px-4 py-2 border border-[#c6c9c8] rounded-md text-[#7f8489] hover:bg-[#fdf9f4] hover:text-[#282424] transition-colors"
           >
             Annuler
           </button>
           <button
             type="submit"
             disabled={saving}
-            className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50"
+            className="px-4 py-2 bg-[#fe5502] text-white rounded-md hover:bg-[#e0682e] disabled:opacity-50 transition-colors"
           >
             {saving ? "Enregistrement..." : "Enregistrer"}
           </button>

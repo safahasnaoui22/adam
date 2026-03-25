@@ -1,5 +1,4 @@
 import { getServerSession } from "next-auth";
-
 import { prisma } from "@/app/lib/prisma";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -40,11 +39,11 @@ export default async function DashboardPage() {
     if (!restaurant) {
         return (
             <div className="text-center py-12">
-                <h3 className="text-lg font-medium text-gray-900">Restaurant not found</h3>
-                <p className="mt-2 text-sm text-gray-600">Please complete your setup</p>
+                <h3 className="text-lg font-medium text-[#282424]">Restaurant not found</h3>
+                <p className="mt-2 text-sm text-[#7f8489]">Please complete your setup</p>
                 <Link
                     href="/dashboard/personalize"
-                    className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
+                    className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-[#fe5502] hover:bg-[#e0682e] transition-colors"
                 >
                     Complete Setup
                 </Link>
@@ -66,26 +65,26 @@ export default async function DashboardPage() {
             {/* Welcome Header */}
             <div className="bg-white shadow sm:rounded-lg">
                 <div className="px-4 py-5 sm:p-6">
-                    <h1 className="text-2xl font-bold text-gray-900">
+                    <h1 className="text-2xl font-bold text-[#282424]">
                         Bienvenue sur votre tableau de bord de fidélité
                     </h1>
-                    <p className="mt-1 text-sm text-gray-600">
+                    <p className="mt-1 text-sm text-[#7f8489]">
                         Démarrer avec Adam
                     </p>
 
                     {/* Progress Bar */}
                     <div className="mt-4">
                         <div className="flex items-center justify-between mb-1">
-                            <span className="text-sm font-medium text-gray-700">
+                            <span className="text-sm font-medium text-[#282424]">
                                 {stepsCompleted} sur 4 étapes terminées
                             </span>
-                            <span className="text-sm font-medium text-indigo-600">
+                            <span className="text-sm font-medium text-[#fe5502]">
                                 {Math.round((stepsCompleted / 4) * 100)}%
                             </span>
                         </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2.5">
+                        <div className="w-full bg-[#c6c9c8] rounded-full h-2.5">
                             <div
-                                className="bg-indigo-600 h-2.5 rounded-full"
+                                className="bg-[#fe5502] h-2.5 rounded-full"
                                 style={{ width: `${(stepsCompleted / 4) * 100}%` }}
                             ></div>
                         </div>
@@ -96,24 +95,24 @@ export default async function DashboardPage() {
             {/* Setup Steps Grid */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 {/* Step 1: Personalize Card */}
-                <div className={`bg-white shadow sm:rounded-lg ${steps[0] ? 'border-l-4 border-green-500' : ''}`}>
+                <div className={`bg-white shadow sm:rounded-lg ${steps[0] ? 'border-l-4 border-[#e7926b]' : ''}`}>
                     <div className="px-4 py-5 sm:p-6">
                         <div className="flex items-center justify-between">
-                            <h3 className="text-lg font-medium text-gray-900">
+                            <h3 className="text-lg font-medium text-[#282424]">
                                 1. Personnalisez votre carte
                             </h3>
                             {steps[0] && (
-                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#ffd9b9] text-[#e0682e]">
                                     Complété
                                 </span>
                             )}
                         </div>
-                        <p className="mt-2 text-sm text-gray-600">
+                        <p className="mt-2 text-sm text-[#7f8489]">
                             Ajoutez votre logo, description et coordonnées
                         </p>
                         <Link
                             href="/dashboard/personalize"
-                            className="mt-4 inline-flex items-center text-sm font-medium text-indigo-600 hover:text-indigo-500"
+                            className="mt-4 inline-flex items-center text-sm font-medium text-[#fe5502] hover:text-[#e0682e] transition-colors"
                         >
                             {steps[0] ? "Modifier les informations" : "Commencer"}
                             <svg className="ml-1 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
@@ -124,24 +123,24 @@ export default async function DashboardPage() {
                 </div>
 
                 {/* Step 2: Loyalty Program */}
-                <div className={`bg-white shadow sm:rounded-lg ${steps[3] ? 'border-l-4 border-green-500' : ''}`}>
+                <div className={`bg-white shadow sm:rounded-lg ${steps[3] ? 'border-l-4 border-[#e7926b]' : ''}`}>
                     <div className="px-4 py-5 sm:p-6">
                         <div className="flex items-center justify-between">
-                            <h3 className="text-lg font-medium text-gray-900">
+                            <h3 className="text-lg font-medium text-[#282424]">
                                 2. Configurez le programme
                             </h3>
                             {steps[3] && (
-                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#ffd9b9] text-[#e0682e]">
                                     Complété
                                 </span>
                             )}
                         </div>
-                        <p className="mt-2 text-sm text-gray-600">
+                        <p className="mt-2 text-sm text-[#7f8489]">
                             Définissez les règles de points et récompenses
                         </p>
                         <Link
                             href="/dashboard/loyalty-program"
-                            className="mt-4 inline-flex items-center text-sm font-medium text-indigo-600 hover:text-indigo-500"
+                            className="mt-4 inline-flex items-center text-sm font-medium text-[#fe5502] hover:text-[#e0682e] transition-colors"
                         >
                             {steps[3] ? "Gérer le programme" : "Configurer"}
                             <svg className="ml-1 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
@@ -151,35 +150,34 @@ export default async function DashboardPage() {
                     </div>
                 </div>
 
-                {/* Step 3: Share QR Code */}
                 {/* Step 3: Share QR Code - Enhanced version */}
-                <div className="bg-white shadow sm:rounded-lg border-2 border-indigo-100 hover:border-indigo-300 transition">
+                <div className="bg-white shadow sm:rounded-lg border-2 border-[#ffd9b9] hover:border-[#fe5502] transition">
                     <div className="px-4 py-5 sm:p-6">
                         <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-lg font-medium text-gray-900">
+                            <h3 className="text-lg font-medium text-[#282424]">
                                 3. Partagez votre QR code
                             </h3>
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#ffd9b9] text-[#e0682e]">
                                 Important
                             </span>
                         </div>
-                        <p className="mt-2 text-sm text-gray-600">
+                        <p className="mt-2 text-sm text-[#7f8489]">
                             Vos clients scannent ce QR code pour rejoindre votre programme de fidélité instantanément.
                         </p>
 
                         {/* Quick QR Preview */}
                         <div className="mt-4 flex items-center space-x-4">
-                            <div className="bg-gray-100 p-2 rounded-lg">
-                                <div className="w-16 h-16 bg-gradient-to-r from-indigo-500 to-purple-600 rounded flex items-center justify-center">
+                            <div className="bg-[#c6c9c8] p-2 rounded-lg">
+                                <div className="w-16 h-16 bg-gradient-to-r from-[#fe5502] to-[#e0682e] rounded flex items-center justify-center">
                                     <span className="text-white text-xs text-center">QR<br />Code</span>
                                 </div>
                             </div>
                             <div className="flex-1">
-                                <p className="text-sm font-medium text-gray-900">
+                                <p className="text-sm font-medium text-[#282424]">
                                     URL de votre carte:
                                 </p>
-                                <p className="text-xs text-indigo-600 break-all">
-                                    {`${restaurant.urlSlug}.stampi.tn`}
+                                <p className="text-xs text-[#fe5502] break-all">
+                                    {`${restaurant.urlSlug}.adam.tn`}
                                 </p>
                             </div>
                         </div>
@@ -187,7 +185,7 @@ export default async function DashboardPage() {
                         <div className="mt-6 flex space-x-3">
                             <Link
                                 href="/dashboard/qr-code"
-                                className="flex-1 inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
+                                className="flex-1 inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-[#fe5502] hover:bg-[#e0682e] transition-colors"
                             >
                                 Voir et télécharger QR Code
                                 <svg className="ml-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -197,39 +195,40 @@ export default async function DashboardPage() {
                             <Link
                                 href={`/${restaurant.urlSlug}`}
                                 target="_blank"
-                                className="flex-inline items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                                className="flex-inline items-center px-4 py-2 border border-[#c6c9c8] text-sm font-medium rounded-md text-[#282424] bg-white hover:bg-[#fdf9f4] transition-colors"
                             >
                                 Aperçu
                             </Link>
                         </div>
 
                         {/* Tips for printing */}
-                        <div className="mt-4 p-3 bg-yellow-50 rounded-md">
-                            <p className="text-xs text-yellow-800">
+                        <div className="mt-4 p-3 bg-[#ffd9b9] rounded-md">
+                            <p className="text-xs text-[#e0682e]">
                                 💡 Astuce: Téléchargez le QR code et imprimez-le pour le placer sur vos tables ou comptoir.
                             </p>
                         </div>
                     </div>
                 </div>
+                
                 {/* Step 4: Recent Customers */}
                 <div className="bg-white shadow sm:rounded-lg">
                     <div className="px-4 py-5 sm:p-6">
-                        <h3 className="text-lg font-medium text-gray-900">
+                        <h3 className="text-lg font-medium text-[#282424]">
                             Clients récents
                         </h3>
                         {restaurant.customers.length > 0 ? (
-                            <ul className="mt-3 divide-y divide-gray-200">
+                            <ul className="mt-3 divide-y divide-[#c6c9c8]">
                                 {restaurant.customers.map((customer) => (
                                     <li key={customer.id} className="py-2">
-                                        <p className="text-sm font-medium text-gray-900">{customer.name}</p>
-                                        <p className="text-xs text-gray-500">
+                                        <p className="text-sm font-medium text-[#282424]">{customer.name}</p>
+                                        <p className="text-xs text-[#7f8489]">
                                             {customer.points} points • Inscrit le {new Date(customer.createdAt).toLocaleDateString()}
                                         </p>
                                     </li>
                                 ))}
                             </ul>
                         ) : (
-                            <p className="mt-2 text-sm text-gray-500">Aucun client pour le moment</p>
+                            <p className="mt-2 text-sm text-[#7f8489]">Aucun client pour le moment</p>
                         )}
                     </div>
                 </div>
@@ -239,23 +238,23 @@ export default async function DashboardPage() {
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <div className="bg-white shadow sm:rounded-lg">
                     <div className="px-4 py-5 sm:p-6">
-                        <dt className="text-sm font-medium text-gray-500 truncate">Total clients</dt>
-                        <dd className="mt-1 text-3xl font-semibold text-gray-900">{restaurant.customers.length}</dd>
+                        <dt className="text-sm font-medium text-[#7f8489] truncate">Total clients</dt>
+                        <dd className="mt-1 text-3xl font-semibold text-[#282424]">{restaurant.customers.length}</dd>
                     </div>
                 </div>
                 <div className="bg-white shadow sm:rounded-lg">
                     <div className="px-4 py-5 sm:p-6">
-                        <dt className="text-sm font-medium text-gray-500 truncate">Points distribués</dt>
-                        <dd className="mt-1 text-3xl font-semibold text-gray-900">
+                        <dt className="text-sm font-medium text-[#7f8489] truncate">Points distribués</dt>
+                        <dd className="mt-1 text-3xl font-semibold text-[#282424]">
                             {restaurant.customers.reduce((sum, c) => sum + c.points, 0)}
                         </dd>
                     </div>
                 </div>
                 <div className="bg-white shadow sm:rounded-lg">
                     <div className="px-4 py-5 sm:p-6">
-                        <dt className="text-sm font-medium text-gray-500 truncate">URL de la carte</dt>
-                        <dd className="mt-1 text-sm font-medium text-indigo-600">
-                            <a href={`https://${restaurant.urlSlug}.Adam.tn`} target="_blank" rel="noopener noreferrer">
+                        <dt className="text-sm font-medium text-[#7f8489] truncate">URL de la carte</dt>
+                        <dd className="mt-1 text-sm font-medium text-[#fe5502]">
+                            <a href={`https://${restaurant.urlSlug}.Adam.tn`} target="_blank" rel="noopener noreferrer" className="hover:text-[#e0682e]">
                                 {restaurant.urlSlug}.Adam.tn
                             </a>
                         </dd>

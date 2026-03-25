@@ -506,7 +506,7 @@ export default function ThemeSelector({
 
                   {/* Powered By */}
                   <p className="text-center text-xs mt-6 opacity-50" style={{ color: selectedTheme?.colors?.text }}>
-                    Powered by Stampi · Mentions légales
+                    Powered by adam · Mentions légales
                   </p>
 
                   {/* Page Indicator */}
