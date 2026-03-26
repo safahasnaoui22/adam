@@ -11,6 +11,7 @@ interface CustomerSignupProps {
 }
 
 export default function CustomerSignup({ restaurantId, restaurantSlug }: CustomerSignupProps) {
+  const router = useRouter(); // Add this line - initialize the router
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
