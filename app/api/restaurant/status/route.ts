@@ -12,13 +12,18 @@ export async function GET() {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
+        // Fix: Select fields correctly - plan comes from subscription, not restaurant
         const restaurant = await prisma.restaurant.findUnique({
             where: { id: session.user.restaurantId },
             select: {
                 accountStatus: true,
-                plan: true,
                 id: true,
-                name: true
+                name: true,
+                subscription: {
+                    select: {
+                        plan: true
+                    }
+                }
             }
         });
 
@@ -28,7 +33,7 @@ export async function GET() {
 
         return NextResponse.json({
             accountStatus: restaurant.accountStatus,
-            plan: restaurant.plan,
+            plan: restaurant.subscription?.plan || "FREE",
             id: restaurant.id,
             name: restaurant.name
         });
