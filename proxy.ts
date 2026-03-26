@@ -1,4 +1,4 @@
-// middleware.ts (update your existing middleware)
+// proxy.ts (or middleware.ts if you haven't migrated yet)
 import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
@@ -9,9 +9,8 @@ export default withAuth(
     const pathname = req.nextUrl.pathname;
 
     // Check if user is trying to access dashboard routes
-    if (pathname.startsWith("/dashboard") && token?.user?.role === "RESTAURANT_OWNER") {
+    if (pathname.startsWith("/dashboard") && token?.role === "RESTAURANT_OWNER") {
       try {
-        // You might want to cache this check
         const response = await fetch(`${req.nextUrl.origin}/api/restaurant/status`, {
           headers: {
             cookie: req.headers.get("cookie") || "",
