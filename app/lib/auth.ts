@@ -1,75 +1,38 @@
-import type { NextAuthOptions, DefaultUser, DefaultSession } from "next-auth"
-import CredentialsProvider from "next-auth/providers/credentials"
-import { PrismaAdapter } from "@next-auth/prisma-adapter"
-import { compare } from "bcrypt"
-import { prisma } from "@/app/lib/prisma"
-
-// Extend the built-in types
-declare module "next-auth" {
-  interface Session {
-    user: {
-      id: string;
-      role: string;
-      restaurantId?: string;
-      customerId?: string;
-    } & DefaultSession["user"]
-  }
-
-  interface User extends DefaultUser {
-    role: string;
-    restaurantId?: string;
-    customerId?: string;
-  }
-}
-
-declare module "next-auth/jwt" {
-  interface JWT {
-    id: string;
-    role: string;
-    restaurantId?: string;
-    customerId?: string;
-  }
-}
+// app/lib/auth.ts
+import { NextAuthOptions } from "next-auth";
+import CredentialsProvider from "next-auth/providers/credentials";
+import { prisma } from "./prisma";
+import { compare } from "bcryptjs";
 
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma),
-  secret: process.env.NEXTAUTH_SECRET,
-  session: {
-    strategy: "jwt",
-    maxAge: 30 * 24 * 60 * 60, // 30 days
-  },
-  jwt: {
-    maxAge: 30 * 24 * 60 * 60, // 30 days
-  },
-  pages: {
-    signIn: "/auth/signin",
-    // signUp is NOT a valid option - removed
-    error: "/auth/error", // optional
-  },
   providers: [
     CredentialsProvider({
       name: "credentials",
       credentials: {
         email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" },
+        password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
-          return null
+          return null;
         }
 
         const user = await prisma.user.findUnique({
           where: { email: credentials.email },
-          include: { 
+          include: {
             restaurant: true,
-            customerProfile: true
+            customerProfile: true,
           },
-        })
+        });
 
-        if (!user || !user.password) return null
+        if (!user) {
+          return null;
+        }
 
-        const validPassword = await compare(credentials.password, user.password)
-        if (!validPassword) return null
+        const isValid = await compare(credentials.password, user.password);
+        if (!isValid) {
+          return null;
+        }
 
         return {
           id: user.id,
@@ -78,28 +41,44 @@ export const authOptions: NextAuthOptions = {
           role: user.role,
           restaurantId: user.restaurant?.id,
           customerId: user.customerProfile?.id,
-        }
+        };
       },
     }),
   ],
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.id = user.id
-        token.role = user.role
-        token.restaurantId = user.restaurantId
-        token.customerId = user.customerId
+        token.id = user.id;
+        token.role = user.role;
+        token.restaurantId = user.restaurantId;
+        token.customerId = user.customerId;
       }
-      return token
+      return token;
     },
     async session({ session, token }) {
       if (session.user) {
-        session.user.id = token.id
-        session.user.role = token.role
-        session.user.restaurantId = token.restaurantId
-        session.user.customerId = token.customerId
+        session.user.id = token.id as string;
+        session.user.role = token.role as string;
+        session.user.restaurantId = token.restaurantId as string;
+        session.user.customerId = token.customerId as string;
+        
+        // If it's a customer, fetch their full profile
+        if (token.role === "CUSTOMER" && token.customerId) {
+          const customerProfile = await prisma.customerProfile.findUnique({
+            where: { id: token.customerId as string },
+          });
+          if (customerProfile) {
+            session.user.customerProfile = customerProfile;
+          }
+        }
       }
-      return session
+      return session;
     },
   },
-}
+  session: {
+    strategy: "jwt",
+  },
+  pages: {
+    signIn: "/auth/signin",
+  },
+};

@@ -38,10 +38,10 @@ export default function CustomerSignup({ restaurantId, restaurantSlug }: Custome
       const data = await res.json();
 
       if (res.ok) {
-        // Sign in with the temporary password
+        // Sign in with the temporary password (development only)
         if (data.tempPassword) {
           const signInResult = await signIn("credentials", {
-            email: data.email || `${data.customerId}@temp.adam.tn`,
+            email: data.email,
             password: data.tempPassword,
             redirect: false,
           });

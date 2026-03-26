@@ -1,29 +1,28 @@
-import NextAuth from "next-auth";
-import { JWT } from "next-auth/jwt";
+// types/next-auth.d.ts
+import "next-auth";
+import { DefaultSession } from "next-auth";
 
 declare module "next-auth" {
   interface Session {
     user: {
       id: string;
       role: string;
-      restaurantId: string;
-      name?: string | null;
-      email?: string | null;
-      image?: string | null;
-    };
+      restaurantId?: string;
+      customerId?: string;
+      customerProfile?: {
+        id: string;
+        name: string;
+        customerId: string;
+        points: number;
+        stamps: number;
+      };
+    } & DefaultSession["user"];
   }
 
   interface User {
     id: string;
     role: string;
     restaurantId?: string;
-  }
-}
-
-declare module "next-auth/jwt" {
-  interface JWT {
-    id: string;
-    role: string;
-    restaurantId?: string;
+    customerId?: string;
   }
 }

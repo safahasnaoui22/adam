@@ -13,10 +13,12 @@ export default async function CustomerDashboardPage({ params }: PageProps) {
   const { restaurantSlug } = await params;
   const session = await getServerSession(authOptions);
 
+  // Check if user is logged in and is a customer
   if (!session?.user?.customerProfile) {
     redirect(`/${restaurantSlug}`);
   }
 
+  // Fetch restaurant details
   const restaurant = await prisma.restaurant.findUnique({
     where: { urlSlug: restaurantSlug },
     include: {
@@ -32,8 +34,9 @@ export default async function CustomerDashboardPage({ params }: PageProps) {
     notFound();
   }
 
+  // Fetch customer details with visits and earned rewards
   const customer = await prisma.customerProfile.findUnique({
-    where: { userId: session.user.id },
+    where: { id: session.user.customerProfile.id },
     include: {
       visits: {
         orderBy: { date: "desc" },
@@ -64,7 +67,7 @@ export default async function CustomerDashboardPage({ params }: PageProps) {
       restaurant={restaurant}
       customer={customer}
       rewards={sortedRewards}
-      nextReward={nextReward}
+      nextReward={nextReward || null}
       currentProgress={currentProgress}
     />
   );

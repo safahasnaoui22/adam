@@ -2,7 +2,6 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { Restaurant, CustomerProfile, Reward } from "@prisma/client";
 
@@ -25,21 +24,9 @@ export default function CustomerDashboard({
   const [showOptions, setShowOptions] = useState(false);
 
   const handleAddToHomeScreen = () => {
-    // @ts-ignore
     if (window.matchMedia('(display-mode: standalone)').matches) {
       alert("Déjà installé!");
-    } else if (window.navigator.standalone) {
-      alert("Déjà installé sur iOS!");
     } else {
-      // For PWA installation
-      if ('BeforeInstallPromptEvent' in window) {
-        // @ts-ignore
-        window.addEventListener('beforeinstallprompt', (e) => {
-          e.preventDefault();
-          // @ts-ignore
-          e.prompt();
-        });
-      }
       alert("Utilisez 'Ajouter à l'écran d'accueil' dans le menu de votre navigateur");
     }
   };
@@ -212,20 +199,11 @@ export default function CustomerDashboard({
 
         {showOptions && (
           <div className="bg-white rounded-2xl shadow-lg p-4 space-y-3 mb-4">
-            <Link
-              href={`/${restaurant.urlSlug}/history`}
-              className="block py-2 text-[#282424] hover:text-[#fe5502] transition-colors"
-            >
-              📜 Historique des visites
-            </Link>
-            <Link
-              href={`/${restaurant.urlSlug}/rewards-history`}
-              className="block py-2 text-[#282424] hover:text-[#fe5502] transition-colors"
-            >
-              🎁 Historique des récompenses
-            </Link>
             <button
-              onClick={() => {/* Handle logout */}}
+              onClick={async () => {
+                const { signOut } = await import("next-auth/react");
+                signOut({ callbackUrl: `/${restaurant.urlSlug}` });
+              }}
               className="block w-full text-left py-2 text-red-600 hover:text-red-700 transition-colors"
             >
               🚪 Se déconnecter
