@@ -1,8 +1,10 @@
+// app/dashboard/page.tsx
 import { getServerSession } from "next-auth";
 import { prisma } from "@/app/lib/prisma";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { authOptions } from "../lib/auth";
+import { AccountStatus, SubscriptionPlan } from "@prisma/client"; // Import enums
 
 async function getRestaurantData(userId: string) {
     const user = await prisma.user.findUnique({
@@ -10,7 +12,7 @@ async function getRestaurantData(userId: string) {
         include: {
             restaurant: {
                 include: {
-                    subscription: true, // Add this to get plan
+                    subscription: true,
                     loyaltyProgram: {
                         include: {
                             rewards: true,
@@ -53,10 +55,10 @@ export default async function DashboardPage() {
     }
 
     // Get plan from subscription
-    const plan = restaurant.subscription?.plan || "FREE";
+    const plan = restaurant.subscription?.plan || SubscriptionPlan.FREE;
 
     // Check account status - Show pending/suspended screens if needed
-    if (restaurant.accountStatus === "PENDING") {
+    if (restaurant.accountStatus === AccountStatus.PENDING) {
         return (
             <div className="max-w-2xl mx-auto py-12 px-4">
                 <div className="bg-white shadow rounded-lg p-8 text-center">
@@ -78,7 +80,7 @@ export default async function DashboardPage() {
         );
     }
 
-    if (restaurant.accountStatus === "SUSPENDED") {
+    if (restaurant.accountStatus === AccountStatus.SUSPENDED) {
         return (
             <div className="max-w-2xl mx-auto py-12 px-4">
                 <div className="bg-white shadow rounded-lg p-8 text-center">
@@ -111,6 +113,30 @@ export default async function DashboardPage() {
     ];
     const stepsCompleted = steps.filter(Boolean).length;
 
+    // Helper function to get status display text
+    const getStatusDisplay = () => {
+        if (restaurant.accountStatus === AccountStatus.ACTIVE) return "✓ Compte Actif";
+        if (restaurant.accountStatus === AccountStatus.PENDING) return "⏳ En attente d'approbation";
+        if (restaurant.accountStatus === AccountStatus.SUSPENDED) return "⚠️ Compte Suspendu";
+        return "";
+    };
+
+    // Helper function to get status styles
+    const getStatusStyles = () => {
+        if (restaurant.accountStatus === AccountStatus.ACTIVE) return "bg-[#ffd9b9] text-[#e0682e]";
+        if (restaurant.accountStatus === AccountStatus.PENDING) return "bg-[#ffd9b9] text-[#fe5502]";
+        return "bg-[#c6c9c8] text-[#7f8489]";
+    };
+
+    // Helper function to get plan display
+    const getPlanDisplay = () => {
+        if (plan === SubscriptionPlan.FREE) return "Gratuit";
+        if (plan === SubscriptionPlan.BASIC) return "Basic";
+        if (plan === SubscriptionPlan.PREMIUM) return "Premium";
+        if (plan === SubscriptionPlan.ENTERPRISE) return "Enterprise";
+        return "Gratuit";
+    };
+
     return (
         <div className="space-y-6">
             {/* Status and Plan Banner */}
@@ -124,21 +150,11 @@ export default async function DashboardPage() {
                             </p>
                         </div>
                         <div className="flex space-x-4">
-                            <div className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                                restaurant.accountStatus === "ACTIVE"
-                                    ? "bg-[#ffd9b9] text-[#e0682e]"
-                                    : restaurant.accountStatus === "PENDING"
-                                    ? "bg-[#ffd9b9] text-[#fe5502]"
-                                    : "bg-[#c6c9c8] text-[#7f8489]"
-                            }`}>
-                                {restaurant.accountStatus === "ACTIVE" && "✓ Compte Actif"}
-                                {restaurant.accountStatus === "PENDING" && "⏳ En attente d'approbation"}
-                                {restaurant.accountStatus === "SUSPENDED" && "⚠️ Compte Suspendu"}
+                            <div className={`px-3 py-1 rounded-full text-sm font-semibold ${getStatusStyles()}`}>
+                                {getStatusDisplay()}
                             </div>
                             <div className="px-3 py-1 bg-[#fdf9f4] text-[#fe5502] rounded-full text-sm font-semibold border border-[#fe5502]">
-                                Plan {plan === "FREE" ? "Gratuit" : 
-                                      plan === "BASIC" ? "Basic" : 
-                                      plan === "PREMIUM" ? "Premium" : "Enterprise"}
+                                Plan {getPlanDisplay()}
                             </div>
                         </div>
                     </div>
@@ -175,6 +191,7 @@ export default async function DashboardPage() {
                 </div>
             </div>
 
+            {/* Rest of your component remains the same */}
             {/* Setup Steps Grid */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 {/* Step 1: Personalize Card */}
@@ -233,6 +250,7 @@ export default async function DashboardPage() {
                     </div>
                 </div>
 
+                {/* Continue with the rest of your existing code... */}
                 {/* Step 3: Share QR Code */}
                 <div className="bg-white shadow sm:rounded-lg border-2 border-[#ffd9b9] hover:border-[#fe5502] transition">
                     <div className="px-4 py-5 sm:p-6">
