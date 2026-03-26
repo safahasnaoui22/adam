@@ -13,8 +13,8 @@ export default async function CustomerDashboardPage({ params }: PageProps) {
   const { restaurantSlug } = await params;
   const session = await getServerSession(authOptions);
 
-  // Check if user is logged in and is a customer
-  if (!session?.user?.customerProfile) {
+  // Check if user is logged in and has customerProfile
+  if (!session?.user?.customerProfile?.id) {
     redirect(`/${restaurantSlug}`);
   }
 

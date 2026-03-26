@@ -15,6 +15,8 @@ declare module "next-auth" {
         customerId: string;
         points: number;
         stamps: number;
+        createdAt: Date;
+        lastVisit?: Date | null;
       };
     } & DefaultSession["user"];
   }
