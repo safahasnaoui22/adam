@@ -16,6 +16,7 @@ export async function GET() {
         const restaurant = await prisma.restaurant.findUnique({
             where: { id: session.user.restaurantId },
             include: {
+                subscription: true, // Include subscription to get plan
                 loyaltyProgram: {
                     include: {
                         rewards: true,
@@ -33,6 +34,9 @@ export async function GET() {
             return NextResponse.json({ error: "Restaurant not found" }, { status: 404 });
         }
 
+        // Get plan from subscription
+        const plan = restaurant.subscription?.plan || "FREE";
+
         // Check if account is suspended - return 403 for suspended accounts
         if (restaurant.accountStatus === "SUSPENDED") {
             return NextResponse.json(
@@ -40,9 +44,9 @@ export async function GET() {
                     error: "Account suspended", 
                     restaurant: {
                         ...restaurant,
+                        plan: plan,
                         isSuspended: true,
                         accountStatus: restaurant.accountStatus,
-                        plan: restaurant.plan
                     } 
                 }, 
                 { status: 403 }
@@ -52,8 +56,8 @@ export async function GET() {
         // Return restaurant with status and plan info
         return NextResponse.json({
             ...restaurant,
+            plan: plan,
             accountStatus: restaurant.accountStatus,
-            plan: restaurant.plan
         });
     } catch (error) {
         console.error("Failed to fetch restaurant:", error);
@@ -141,12 +145,18 @@ export async function PUT(request: Request) {
                 theme: theme || undefined,
                 backgroundPattern,
             },
+            include: {
+                subscription: true, // Include subscription to get plan
+            }
         });
+
+        // Get plan from subscription
+        const plan = restaurant.subscription?.plan || "FREE";
 
         return NextResponse.json({
             ...restaurant,
+            plan: plan,
             accountStatus: restaurant.accountStatus,
-            plan: restaurant.plan
         });
     } catch (error) {
         console.error("Update error:", error);
@@ -165,11 +175,18 @@ export async function HEAD() {
 
         const restaurant = await prisma.restaurant.findUnique({
             where: { id: session.user.restaurantId },
+            include: {
+                subscription: {
+                    select: { plan: true }
+                }
+            },
             select: {
                 accountStatus: true,
-                plan: true,
                 id: true,
-                name: true
+                name: true,
+                subscription: {
+                    select: { plan: true }
+                }
             }
         });
 
@@ -179,7 +196,7 @@ export async function HEAD() {
 
         return NextResponse.json({
             accountStatus: restaurant.accountStatus,
-            plan: restaurant.plan,
+            plan: restaurant.subscription?.plan || "FREE",
             id: restaurant.id,
             name: restaurant.name
         });

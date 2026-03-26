@@ -27,6 +27,7 @@ async function getRestaurantData(userId: string) {
 
     return user?.restaurant;
 }
+
 export default async function DashboardPage() {
     const session = await getServerSession(authOptions);
 
@@ -50,6 +51,9 @@ export default async function DashboardPage() {
             </div>
         );
     }
+
+    // Get plan from subscription
+    const plan = restaurant.subscription?.plan || "FREE";
 
     // Check account status - Show pending/suspended screens if needed
     if (restaurant.accountStatus === "PENDING") {
@@ -132,7 +136,9 @@ export default async function DashboardPage() {
                                 {restaurant.accountStatus === "SUSPENDED" && "⚠️ Compte Suspendu"}
                             </div>
                             <div className="px-3 py-1 bg-[#fdf9f4] text-[#fe5502] rounded-full text-sm font-semibold border border-[#fe5502]">
-                                Plan {restaurant.plan === "FREE" ? "Gratuit" : restaurant.plan === "PRO" ? "Pro" : "Enterprise"}
+                                Plan {plan === "FREE" ? "Gratuit" : 
+                                      plan === "BASIC" ? "Basic" : 
+                                      plan === "PREMIUM" ? "Premium" : "Enterprise"}
                             </div>
                         </div>
                     </div>
