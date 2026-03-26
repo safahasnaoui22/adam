@@ -164,7 +164,7 @@ export async function PUT(request: Request) {
     }
 }
 
-// Add a new endpoint to check restaurant status
+// HEAD endpoint to check restaurant status (fixed version)
 export async function HEAD() {
     try {
         const session = await getServerSession(authOptions);
@@ -173,19 +173,17 @@ export async function HEAD() {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
+        // Fix: Use only select OR include, not both
         const restaurant = await prisma.restaurant.findUnique({
             where: { id: session.user.restaurantId },
-            include: {
-                subscription: {
-                    select: { plan: true }
-                }
-            },
             select: {
                 accountStatus: true,
                 id: true,
                 name: true,
                 subscription: {
-                    select: { plan: true }
+                    select: {
+                        plan: true
+                    }
                 }
             }
         });
