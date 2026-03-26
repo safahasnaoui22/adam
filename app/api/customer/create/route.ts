@@ -100,6 +100,7 @@ export async function POST(request: NextRequest) {
         name: user.customerProfile?.name,
         customerId: user.customerProfile?.customerId,
       },
+      email: user.email, // Add this line - this is the email we created
       message: "Compte créé avec succès",
       // In production, you would send this password via email
       // For development, you can return it temporarily

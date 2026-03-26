@@ -1,43 +1,52 @@
+// app/api/restaurant/generate-qr/route.ts
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-
-import { prisma } from "@/app/lib/prisma"
-import QRCode from "qrcode";
 import { authOptions } from "@/app/lib/auth";
+import { prisma } from "@/app/lib/prisma";
+import QRCode from "qrcode";
 
 export async function GET() {
-    try {
-        const session = await getServerSession(authOptions);
-
-        if (!session?.user?.restaurantId) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        }
-
-        const restaurant = await prisma.restaurant.findUnique({
-            where: { id: session.user.restaurantId },
-        });
-
-        if (!restaurant) {
-            return NextResponse.json({ error: "Restaurant not found" }, { status: 404 });
-        }
-
-        // Generate QR code that points to client login page with restaurant ID
-        const clientLoginUrl = `${process.env.NEXTAUTH_URL}/client/login?restaurantId=${restaurant.id}`;
-
-        const qrCodeDataUrl = await QRCode.toDataURL(clientLoginUrl);
-
-        // Save QR code to restaurant (optional)
-        await prisma.restaurant.update({
-            where: { id: restaurant.id },
-            data: { qrCode: qrCodeDataUrl },
-        });
-
-        return NextResponse.json({
-            qrCode: qrCodeDataUrl,
-            url: clientLoginUrl
-        });
-    } catch (error) {
-        console.error("QR generation error:", error);
-        return NextResponse.json({ error: "Failed to generate QR code" }, { status: 500 });
+  try {
+    const session = await getServerSession(authOptions);
+    
+    if (!session?.user?.restaurantId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    const restaurant = await prisma.restaurant.findUnique({
+      where: { id: session.user.restaurantId },
+      select: { urlSlug: true, name: true }
+    });
+
+    if (!restaurant) {
+      return NextResponse.json({ error: "Restaurant not found" }, { status: 404 });
+    }
+
+    // Generate the correct URL - use restaurant slug, not client/login
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://adamrestaurents.vercel.app";
+    const url = `${baseUrl}/${restaurant.urlSlug}`;
+    
+    // Generate QR code as data URL
+    const qrCodeDataUrl = await QRCode.toDataURL(url, {
+      errorCorrectionLevel: 'H',
+      margin: 2,
+      width: 300,
+      color: {
+        dark: '#fe5502',
+        light: '#ffffff'
+      }
+    });
+
+    return NextResponse.json({
+      qrCode: qrCodeDataUrl,
+      url: url,
+      restaurantName: restaurant.name
+    });
+  } catch (error) {
+    console.error("Failed to generate QR code:", error);
+    return NextResponse.json(
+      { error: "Failed to generate QR code" },
+      { status: 500 }
+    );
+  }
 }

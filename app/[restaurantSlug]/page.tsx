@@ -1,9 +1,9 @@
 // app/[restaurantSlug]/page.tsx
 import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/app/lib/prisma";
-import QRCodeScanner from "@/components/QRCodeScanner";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/lib/auth";
+import QRCodeScanner from "@/components/QRCodeScanner";
 
 interface PageProps {
   params: Promise<{ restaurantSlug: string }>;
@@ -23,9 +23,28 @@ export default async function RestaurantLandingPage({ params }: PageProps) {
     notFound();
   }
 
+  // Check if restaurant is active
+  if (restaurant.accountStatus !== "ACTIVE") {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-[#fdf9f4] to-white flex items-center justify-center p-4">
+        <div className="text-center">
+          <div className="w-20 h-20 bg-[#ffd9b9] rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-10 h-10 text-[#fe5502]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-bold text-[#282424] mb-2">Restaurant en attente</h2>
+          <p className="text-[#7f8489]">
+            Ce programme de fidélité n'est pas encore actif.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   const session = await getServerSession(authOptions);
   
-  // Check if customer is already logged in
+  // If customer is already logged in, redirect to their dashboard
   if (session?.user?.customerProfile) {
     redirect(`/${restaurantSlug}/dashboard`);
   }
@@ -56,14 +75,18 @@ export default async function RestaurantLandingPage({ params }: PageProps) {
           </p>
         </div>
 
-        {/* QR Code Scanner */}
-        <div className="bg-white rounded-2xl shadow-lg p-6">
-          <h2 className="text-lg font-semibold text-[#282424] text-center mb-4">
-            Scannez pour rejoindre
+        {/* Welcome Message */}
+        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6 text-center">
+          <h2 className="text-lg font-semibold text-[#282424] mb-2">
+            Bienvenue !
           </h2>
-          <p className="text-sm text-[#7f8489] text-center mb-6">
-            Scannez ce code QR avec votre téléphone pour créer votre compte fidélité
+          <p className="text-sm text-[#7f8489]">
+            Créez votre compte pour commencer à accumuler des points et profiter de récompenses exclusives.
           </p>
+        </div>
+
+        {/* Name Input Form */}
+        <div className="bg-white rounded-2xl shadow-lg p-6">
           <QRCodeScanner restaurantId={restaurant.id} restaurantSlug={restaurantSlug} />
         </div>
 
