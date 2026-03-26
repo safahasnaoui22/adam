@@ -2,7 +2,12 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
-
+<head>
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#fe5502" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+</head>
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {

@@ -10,6 +10,7 @@ async function getRestaurantData(userId: string) {
         include: {
             restaurant: {
                 include: {
+                    subscription: true, // Add this to get plan
                     loyaltyProgram: {
                         include: {
                             rewards: true,
@@ -26,7 +27,6 @@ async function getRestaurantData(userId: string) {
 
     return user?.restaurant;
 }
-
 export default async function DashboardPage() {
     const session = await getServerSession(authOptions);
 
@@ -51,7 +51,54 @@ export default async function DashboardPage() {
         );
     }
 
-    // Calculate steps completed
+    // Check account status - Show pending/suspended screens if needed
+    if (restaurant.accountStatus === "PENDING") {
+        return (
+            <div className="max-w-2xl mx-auto py-12 px-4">
+                <div className="bg-white shadow rounded-lg p-8 text-center">
+                    <div className="w-20 h-20 bg-[#ffd9b9] rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg className="w-10 h-10 text-[#fe5502]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <h2 className="text-2xl font-bold text-[#282424] mb-2">Compte en attente de vérification</h2>
+                    <p className="text-[#7f8489] mb-4">
+                        Votre compte est actuellement en cours de vérification par notre équipe administrative.
+                        Vous serez notifié dès que votre compte sera activé.
+                    </p>
+                    <p className="text-sm text-[#7f8489]">
+                        Cela peut prendre jusqu'à 24-48 heures. Merci de votre patience.
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
+    if (restaurant.accountStatus === "SUSPENDED") {
+        return (
+            <div className="max-w-2xl mx-auto py-12 px-4">
+                <div className="bg-white shadow rounded-lg p-8 text-center">
+                    <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg className="w-10 h-10 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <h2 className="text-2xl font-bold text-[#282424] mb-2">Compte suspendu</h2>
+                    <p className="text-[#7f8489] mb-4">
+                        Votre compte a été suspendu. Pour plus d'informations, veuillez contacter notre support.
+                    </p>
+                    <Link
+                        href="/contact"
+                        className="inline-flex items-center px-4 py-2 bg-[#fe5502] text-white rounded-md hover:bg-[#e0682e] transition-colors"
+                    >
+                        Contacter le support
+                    </Link>
+                </div>
+            </div>
+        );
+    }
+
+    // Calculate steps completed (only show for active accounts)
     const steps = [
         !!restaurant.logo,
         !!restaurant.address,
@@ -62,6 +109,36 @@ export default async function DashboardPage() {
 
     return (
         <div className="space-y-6">
+            {/* Status and Plan Banner */}
+            <div className="bg-white shadow sm:rounded-lg">
+                <div className="px-4 py-5 sm:p-6">
+                    <div className="flex items-center justify-between flex-wrap gap-4">
+                        <div>
+                            <h2 className="text-lg font-medium text-[#282424]">Statut de votre compte</h2>
+                            <p className="mt-1 text-sm text-[#7f8489]">
+                                Consultez l'état de votre compte et votre abonnement actuel
+                            </p>
+                        </div>
+                        <div className="flex space-x-4">
+                            <div className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                                restaurant.accountStatus === "ACTIVE"
+                                    ? "bg-[#ffd9b9] text-[#e0682e]"
+                                    : restaurant.accountStatus === "PENDING"
+                                    ? "bg-[#ffd9b9] text-[#fe5502]"
+                                    : "bg-[#c6c9c8] text-[#7f8489]"
+                            }`}>
+                                {restaurant.accountStatus === "ACTIVE" && "✓ Compte Actif"}
+                                {restaurant.accountStatus === "PENDING" && "⏳ En attente d'approbation"}
+                                {restaurant.accountStatus === "SUSPENDED" && "⚠️ Compte Suspendu"}
+                            </div>
+                            <div className="px-3 py-1 bg-[#fdf9f4] text-[#fe5502] rounded-full text-sm font-semibold border border-[#fe5502]">
+                                Plan {restaurant.plan === "FREE" ? "Gratuit" : restaurant.plan === "PRO" ? "Pro" : "Enterprise"}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             {/* Welcome Header */}
             <div className="bg-white shadow sm:rounded-lg">
                 <div className="px-4 py-5 sm:p-6">
@@ -150,7 +227,7 @@ export default async function DashboardPage() {
                     </div>
                 </div>
 
-                {/* Step 3: Share QR Code - Enhanced version */}
+                {/* Step 3: Share QR Code */}
                 <div className="bg-white shadow sm:rounded-lg border-2 border-[#ffd9b9] hover:border-[#fe5502] transition">
                     <div className="px-4 py-5 sm:p-6">
                         <div className="flex items-center justify-between mb-4">
@@ -165,7 +242,6 @@ export default async function DashboardPage() {
                             Vos clients scannent ce QR code pour rejoindre votre programme de fidélité instantanément.
                         </p>
 
-                        {/* Quick QR Preview */}
                         <div className="mt-4 flex items-center space-x-4">
                             <div className="bg-[#c6c9c8] p-2 rounded-lg">
                                 <div className="w-16 h-16 bg-gradient-to-r from-[#fe5502] to-[#e0682e] rounded flex items-center justify-center">
@@ -201,7 +277,6 @@ export default async function DashboardPage() {
                             </Link>
                         </div>
 
-                        {/* Tips for printing */}
                         <div className="mt-4 p-3 bg-[#ffd9b9] rounded-md">
                             <p className="text-xs text-[#e0682e]">
                                 💡 Astuce: Téléchargez le QR code et imprimez-le pour le placer sur vos tables ou comptoir.
