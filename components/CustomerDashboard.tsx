@@ -168,7 +168,7 @@ export default function CustomerDashboard({
           <div className="bg-white rounded-2xl shadow-lg p-4 space-y-3 mb-6">
             <Link href={`/${restaurant.urlSlug}/history`} className="block py-2 text-[#282424] hover:text-[#fe5502]">📜 Historique des visites</Link>
             <Link href={`/${restaurant.urlSlug}/rewards-history`} className="block py-2 text-[#282424] hover:text-[#fe5502]">🎁 Historique des récompenses</Link>
-            <button onClick={async () => { const { signOut } = await import("next-auth/react"); signOut({ callbackUrl: `/${restaurant.urlSlug}` }); }} className="block w-full text-left py-2 text-red-600 hover:text-red-700">🚪 Se déconnecter</button>
+
           </div>
         )}
 

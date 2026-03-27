@@ -49,6 +49,8 @@ export default function QRCodeScanner({ restaurantId, restaurantSlug }: QRCodeSc
           });
 
           if (signInResult?.ok) {
+             localStorage.setItem('customerId', data.customer.id);
+  localStorage.setItem('restaurantSlug', restaurantSlug);
             router.push(`/${restaurantSlug}/dashboard`);
             router.refresh();
           } else {

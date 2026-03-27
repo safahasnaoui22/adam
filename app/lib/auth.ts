@@ -46,37 +46,29 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
-      if (user) {
-        token.id = user.id;
-        token.role = user.role;
-        token.restaurantId = user.restaurantId;
-        token.customerId = user.customerId;
-      }
-      return token;
-    },
-    async session({ session, token }) {
-      if (session.user) {
-        session.user.id = token.id as string;
-        session.user.role = token.role as string;
-        session.user.restaurantId = token.restaurantId as string;
-        session.user.customerId = token.customerId as string;
-        
-        // If it's a customer, fetch their full profile
-        if (token.role === "CUSTOMER" && token.customerId) {
-          const customerProfile = await prisma.customerProfile.findUnique({
-            where: { id: token.customerId as string },
-          });
-          if (customerProfile) {
-            session.user.customerProfile = customerProfile;
-          }
-        }
-      }
-      return session;
-    },
+  async jwt({ token, user }) {
+  if (user) {
+    token.id = user.id;
+    token.role = user.role;
+    token.restaurantId = user.restaurantId;
+    token.customerId = user.customerId; // already set in user object
+  }
+  return token;
+},
+async session({ session, token }) {
+  if (session.user) {
+    session.user.id = token.id as string;
+    session.user.role = token.role as string;
+    session.user.restaurantId = token.restaurantId as string;
+    session.user.customerId = token.customerId as string; // make sure it's here
+  }
+  return session;
+},
   },
   session: {
     strategy: "jwt",
+        maxAge: 30 * 24 * 60 * 60, // 30 days
+    updateAge: 24 * 60 * 60,   
   },
   pages: {
     signIn: "/auth/signin",
