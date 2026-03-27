@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
+import { Toaster } from "sonner";
 <head>
   <link rel="manifest" href="/manifest.json" />
   <meta name="theme-color" content="#fe5502" />
@@ -23,7 +24,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <Providers>{children}</Providers>
+        <Providers>{children}
+            <Toaster position="top-right" />
+        </Providers>
       </body>
     </html>
   );
