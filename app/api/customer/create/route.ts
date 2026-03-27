@@ -102,9 +102,7 @@ export async function POST(request: NextRequest) {
       },
       email: user.email, // Add this line - this is the email we created
       message: "Compte créé avec succès",
-      // In production, you would send this password via email
-      // For development, you can return it temporarily
-      ...(process.env.NODE_ENV === "development" && { tempPassword }),
+tempPassword, 
     });
   } catch (error: any) {
     console.error("Failed to create customer:", error);
