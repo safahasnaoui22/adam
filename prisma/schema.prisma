@@ -55,6 +55,11 @@ model Restaurant {
   owner             User              @relation(fields: [ownerId], references: [id])
   stats             RestaurantStats?
   subscription      Subscription?
+    googleMapsUrl String?
+     
+  facebookUrl   String?
+  instagramUrl  String?
+  twitterUrl    String?
 }
 
 model LoyaltyProgram {
@@ -83,6 +88,11 @@ model CustomerProfile {
   user          User           @relation(fields: [userId], references: [id])
   earnedRewards EarnedReward[]
   visits        Visit[]
+    hasClaimedReviewBonus Boolean @default(false)
+      hasClaimedGoogleMapsBonus Boolean @default(false)
+  hasClaimedFacebookBonus   Boolean @default(false)
+  hasClaimedInstagramBonus  Boolean @default(false)
+  hasClaimedTwitterBonus    Boolean @default(false)
 }
 
 model Visit {

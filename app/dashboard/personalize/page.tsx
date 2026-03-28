@@ -26,6 +26,11 @@ export default function PersonalizePage() {
     phoneNumber: "",
     email: "",
     website: "",
+    // New fields for bonuses
+    googleMapsUrl: "",
+    facebookUrl: "",
+    instagramUrl: "",
+    twitterUrl: "",
     
     // These will be handled by subcomponents
     openingHours: {},
@@ -63,6 +68,11 @@ export default function PersonalizePage() {
           phoneNumber: data.phoneNumber || "",
           email: data.email || "",
           website: data.website || "",
+          // Load the new fields
+          googleMapsUrl: data.googleMapsUrl || "",
+          facebookUrl: data.facebookUrl || "",
+          instagramUrl: data.instagramUrl || "",
+          twitterUrl: data.twitterUrl || "",
           openingHours: data.openingHours || {},
           socialMedia: data.socialMedia || {},
           termsConditions: data.termsConditions || "",
@@ -245,8 +255,8 @@ export default function PersonalizePage() {
                       }}
                     />
                     <label htmlFor="logo-upload" className="cursor-pointer">
-                      <svg className="mx-auto h-12 w-12 text-[#7f8489]" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                        <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H8a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      <svg className="mx-auto h-12 w-12 text-[#7f8489]" stroke="currentColor" fill="none" viewBox="0 0 24 24">
+                        <path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
                       <p className="mt-1 text-sm text-[#7f8489]">
                         <span className="text-[#fe5502]">Importer un logo</span>
@@ -321,6 +331,82 @@ export default function PersonalizePage() {
                 placeholder="Site web (optionnel)"
                 className="w-full px-3 py-2 border border-[#c6c9c8] rounded-md focus:outline-none focus:ring-[#fe5502] focus:border-[#fe5502] text-[#282424]"
               />
+            </div>
+
+            {/* New Section: Social Media Links for Bonuses */}
+            <div className="border-t border-[#c6c9c8] pt-6 mt-6">
+              <h3 className="text-lg font-semibold text-[#282424] mb-4">Liens pour les bonus clients</h3>
+              <p className="text-sm text-[#7f8489] mb-4">
+                Ajoutez vos liens pour que les clients puissent gagner 50⭐ en suivant vos pages ou laissant un avis.
+              </p>
+              
+              {/* Google Maps URL */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-[#282424] mb-1">
+                  Lien Google Maps
+                </label>
+                <input
+                  type="url"
+                  value={formData.googleMapsUrl || ""}
+                  onChange={(e) => setFormData({ ...formData, googleMapsUrl: e.target.value })}
+                  placeholder="https://maps.app.goo.gl/..."
+                  className="w-full px-3 py-2 border border-[#c6c9c8] rounded-md focus:outline-none focus:ring-[#fe5502] focus:border-[#fe5502] text-[#282424]"
+                />
+                <p className="text-xs text-[#7f8489] mt-1">
+                  Le client gagne 50⭐ après avoir laissé un avis Google
+                </p>
+              </div>
+
+              {/* Facebook URL */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-[#282424] mb-1">
+                  Lien Facebook
+                </label>
+                <input
+                  type="url"
+                  value={formData.facebookUrl || ""}
+                  onChange={(e) => setFormData({ ...formData, facebookUrl: e.target.value })}
+                  placeholder="https://facebook.com/votrepage"
+                  className="w-full px-3 py-2 border border-[#c6c9c8] rounded-md focus:outline-none focus:ring-[#fe5502] focus:border-[#fe5502] text-[#282424]"
+                />
+                <p className="text-xs text-[#7f8489] mt-1">
+                  Suivre la page = +50⭐
+                </p>
+              </div>
+
+              {/* Instagram URL */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-[#282424] mb-1">
+                  Lien Instagram
+                </label>
+                <input
+                  type="url"
+                  value={formData.instagramUrl || ""}
+                  onChange={(e) => setFormData({ ...formData, instagramUrl: e.target.value })}
+                  placeholder="https://instagram.com/votrepage"
+                  className="w-full px-3 py-2 border border-[#c6c9c8] rounded-md focus:outline-none focus:ring-[#fe5502] focus:border-[#fe5502] text-[#282424]"
+                />
+                <p className="text-xs text-[#7f8489] mt-1">
+                  Suivre = +50⭐
+                </p>
+              </div>
+
+              {/* Twitter URL */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-[#282424] mb-1">
+                  Lien Twitter / X
+                </label>
+                <input
+                  type="url"
+                  value={formData.twitterUrl || ""}
+                  onChange={(e) => setFormData({ ...formData, twitterUrl: e.target.value })}
+                  placeholder="https://twitter.com/votrepage"
+                  className="w-full px-3 py-2 border border-[#c6c9c8] rounded-md focus:outline-none focus:ring-[#fe5502] focus:border-[#fe5502] text-[#282424]"
+                />
+                <p className="text-xs text-[#7f8489] mt-1">
+                  Suivre = +50⭐
+                </p>
+              </div>
             </div>
           </div>
         )}
