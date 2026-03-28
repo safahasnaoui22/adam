@@ -21,7 +21,13 @@ export const authOptions: NextAuthOptions = {
           where: { email: credentials.email },
           include: {
             restaurant: true,
-            customerProfile: true,
+            customerProfile: {
+              include: {
+                restaurant: {
+                  select: { urlSlug: true }
+                }
+              }
+            },
           },
         });
 
@@ -34,6 +40,12 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
+        // Get restaurant slug for customers
+        let restaurantSlug = null;
+        if (user.role === "CUSTOMER" && user.customerProfile?.restaurant?.urlSlug) {
+          restaurantSlug = user.customerProfile.restaurant.urlSlug;
+        }
+
         return {
           id: user.id,
           email: user.email,
@@ -41,34 +53,37 @@ export const authOptions: NextAuthOptions = {
           role: user.role,
           restaurantId: user.restaurant?.id,
           customerId: user.customerProfile?.id,
+          restaurantSlug: restaurantSlug,
         };
       },
     }),
   ],
   callbacks: {
-  async jwt({ token, user }) {
-  if (user) {
-    token.id = user.id;
-    token.role = user.role;
-    token.restaurantId = user.restaurantId;
-    token.customerId = user.customerId; // already set in user object
-  }
-  return token;
-},
-async session({ session, token }) {
-  if (session.user) {
-    session.user.id = token.id as string;
-    session.user.role = token.role as string;
-    session.user.restaurantId = token.restaurantId as string;
-    session.user.customerId = token.customerId as string; // make sure it's here
-  }
-  return session;
-},
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = user.id;
+        token.role = user.role;
+        token.restaurantId = user.restaurantId;
+        token.customerId = user.customerId;
+        token.restaurantSlug = user.restaurantSlug;
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      if (session.user) {
+        session.user.id = token.id as string;
+        session.user.role = token.role as string;
+        session.user.restaurantId = token.restaurantId as string;
+        session.user.customerId = token.customerId as string;
+        session.user.restaurantSlug = token.restaurantSlug as string;
+      }
+      return session;
+    },
   },
   session: {
     strategy: "jwt",
-        maxAge: 30 * 24 * 60 * 60, // 30 days
-    updateAge: 24 * 60 * 60,   
+    maxAge: 30 * 24 * 60 * 60, // 30 days
+    updateAge: 24 * 60 * 60,   // refresh every 24 hours
   },
   pages: {
     signIn: "/auth/signin",
