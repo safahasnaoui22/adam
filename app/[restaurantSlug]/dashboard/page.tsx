@@ -13,8 +13,8 @@ export default async function CustomerDashboardPage({ params }: PageProps) {
   const { restaurantSlug } = await params;
   const session = await getServerSession(authOptions);
 
-  // Check if user is logged in and has customerProfile
-  if (!session?.user?.customerProfile?.id) {
+  // Check if user is logged in and has customerId (customerProfile might be fetched separately)
+  if (!session?.user?.customerId) {
     redirect(`/${restaurantSlug}`);
   }
 
@@ -36,7 +36,7 @@ export default async function CustomerDashboardPage({ params }: PageProps) {
 
   // Fetch customer details with visits and earned rewards
   const customer = await prisma.customerProfile.findUnique({
-    where: { id: session.user.customerProfile.id },
+    where: { id: session.user.customerId },
     include: {
       visits: {
         orderBy: { date: "desc" },

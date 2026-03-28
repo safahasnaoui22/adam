@@ -10,6 +10,15 @@ declare module "next-auth" {
       restaurantId?: string;
       customerId?: string;
       restaurantSlug?: string;
+      customerProfile?: {
+        id: string;
+        name: string;
+        customerId: string;
+        points: number;
+        stamps: number;
+        createdAt: Date;
+        lastVisit?: Date | null;
+      };
     } & DefaultSession["user"];
   }
 

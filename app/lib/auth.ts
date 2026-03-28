@@ -46,13 +46,10 @@ export const authOptions: NextAuthOptions = {
           restaurantSlug = user.customerProfile.restaurant.urlSlug;
         }
 
-        // Return only the fields that NextAuth expects
-        // The extra fields will be added via callbacks
         return {
           id: user.id,
           email: user.email,
           name: user.name,
-          // Add custom fields that will be picked up by JWT callback
           role: user.role,
           restaurantId: user.restaurant?.id,
           customerId: user.customerProfile?.id,
@@ -79,14 +76,24 @@ export const authOptions: NextAuthOptions = {
         session.user.restaurantId = token.restaurantId as string;
         session.user.customerId = token.customerId as string;
         session.user.restaurantSlug = token.restaurantSlug as string;
+        
+        // Fetch the full customer profile if it's a customer
+        if (token.role === "CUSTOMER" && token.customerId) {
+          const customerProfile = await prisma.customerProfile.findUnique({
+            where: { id: token.customerId as string },
+          });
+          if (customerProfile) {
+            session.user.customerProfile = customerProfile;
+          }
+        }
       }
       return session;
     },
   },
   session: {
     strategy: "jwt",
-    maxAge: 30 * 24 * 60 * 60, // 30 days
-    updateAge: 24 * 60 * 60,   // refresh every 24 hours
+    maxAge: 30 * 24 * 60 * 60,
+    updateAge: 24 * 60 * 60,
   },
   pages: {
     signIn: "/auth/signin",
