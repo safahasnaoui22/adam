@@ -46,10 +46,13 @@ export const authOptions: NextAuthOptions = {
           restaurantSlug = user.customerProfile.restaurant.urlSlug;
         }
 
+        // Return only the fields that NextAuth expects
+        // The extra fields will be added via callbacks
         return {
           id: user.id,
           email: user.email,
           name: user.name,
+          // Add custom fields that will be picked up by JWT callback
           role: user.role,
           restaurantId: user.restaurant?.id,
           customerId: user.customerProfile?.id,

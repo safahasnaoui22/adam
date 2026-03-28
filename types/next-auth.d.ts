@@ -9,16 +9,7 @@ declare module "next-auth" {
       role: string;
       restaurantId?: string;
       customerId?: string;
-      restaurantSlug?: string; // Add this for customer redirects
-      customerProfile?: {
-        id: string;
-        name: string;
-        customerId: string;
-        points: number;
-        stamps: number;
-        createdAt: Date;
-        lastVisit?: Date | null;
-      };
+      restaurantSlug?: string;
     } & DefaultSession["user"];
   }
 
@@ -27,6 +18,6 @@ declare module "next-auth" {
     role: string;
     restaurantId?: string;
     customerId?: string;
-    restaurantSlug?: string; // Add this for customer redirects
+    restaurantSlug?: string;
   }
 }
