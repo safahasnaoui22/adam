@@ -9,7 +9,7 @@ declare module "next-auth" {
       role: string;
       restaurantId?: string;
       customerId?: string;
-      restaurantSlug?: string;
+      restaurantSlug?: string;  // This is optional (string | undefined)
       customerProfile?: {
         id: string;
         name: string;
@@ -27,6 +27,6 @@ declare module "next-auth" {
     role: string;
     restaurantId?: string;
     customerId?: string;
-    restaurantSlug?: string;
+    restaurantSlug?: string;  // This is optional (string | undefined)
   }
 }

@@ -40,8 +40,8 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        // Get restaurant slug for customers
-        let restaurantSlug = null;
+        // Get restaurant slug for customers - convert null to undefined
+        let restaurantSlug: string | undefined = undefined;
         if (user.role === "CUSTOMER" && user.customerProfile?.restaurant?.urlSlug) {
           restaurantSlug = user.customerProfile.restaurant.urlSlug;
         }
@@ -53,7 +53,7 @@ export const authOptions: NextAuthOptions = {
           role: user.role,
           restaurantId: user.restaurant?.id,
           customerId: user.customerProfile?.id,
-          restaurantSlug: restaurantSlug,
+          restaurantSlug: restaurantSlug, // Now this is string | undefined, not null
         };
       },
     }),
@@ -75,7 +75,7 @@ export const authOptions: NextAuthOptions = {
         session.user.role = token.role as string;
         session.user.restaurantId = token.restaurantId as string;
         session.user.customerId = token.customerId as string;
-        session.user.restaurantSlug = token.restaurantSlug as string;
+        session.user.restaurantSlug = token.restaurantSlug as string | undefined;
         
         // Fetch the full customer profile if it's a customer
         if (token.role === "CUSTOMER" && token.customerId) {
