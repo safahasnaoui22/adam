@@ -16,25 +16,35 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Get customer to find restaurant
+    // Get customer with all fields using include
     const customer = await prisma.customerProfile.findUnique({
       where: { id: customerId },
-      select: { restaurantId: true, hasClaimedGoogleMapsBonus: true, hasClaimedFacebookBonus: true, hasClaimedInstagramBonus: true, hasClaimedTwitterBonus: true },
+      include: {
+        restaurant: {
+          select: {
+            id: true,
+            googleMapsBonusStars: true,
+            facebookBonusStars: true,
+            instagramBonusStars: true,
+            twitterBonusStars: true,
+          },
+        },
+      },
     });
 
     if (!customer) {
       return NextResponse.json({ error: "Customer not found" }, { status: 404 });
     }
 
-    // Check if already claimed this bonus
-    const claimedMap = {
-      googleMaps: customer.hasClaimedGoogleMapsBonus,
-      facebook: customer.hasClaimedFacebookBonus,
-      instagram: customer.hasClaimedInstagramBonus,
-      twitter: customer.hasClaimedTwitterBonus,
+    // Check if already claimed - using type assertion since fields exist on customer
+    const claimedMap: Record<string, boolean> = {
+      googleMaps: (customer as any).hasClaimedGoogleMapsBonus || false,
+      facebook: (customer as any).hasClaimedFacebookBonus || false,
+      instagram: (customer as any).hasClaimedInstagramBonus || false,
+      twitter: (customer as any).hasClaimedTwitterBonus || false,
     };
 
-    if (claimedMap[platform as keyof typeof claimedMap]) {
+    if (claimedMap[platform]) {
       return NextResponse.json({ error: "Bonus déjà réclamé" }, { status: 400 });
     }
 

@@ -97,6 +97,10 @@ model CustomerProfile {
   
   // Add this line for the relation to BonusRequest
   bonusRequests BonusRequest[]
+    hasClaimedGoogleMapsBonus Boolean @default(false)
+  hasClaimedFacebookBonus   Boolean @default(false)
+  hasClaimedInstagramBonus  Boolean @default(false)
+  hasClaimedTwitterBonus    Boolean @default(false)
 }
 
 model BonusRequest {
