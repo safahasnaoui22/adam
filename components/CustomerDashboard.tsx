@@ -23,45 +23,14 @@ export default function CustomerDashboard({
 }: CustomerDashboardProps) {
   const [showQR, setShowQR] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
-  const [claimingBonus, setClaimingBonus] = useState<string | null>(null);
-  const [bonusMessage, setBonusMessage] = useState("");
-const [showCodeInput, setShowCodeInput] = useState(false);
-const [googleCode, setGoogleCode] = useState("");
-const [verifying, setVerifying] = useState(false);
-
-const handleFacebookVerify = async () => {
-  // Redirect to Facebook OAuth
-  window.location.href = `/api/auth/signin/facebook?callbackUrl=${encodeURIComponent(
-    `/${restaurant.urlSlug}/dashboard?social=facebook`
-  )}`;
-};
-
-const handleGoogleCodeVerify = async () => {
-  setVerifying(true);
-  try {
-    const res = await fetch("/api/customer/verify-google-code", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ code: googleCode }),
-    });
-    const data = await res.json();
-    if (res.ok) {
-      alert(data.message);
-      window.location.reload();
-    } else {
-      alert(data.error);
-    }
-  } catch (error) {
-    alert("Erreur");
-  } finally {
-    setVerifying(false);
-  }
-};
-
-
-
-
-
+  
+  // Bonus request states
+  const [requestingBonus, setRequestingBonus] = useState<string | null>(null);
+  const [requestMessage, setRequestMessage] = useState("");
+  
+  // Google Maps code states
+  const [googleCode, setGoogleCode] = useState("");
+  const [verifying, setVerifying] = useState(false);
 
   // Define bonuses based on restaurant's links - filter out null/undefined URLs
   const bonuses = [
@@ -97,25 +66,58 @@ const handleGoogleCodeVerify = async () => {
 
   const dinars = (customer.points / 10).toFixed(2);
 
-  const handleClaimBonus = async (platform: string) => {
-    setClaimingBonus(platform);
-    setBonusMessage("");
+  // Handle bonus request (for all platforms)
+  const handleRequestBonus = async (platform: string) => {
+    setRequestingBonus(platform);
+    setRequestMessage("");
     try {
-      const res = await fetch("/api/customer/claim-bonus", {
+      const res = await fetch("/api/customer/request-bonus", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ platform, customerId: customer.id }),
+        body: JSON.stringify({ 
+          platform, 
+          customerId: customer.id,
+        }),
       });
       const data = await res.json();
       if (res.ok) {
-        window.location.reload();
+        setRequestMessage(data.message || "✅ Demande envoyée! Le restaurateur vérifiera et ajoutera vos points sous 24h.");
       } else {
-        setBonusMessage(data.error || "Erreur, réessayez.");
+        setRequestMessage(data.error || "Erreur, réessayez.");
       }
     } catch (error) {
-      setBonusMessage("Erreur de connexion.");
+      setRequestMessage("Erreur de connexion.");
     } finally {
-      setClaimingBonus(null);
+      setRequestingBonus(null);
+      setTimeout(() => setRequestMessage(""), 5000);
+    }
+  };
+
+  // Handle Google Maps code verification
+  const handleGoogleCodeVerify = async () => {
+    if (!googleCode.trim()) {
+      alert("Veuillez entrer le code unique");
+      return;
+    }
+    
+    setVerifying(true);
+    try {
+      const res = await fetch("/api/customer/verify-google-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: googleCode }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert(data.message);
+        window.location.reload();
+      } else {
+        alert(data.error);
+      }
+    } catch (error) {
+      alert("Erreur de connexion");
+    } finally {
+      setVerifying(false);
     }
   };
 
@@ -126,40 +128,7 @@ const handleGoogleCodeVerify = async () => {
       alert("Utilisez 'Ajouter à l'écran d'accueil' dans le menu de votre navigateur.");
     }
   };
-// Add these state variables
-const [requestingBonus, setRequestingBonus] = useState<string | null>(null);
-const [requestMessage, setRequestMessage] = useState("");
-const [googleReviewName, setGoogleReviewName] = useState("");
 
-// Replace handleClaimBonus with handleRequestBonus
-const handleRequestBonus = async (platform: string, proofName?: string) => {
-  setRequestingBonus(platform);
-  setRequestMessage("");
-  try {
-    const res = await fetch("/api/customer/request-bonus", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ 
-        platform, 
-        customerId: customer.id,
-        proofName: proofName || null
-      }),
-    });
-    const data = await res.json();
-    if (res.ok) {
-      setRequestMessage(data.message || "✅ Demande envoyée! Le restaurateur vérifiera et ajoutera vos points sous 24h.");
-      // Clear the input
-      if (platform === "googleMaps") setGoogleReviewName("");
-    } else {
-      setRequestMessage(data.error || "Erreur, réessayez.");
-    }
-  } catch (error) {
-    setRequestMessage("Erreur de connexion.");
-  } finally {
-    setRequestingBonus(null);
-    setTimeout(() => setRequestMessage(""), 5000);
-  }
-};
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#fdf9f4] to-white pb-20">
       <div className="max-w-md mx-auto px-4 py-6">
@@ -238,53 +207,68 @@ const handleRequestBonus = async (platform: string, proofName?: string) => {
         )}
 
         {/* Bonuses Section */}
-   {bonuses.map((bonus) => (
-  <div key={bonus.id}>
-    {!bonus.claimed ? (
-      <div>
-        {bonus.id === "googleMaps" ? (
-          // Google Maps - Code input
-          <div className="space-y-2">
-            <a href={bonus.url} target="_blank" className="block w-full py-2 bg-[#fe5502] text-white rounded-lg">
-              Laisser un avis Google
-            </a>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                placeholder="Code unique du restaurant"
-                value={googleCode}
-                onChange={(e) => setGoogleCode(e.target.value)}
-                className="flex-1 px-3 py-2 border rounded-lg"
-              />
-              <button
-                onClick={handleGoogleCodeVerify}
-                disabled={verifying}
-                className="px-4 py-2 border border-[#fe5502] rounded-lg"
-              >
-                {verifying ? "..." : "Vérifier +⭐"}
-              </button>
+        <div className="bg-white rounded-2xl shadow-lg p-4 mb-6">
+          <h3 className="font-semibold text-[#282424] mb-2">Gagnez plus de points</h3>
+          {bonuses.length === 0 ? (
+            <p className="text-sm text-[#7f8489] text-center">
+              🚧 Aucun bonus disponible pour le moment.
+            </p>
+          ) : (
+            <div className="space-y-4">
+              {bonuses.map((bonus) => (
+                <div key={bonus.id} className="border-b border-[#c6c9c8] last:border-0 pb-3 last:pb-0">
+                  {!bonus.claimed ? (
+                    <div className="space-y-2">
+                      {bonus.url && (
+                        <a
+                          href={bonus.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block w-full py-2 bg-[#fe5502] text-white rounded-lg text-center hover:bg-[#e0682e] transition-colors"
+                        >
+                          {bonus.label}
+                        </a>
+                      )}
+                      
+                      {/* Google Maps code input */}
+                      {bonus.id === "googleMaps" && (
+                        <div className="flex gap-2 mt-2">
+                          <input
+                            type="text"
+                            placeholder="Code unique du restaurant"
+                            value={googleCode}
+                            onChange={(e) => setGoogleCode(e.target.value)}
+                            className="flex-1 px-3 py-2 border border-[#c6c9c8] rounded-lg"
+                          />
+                          <button
+                            onClick={handleGoogleCodeVerify}
+                            disabled={verifying}
+                            className="px-4 py-2 border border-[#fe5502] text-[#fe5502] rounded-lg hover:bg-[#fe5502] hover:text-white transition-colors"
+                          >
+                            {verifying ? "..." : "Vérifier +⭐"}
+                          </button>
+                        </div>
+                      )}
+                      
+                      <button
+                        onClick={() => handleRequestBonus(bonus.id)}
+                        disabled={requestingBonus === bonus.id}
+                        className="w-full py-2 border border-[#fe5502] text-[#fe5502] rounded-lg hover:bg-[#fe5502] hover:text-white transition-colors"
+                      >
+                        {requestingBonus === bonus.id ? "Envoi..." : `J'ai ${bonus.label.toLowerCase()} (+${bonus.points}⭐)`}
+                      </button>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-green-600 text-center">
+                      ✅ +{bonus.points}⭐ déjà reçus pour {bonus.label.toLowerCase()} !
+                    </p>
+                  )}
+                </div>
+              ))}
             </div>
-          </div>
-        ) : (
-          // Social Media - Direct OAuth
-          <div className="space-y-2">
-            <a href={bonus.url} target="_blank" className="block w-full py-2 bg-[#fe5502] text-white rounded-lg">
-              {bonus.label}
-            </a>
-            <button
-              onClick={() => handleFacebookVerify()}
-              className="w-full py-2 border border-[#fe5502] rounded-lg"
-            >
-              Vérifier et recevoir +{bonus.points}⭐
-            </button>
-          </div>
-        )}
-      </div>
-    ) : (
-      <p>✅ +{bonus.points}⭐ déjà reçus!</p>
-    )}
-  </div>
-))}
+          )}
+          {requestMessage && <p className="text-sm text-[#e0682e] mt-2">{requestMessage}</p>}
+        </div>
 
         {/* How it Works */}
         <div className="bg-white rounded-2xl shadow-lg p-4 mb-6">
