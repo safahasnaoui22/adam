@@ -64,7 +64,9 @@ model Restaurant {
   facebookBonusStars      Int? @default(50)
   instagramBonusStars     Int? @default(50)
   twitterBonusStars       Int? @default(50)
+   bonusRequests BonusRequest[]
 }
+
 
 model LoyaltyProgram {
   id                    String     @id @default(cuid())
@@ -92,13 +94,27 @@ model CustomerProfile {
   user          User           @relation(fields: [userId], references: [id])
   earnedRewards EarnedReward[]
   visits        Visit[]
-    hasClaimedReviewBonus Boolean @default(false)
-      hasClaimedGoogleMapsBonus Boolean @default(false)
-  hasClaimedFacebookBonus   Boolean @default(false)
-  hasClaimedInstagramBonus  Boolean @default(false)
-  hasClaimedTwitterBonus    Boolean @default(false)
+  
+  // Add this line for the relation to BonusRequest
+  bonusRequests BonusRequest[]
 }
 
+model BonusRequest {
+  id           String   @id @default(cuid())
+  customerId   String
+  restaurantId String
+  platform     String   // googleMaps, facebook, instagram, twitter
+  status       String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  proofName    String?  // For Google Maps: the name they used
+  requestedAt  DateTime @default(now())
+  approvedAt   DateTime?
+  rejectedAt   DateTime?
+  rejectedReason String?
+  
+  // Relations
+  customer   CustomerProfile @relation(fields: [customerId], references: [id])
+  restaurant Restaurant     @relation(fields: [restaurantId], references: [id])
+}
 model Visit {
   id           String          @id @default(cuid())
   date         DateTime        @default(now())

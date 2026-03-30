@@ -89,7 +89,40 @@ export default function CustomerDashboard({
       alert("Utilisez 'Ajouter à l'écran d'accueil' dans le menu de votre navigateur.");
     }
   };
+// Add these state variables
+const [requestingBonus, setRequestingBonus] = useState<string | null>(null);
+const [requestMessage, setRequestMessage] = useState("");
+const [googleReviewName, setGoogleReviewName] = useState("");
 
+// Replace handleClaimBonus with handleRequestBonus
+const handleRequestBonus = async (platform: string, proofName?: string) => {
+  setRequestingBonus(platform);
+  setRequestMessage("");
+  try {
+    const res = await fetch("/api/customer/request-bonus", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ 
+        platform, 
+        customerId: customer.id,
+        proofName: proofName || null
+      }),
+    });
+    const data = await res.json();
+    if (res.ok) {
+      setRequestMessage(data.message || "✅ Demande envoyée! Le restaurateur vérifiera et ajoutera vos points sous 24h.");
+      // Clear the input
+      if (platform === "googleMaps") setGoogleReviewName("");
+    } else {
+      setRequestMessage(data.error || "Erreur, réessayez.");
+    }
+  } catch (error) {
+    setRequestMessage("Erreur de connexion.");
+  } finally {
+    setRequestingBonus(null);
+    setTimeout(() => setRequestMessage(""), 5000);
+  }
+};
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#fdf9f4] to-white pb-20">
       <div className="max-w-md mx-auto px-4 py-6">
@@ -168,47 +201,47 @@ export default function CustomerDashboard({
         )}
 
         {/* Bonuses Section */}
-        <div className="bg-white rounded-2xl shadow-lg p-4 mb-6">
-          <h3 className="font-semibold text-[#282424] mb-2">Gagnez plus de points</h3>
-          {bonuses.length === 0 ? (
-            <p className="text-sm text-[#7f8489] text-center">
-              🚧 Aucun bonus disponible pour le moment.
-            </p>
-          ) : (
-            <div className="space-y-4">
-              {bonuses.map((bonus) => (
-                <div key={bonus.id} className="border-b border-[#c6c9c8] last:border-0 pb-3 last:pb-0">
-                  {!bonus.claimed ? (
-                    <div className="space-y-2">
-                      {bonus.url && (
-                        <a
-                          href={bonus.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="block w-full py-2 bg-[#fe5502] text-white rounded-lg text-center hover:bg-[#e0682e] transition-colors"
-                        >
-                          {bonus.label}
-                        </a>
-                      )}
-                      <button
-                        onClick={() => handleClaimBonus(bonus.id)}
-                        disabled={claimingBonus === bonus.id}
-                        className="w-full py-2 border border-[#fe5502] text-[#fe5502] rounded-lg hover:bg-[#fe5502] hover:text-white transition-colors"
-                      >
-                        {claimingBonus === bonus.id ? "Vérification..." : `J'ai ${bonus.label.toLowerCase()} (+${bonus.points}⭐)`}
-                      </button>
-                    </div>
-                  ) : (
-                    <p className="text-sm text-green-600 text-center">
-                      ✅ +{bonus.points}⭐ déjà reçus pour {bonus.label.toLowerCase()} !
-                    </p>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-          {bonusMessage && <p className="text-sm text-[#e0682e] mt-2">{bonusMessage}</p>}
-        </div>
+      {bonuses.map((bonus) => (
+  <div key={bonus.id} className="border-b border-[#c6c9c8] last:border-0 pb-3 last:pb-0">
+    {!bonus.claimed ? (
+      <div className="space-y-2">
+        {bonus.url && (
+          <a
+            href={bonus.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block w-full py-2 bg-[#fe5502] text-white rounded-lg text-center hover:bg-[#e0682e] transition-colors"
+          >
+            {bonus.label}
+          </a>
+        )}
+        
+        {/* Special input for Google Maps to provide name */}
+        {bonus.id === "googleMaps" && (
+          <input
+            type="text"
+            placeholder="Votre nom sur Google (pour vérification)"
+            value={googleReviewName}
+            onChange={(e) => setGoogleReviewName(e.target.value)}
+            className="w-full px-3 py-2 border border-[#c6c9c8] rounded-lg text-sm"
+          />
+        )}
+        
+        <button
+          onClick={() => handleRequestBonus(bonus.id, bonus.id === "googleMaps" ? googleReviewName : undefined)}
+          disabled={requestingBonus === bonus.id}
+          className="w-full py-2 border border-[#fe5502] text-[#fe5502] rounded-lg hover:bg-[#fe5502] hover:text-white transition-colors"
+        >
+          {requestingBonus === bonus.id ? "Envoi..." : `J'ai ${bonus.label.toLowerCase()} (+${bonus.points}⭐)`}
+        </button>
+      </div>
+    ) : (
+      <p className="text-sm text-green-600 text-center">
+        ✅ +{bonus.points}⭐ déjà reçus pour {bonus.label.toLowerCase()} !
+      </p>
+    )}
+  </div>
+))}
 
         {/* How it Works */}
         <div className="bg-white rounded-2xl shadow-lg p-4 mb-6">

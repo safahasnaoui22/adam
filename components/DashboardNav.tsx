@@ -15,6 +15,7 @@ export default function DashboardNav() {
     { name: "Programme de fidélité", href: "/dashboard/loyalty-program" },
     { name: "Clients", href: "/dashboard/clients" },
     { name: "QR Code", href: "/dashboard/qr-code" },
+      { name: "Demandes de bonus", href: "/dashboard/bonus-requests", icon: "🎁" },
   ];
 
   return (
