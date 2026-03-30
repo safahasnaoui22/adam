@@ -93,10 +93,14 @@ export async function PUT(request: Request) {
       theme,
       backgroundPattern,
       // Add these new fields
-      googleMapsUrl,
-      facebookUrl,
-      instagramUrl,
-      twitterUrl,
+    googleMapsUrl,
+  facebookUrl,
+  instagramUrl,
+  twitterUrl,
+  googleMapsBonusStars,
+  facebookBonusStars,
+  instagramBonusStars,
+  twitterBonusStars,
     } = body;
 
     // Check if urlSlug is already taken (excluding current restaurant)
@@ -136,10 +140,14 @@ export async function PUT(request: Request) {
         theme: theme || undefined,
         backgroundPattern,
         // Add the new fields here
-        googleMapsUrl: googleMapsUrl || undefined,
-        facebookUrl: facebookUrl || undefined,
-        instagramUrl: instagramUrl || undefined,
-        twitterUrl: twitterUrl || undefined,
+       googleMapsUrl: googleMapsUrl || undefined,
+  facebookUrl: facebookUrl || undefined,
+  instagramUrl: instagramUrl || undefined,
+  twitterUrl: twitterUrl || undefined,
+  googleMapsBonusStars: googleMapsBonusStars || 50,
+  facebookBonusStars: facebookBonusStars || 50,
+  instagramBonusStars: instagramBonusStars || 50,
+  twitterBonusStars: twitterBonusStars || 50,
       },
       include: {
         subscription: true,

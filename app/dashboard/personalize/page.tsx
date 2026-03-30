@@ -18,82 +18,93 @@ export default function PersonalizePage() {
   const [restaurant, setRestaurant] = useState<any>(null);
   
   // Form state
-  const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    logo: null as string | null,
-    address: "",
-    phoneNumber: "",
-    email: "",
-    website: "",
-    // New fields for bonuses
-    googleMapsUrl: "",
-    facebookUrl: "",
-    instagramUrl: "",
-    twitterUrl: "",
-    
-    // These will be handled by subcomponents
-    openingHours: {},
-    socialMedia: {},
-    termsConditions: "",
-    howToUse: "",
-    revenueSettings: {
-      avgSpend: 0,
-      baseVisits: 1,
-      inactiveDays: 90,
-    },
-    appName: "",
-    urlSlug: "",
-    theme: {},
-    backgroundPattern: "",
-  });
+const [formData, setFormData] = useState({
+  name: "",
+  description: "",
+  logo: null as string | null,
+  address: "",
+  phoneNumber: "",
+  email: "",
+  website: "",
+  // New fields for bonuses - URLs
+  googleMapsUrl: "",
+  facebookUrl: "",
+  instagramUrl: "",
+  twitterUrl: "",
+  // New fields for bonus stars
+  googleMapsBonusStars: 50,
+  facebookBonusStars: 50,
+  instagramBonusStars: 50,
+  twitterBonusStars: 50,
+  
+  // These will be handled by subcomponents
+  openingHours: {},
+  socialMedia: {},
+  termsConditions: "",
+  howToUse: "",
+  revenueSettings: {
+    avgSpend: 0,
+    baseVisits: 1,
+    inactiveDays: 90,
+  },
+  appName: "",
+  urlSlug: "",
+  theme: {},
+  backgroundPattern: "",
+});
 
   // Load existing restaurant data
   useEffect(() => {
     fetchRestaurant();
   }, []);
 
-  const fetchRestaurant = async () => {
-    try {
-      const res = await fetch("/api/restaurant/profile");
-      const data = await res.json();
-      
-      if (res.ok) {
-        setRestaurant(data);
-        setFormData({
-          name: data.name || "",
-          description: data.description || "",
-          logo: data.logo || null,
-          address: data.address || "",
-          phoneNumber: data.phoneNumber || "",
-          email: data.email || "",
-          website: data.website || "",
-          // Load the new fields
-          googleMapsUrl: data.googleMapsUrl || "",
-          facebookUrl: data.facebookUrl || "",
-          instagramUrl: data.instagramUrl || "",
-          twitterUrl: data.twitterUrl || "",
-          openingHours: data.openingHours || {},
-          socialMedia: data.socialMedia || {},
-          termsConditions: data.termsConditions || "",
-          howToUse: data.howToUse || "",
-          revenueSettings: data.revenueSettings || {
-            avgSpend: 0,
-            baseVisits: 1,
-            inactiveDays: 90,
-          },
-          appName: data.appName || data.name?.substring(0, 12) || "",
-          urlSlug: data.urlSlug || "",
-          theme: data.theme || {},
-          backgroundPattern: data.backgroundPattern || "",
-        });
-      }
-    } catch (error) {
-      console.error("Failed to fetch restaurant:", error);
-    } finally {
-      setLoading(false);
+const fetchRestaurant = async () => {
+  try {
+    const res = await fetch("/api/restaurant/profile");
+    const data = await res.json();
+    
+    if (res.ok) {
+      setRestaurant(data);
+      setFormData({
+        name: data.name || "",
+        description: data.description || "",
+        logo: data.logo || null,
+        address: data.address || "",
+        phoneNumber: data.phoneNumber || "",
+        email: data.email || "",
+        website: data.website || "",
+        // Load bonus URLs
+        googleMapsUrl: data.googleMapsUrl || "",
+        facebookUrl: data.facebookUrl || "",
+        instagramUrl: data.instagramUrl || "",
+        twitterUrl: data.twitterUrl || "",
+        // Load bonus stars
+        googleMapsBonusStars: data.googleMapsBonusStars || 50,
+        facebookBonusStars: data.facebookBonusStars || 50,
+        instagramBonusStars: data.instagramBonusStars || 50,
+        twitterBonusStars: data.twitterBonusStars || 50,
+        // Existing fields
+        openingHours: data.openingHours || {},
+        socialMedia: data.socialMedia || {},
+        termsConditions: data.termsConditions || "",
+        howToUse: data.howToUse || "",
+        revenueSettings: data.revenueSettings || {
+          avgSpend: 0,
+          baseVisits: 1,
+          inactiveDays: 90,
+        },
+        appName: data.appName || data.name?.substring(0, 12) || "",
+        urlSlug: data.urlSlug || "",
+        theme: data.theme || {},
+        backgroundPattern: data.backgroundPattern || "",
+      });
     }
-  };
+  } catch (error) {
+    console.error("Failed to fetch restaurant:", error);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -334,80 +345,128 @@ export default function PersonalizePage() {
             </div>
 
             {/* New Section: Social Media Links for Bonuses */}
-            <div className="border-t border-[#c6c9c8] pt-6 mt-6">
-              <h3 className="text-lg font-semibold text-[#282424] mb-4">Liens pour les bonus clients</h3>
-              <p className="text-sm text-[#7f8489] mb-4">
-                Ajoutez vos liens pour que les clients puissent gagner 50⭐ en suivant vos pages ou laissant un avis.
-              </p>
-              
-              {/* Google Maps URL */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-[#282424] mb-1">
-                  Lien Google Maps
-                </label>
-                <input
-                  type="url"
-                  value={formData.googleMapsUrl || ""}
-                  onChange={(e) => setFormData({ ...formData, googleMapsUrl: e.target.value })}
-                  placeholder="https://maps.app.goo.gl/..."
-                  className="w-full px-3 py-2 border border-[#c6c9c8] rounded-md focus:outline-none focus:ring-[#fe5502] focus:border-[#fe5502] text-[#282424]"
-                />
-                <p className="text-xs text-[#7f8489] mt-1">
-                  Le client gagne 50⭐ après avoir laissé un avis Google
-                </p>
-              </div>
+         <div className="border-t border-[#c6c9c8] pt-6 mt-6">
+  <h3 className="text-lg font-semibold text-[#282424] mb-4">Liens pour les bonus clients</h3>
+  <p className="text-sm text-[#7f8489] mb-4">
+    Ajoutez vos liens et définissez le nombre d'étoiles que les clients gagnent.
+  </p>
+  
+  {/* Google Maps */}
+  <div className="mb-6 p-4 bg-[#fdf9f4] rounded-lg">
+    <label className="block text-sm font-medium text-[#282424] mb-1">
+      Lien Google Maps
+    </label>
+    <input
+      type="url"
+      value={formData.googleMapsUrl || ""}
+      onChange={(e) => setFormData({ ...formData, googleMapsUrl: e.target.value })}
+      placeholder="https://maps.app.goo.gl/..."
+      className="w-full px-3 py-2 border border-[#c6c9c8] rounded-md focus:outline-none focus:ring-[#fe5502] focus:border-[#fe5502] text-[#282424] mb-2"
+    />
+    <div className="flex items-center gap-4">
+      <label className="block text-sm font-medium text-[#282424]">
+        Étoiles gagnées:
+      </label>
+      <input
+        type="number"
+        value={formData.googleMapsBonusStars}
+        onChange={(e) => setFormData({ ...formData, googleMapsBonusStars: parseInt(e.target.value) || 0 })}
+        className="w-24 px-3 py-2 border border-[#c6c9c8] rounded-md focus:outline-none focus:ring-[#fe5502] focus:border-[#fe5502] text-[#282424]"
+      />
+      <span className="text-sm text-[#7f8489]">⭐</span>
+    </div>
+    <p className="text-xs text-[#7f8489] mt-2">
+      Le client gagne ces étoiles après avoir laissé un avis Google
+    </p>
+  </div>
 
-              {/* Facebook URL */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-[#282424] mb-1">
-                  Lien Facebook
-                </label>
-                <input
-                  type="url"
-                  value={formData.facebookUrl || ""}
-                  onChange={(e) => setFormData({ ...formData, facebookUrl: e.target.value })}
-                  placeholder="https://facebook.com/votrepage"
-                  className="w-full px-3 py-2 border border-[#c6c9c8] rounded-md focus:outline-none focus:ring-[#fe5502] focus:border-[#fe5502] text-[#282424]"
-                />
-                <p className="text-xs text-[#7f8489] mt-1">
-                  Suivre la page = +50⭐
-                </p>
-              </div>
+  {/* Facebook */}
+  <div className="mb-6 p-4 bg-[#fdf9f4] rounded-lg">
+    <label className="block text-sm font-medium text-[#282424] mb-1">
+      Lien Facebook
+    </label>
+    <input
+      type="url"
+      value={formData.facebookUrl || ""}
+      onChange={(e) => setFormData({ ...formData, facebookUrl: e.target.value })}
+      placeholder="https://facebook.com/votrepage"
+      className="w-full px-3 py-2 border border-[#c6c9c8] rounded-md focus:outline-none focus:ring-[#fe5502] focus:border-[#fe5502] text-[#282424] mb-2"
+    />
+    <div className="flex items-center gap-4">
+      <label className="block text-sm font-medium text-[#282424]">
+        Étoiles gagnées:
+      </label>
+      <input
+        type="number"
+        value={formData.facebookBonusStars}
+        onChange={(e) => setFormData({ ...formData, facebookBonusStars: parseInt(e.target.value) || 0 })}
+        className="w-24 px-3 py-2 border border-[#c6c9c8] rounded-md focus:outline-none focus:ring-[#fe5502] focus:border-[#fe5502] text-[#282424]"
+      />
+      <span className="text-sm text-[#7f8489]">⭐</span>
+    </div>
+    <p className="text-xs text-[#7f8489] mt-2">
+      Suivre la page = +{formData.facebookBonusStars}⭐
+    </p>
+  </div>
 
-              {/* Instagram URL */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-[#282424] mb-1">
-                  Lien Instagram
-                </label>
-                <input
-                  type="url"
-                  value={formData.instagramUrl || ""}
-                  onChange={(e) => setFormData({ ...formData, instagramUrl: e.target.value })}
-                  placeholder="https://instagram.com/votrepage"
-                  className="w-full px-3 py-2 border border-[#c6c9c8] rounded-md focus:outline-none focus:ring-[#fe5502] focus:border-[#fe5502] text-[#282424]"
-                />
-                <p className="text-xs text-[#7f8489] mt-1">
-                  Suivre = +50⭐
-                </p>
-              </div>
+  {/* Instagram */}
+  <div className="mb-6 p-4 bg-[#fdf9f4] rounded-lg">
+    <label className="block text-sm font-medium text-[#282424] mb-1">
+      Lien Instagram
+    </label>
+    <input
+      type="url"
+      value={formData.instagramUrl || ""}
+      onChange={(e) => setFormData({ ...formData, instagramUrl: e.target.value })}
+      placeholder="https://instagram.com/votrepage"
+      className="w-full px-3 py-2 border border-[#c6c9c8] rounded-md focus:outline-none focus:ring-[#fe5502] focus:border-[#fe5502] text-[#282424] mb-2"
+    />
+    <div className="flex items-center gap-4">
+      <label className="block text-sm font-medium text-[#282424]">
+        Étoiles gagnées:
+      </label>
+      <input
+        type="number"
+        value={formData.instagramBonusStars}
+        onChange={(e) => setFormData({ ...formData, instagramBonusStars: parseInt(e.target.value) || 0 })}
+        className="w-24 px-3 py-2 border border-[#c6c9c8] rounded-md focus:outline-none focus:ring-[#fe5502] focus:border-[#fe5502] text-[#282424]"
+      />
+      <span className="text-sm text-[#7f8489]">⭐</span>
+    </div>
+    <p className="text-xs text-[#7f8489] mt-2">
+      Suivre = +{formData.instagramBonusStars}⭐
+    </p>
+  </div>
 
-              {/* Twitter URL */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-[#282424] mb-1">
-                  Lien Twitter / X
-                </label>
-                <input
-                  type="url"
-                  value={formData.twitterUrl || ""}
-                  onChange={(e) => setFormData({ ...formData, twitterUrl: e.target.value })}
-                  placeholder="https://twitter.com/votrepage"
-                  className="w-full px-3 py-2 border border-[#c6c9c8] rounded-md focus:outline-none focus:ring-[#fe5502] focus:border-[#fe5502] text-[#282424]"
-                />
-                <p className="text-xs text-[#7f8489] mt-1">
-                  Suivre = +50⭐
-                </p>
-              </div>
-            </div>
+  {/* Twitter/X */}
+  <div className="mb-6 p-4 bg-[#fdf9f4] rounded-lg">
+    <label className="block text-sm font-medium text-[#282424] mb-1">
+      Lien Twitter / X
+    </label>
+    <input
+      type="url"
+      value={formData.twitterUrl || ""}
+      onChange={(e) => setFormData({ ...formData, twitterUrl: e.target.value })}
+      placeholder="https://twitter.com/votrepage"
+      className="w-full px-3 py-2 border border-[#c6c9c8] rounded-md focus:outline-none focus:ring-[#fe5502] focus:border-[#fe5502] text-[#282424] mb-2"
+    />
+    <div className="flex items-center gap-4">
+      <label className="block text-sm font-medium text-[#282424]">
+        Étoiles gagnées:
+      </label>
+      <input
+        type="number"
+        value={formData.twitterBonusStars}
+        onChange={(e) => setFormData({ ...formData, twitterBonusStars: parseInt(e.target.value) || 0 })}
+        className="w-24 px-3 py-2 border border-[#c6c9c8] rounded-md focus:outline-none focus:ring-[#fe5502] focus:border-[#fe5502] text-[#282424]"
+      />
+      <span className="text-sm text-[#7f8489]">⭐</span>
+    </div>
+    <p className="text-xs text-[#7f8489] mt-2">
+      Suivre = +{formData.twitterBonusStars}⭐
+    </p>
+  </div>
+</div>
           </div>
         )}
 

@@ -60,6 +60,10 @@ model Restaurant {
   facebookUrl   String?
   instagramUrl  String?
   twitterUrl    String?
+    googleMapsBonusStars    Int? @default(50)
+  facebookBonusStars      Int? @default(50)
+  instagramBonusStars     Int? @default(50)
+  twitterBonusStars       Int? @default(50)
 }
 
 model LoyaltyProgram {
