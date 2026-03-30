@@ -36,7 +36,7 @@ const [formData, setFormData] = useState({
   facebookBonusStars: 50,
   instagramBonusStars: 50,
   twitterBonusStars: 50,
-  
+  googleMapsCode: "",
   // These will be handled by subcomponents
   openingHours: {},
   socialMedia: {},
@@ -97,6 +97,7 @@ const fetchRestaurant = async () => {
         urlSlug: data.urlSlug || "",
         theme: data.theme || {},
         backgroundPattern: data.backgroundPattern || "",
+        googleMapsCode: data.googleMapsCode || "",
       });
     }
   } catch (error) {
@@ -352,33 +353,61 @@ const fetchRestaurant = async () => {
   </p>
   
   {/* Google Maps */}
-  <div className="mb-6 p-4 bg-[#fdf9f4] rounded-lg">
+{/* Google Maps */}
+<div className="mb-6 p-4 bg-[#fdf9f4] rounded-lg">
+  <label className="block text-sm font-medium text-[#282424] mb-1">
+    Lien Google Maps
+  </label>
+  <input
+    type="url"
+    value={formData.googleMapsUrl || ""}
+    onChange={(e) => setFormData({ ...formData, googleMapsUrl: e.target.value })}
+    placeholder="https://maps.app.goo.gl/..."
+    className="w-full px-3 py-2 border border-[#c6c9c8] rounded-md focus:outline-none focus:ring-[#fe5502] focus:border-[#fe5502] text-[#282424]"
+  />
+  
+  {/* Code for Google Reviews */}
+  <div className="mt-4 pt-4 border-t border-[#c6c9c8]">
     <label className="block text-sm font-medium text-[#282424] mb-1">
-      Lien Google Maps
+      Code unique pour avis Google
     </label>
-    <input
-      type="url"
-      value={formData.googleMapsUrl || ""}
-      onChange={(e) => setFormData({ ...formData, googleMapsUrl: e.target.value })}
-      placeholder="https://maps.app.goo.gl/..."
-      className="w-full px-3 py-2 border border-[#c6c9c8] rounded-md focus:outline-none focus:ring-[#fe5502] focus:border-[#fe5502] text-[#282424] mb-2"
-    />
-    <div className="flex items-center gap-4">
-      <label className="block text-sm font-medium text-[#282424]">
-        Étoiles gagnées:
-      </label>
+    <div className="flex gap-2">
       <input
-        type="number"
-        value={formData.googleMapsBonusStars}
-        onChange={(e) => setFormData({ ...formData, googleMapsBonusStars: parseInt(e.target.value) || 0 })}
-        className="w-24 px-3 py-2 border border-[#c6c9c8] rounded-md focus:outline-none focus:ring-[#fe5502] focus:border-[#fe5502] text-[#282424]"
+        type="text"
+        value={formData.googleMapsCode || ""}
+        readOnly
+        placeholder="Générer un code"
+        className="flex-1 px-3 py-2 border border-[#c6c9c8] rounded-md bg-gray-50 text-[#282424]"
       />
-      <span className="text-sm text-[#7f8489]">⭐</span>
+      <button
+        type="button"
+        onClick={generateGoogleCode}
+        className="px-4 py-2 bg-[#fe5502] text-white rounded-md hover:bg-[#e0682e] transition-colors"
+      >
+        Générer
+      </button>
     </div>
     <p className="text-xs text-[#7f8489] mt-2">
-      Le client gagne ces étoiles après avoir laissé un avis Google
+      Affichez ce code dans votre restaurant. Les clients l'utiliseront après avoir laissé un avis Google.
     </p>
   </div>
+  
+  <div className="flex items-center gap-4 mt-4">
+    <label className="block text-sm font-medium text-[#282424]">
+      Étoiles gagnées:
+    </label>
+    <input
+      type="number"
+      value={formData.googleMapsBonusStars}
+      onChange={(e) => setFormData({ ...formData, googleMapsBonusStars: parseInt(e.target.value) || 0 })}
+      className="w-24 px-3 py-2 border border-[#c6c9c8] rounded-md focus:outline-none focus:ring-[#fe5502] focus:border-[#fe5502] text-[#282424]"
+    />
+    <span className="text-sm text-[#7f8489]">⭐</span>
+  </div>
+  <p className="text-xs text-[#7f8489] mt-2">
+    Le client gagne ces étoiles après avoir entré le code unique.
+  </p>
+</div>
 
   {/* Facebook */}
   <div className="mb-6 p-4 bg-[#fdf9f4] rounded-lg">

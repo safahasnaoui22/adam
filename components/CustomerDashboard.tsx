@@ -25,6 +25,43 @@ export default function CustomerDashboard({
   const [showOptions, setShowOptions] = useState(false);
   const [claimingBonus, setClaimingBonus] = useState<string | null>(null);
   const [bonusMessage, setBonusMessage] = useState("");
+const [showCodeInput, setShowCodeInput] = useState(false);
+const [googleCode, setGoogleCode] = useState("");
+const [verifying, setVerifying] = useState(false);
+
+const handleFacebookVerify = async () => {
+  // Redirect to Facebook OAuth
+  window.location.href = `/api/auth/signin/facebook?callbackUrl=${encodeURIComponent(
+    `/${restaurant.urlSlug}/dashboard?social=facebook`
+  )}`;
+};
+
+const handleGoogleCodeVerify = async () => {
+  setVerifying(true);
+  try {
+    const res = await fetch("/api/customer/verify-google-code", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code: googleCode }),
+    });
+    const data = await res.json();
+    if (res.ok) {
+      alert(data.message);
+      window.location.reload();
+    } else {
+      alert(data.error);
+    }
+  } catch (error) {
+    alert("Erreur");
+  } finally {
+    setVerifying(false);
+  }
+};
+
+
+
+
+
 
   // Define bonuses based on restaurant's links - filter out null/undefined URLs
   const bonuses = [
@@ -201,44 +238,50 @@ const handleRequestBonus = async (platform: string, proofName?: string) => {
         )}
 
         {/* Bonuses Section */}
-      {bonuses.map((bonus) => (
-  <div key={bonus.id} className="border-b border-[#c6c9c8] last:border-0 pb-3 last:pb-0">
+   {bonuses.map((bonus) => (
+  <div key={bonus.id}>
     {!bonus.claimed ? (
-      <div className="space-y-2">
-        {bonus.url && (
-          <a
-            href={bonus.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block w-full py-2 bg-[#fe5502] text-white rounded-lg text-center hover:bg-[#e0682e] transition-colors"
-          >
-            {bonus.label}
-          </a>
+      <div>
+        {bonus.id === "googleMaps" ? (
+          // Google Maps - Code input
+          <div className="space-y-2">
+            <a href={bonus.url} target="_blank" className="block w-full py-2 bg-[#fe5502] text-white rounded-lg">
+              Laisser un avis Google
+            </a>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="Code unique du restaurant"
+                value={googleCode}
+                onChange={(e) => setGoogleCode(e.target.value)}
+                className="flex-1 px-3 py-2 border rounded-lg"
+              />
+              <button
+                onClick={handleGoogleCodeVerify}
+                disabled={verifying}
+                className="px-4 py-2 border border-[#fe5502] rounded-lg"
+              >
+                {verifying ? "..." : "Vérifier +⭐"}
+              </button>
+            </div>
+          </div>
+        ) : (
+          // Social Media - Direct OAuth
+          <div className="space-y-2">
+            <a href={bonus.url} target="_blank" className="block w-full py-2 bg-[#fe5502] text-white rounded-lg">
+              {bonus.label}
+            </a>
+            <button
+              onClick={() => handleFacebookVerify()}
+              className="w-full py-2 border border-[#fe5502] rounded-lg"
+            >
+              Vérifier et recevoir +{bonus.points}⭐
+            </button>
+          </div>
         )}
-        
-        {/* Special input for Google Maps to provide name */}
-        {bonus.id === "googleMaps" && (
-          <input
-            type="text"
-            placeholder="Votre nom sur Google (pour vérification)"
-            value={googleReviewName}
-            onChange={(e) => setGoogleReviewName(e.target.value)}
-            className="w-full px-3 py-2 border border-[#c6c9c8] rounded-lg text-sm"
-          />
-        )}
-        
-        <button
-          onClick={() => handleRequestBonus(bonus.id, bonus.id === "googleMaps" ? googleReviewName : undefined)}
-          disabled={requestingBonus === bonus.id}
-          className="w-full py-2 border border-[#fe5502] text-[#fe5502] rounded-lg hover:bg-[#fe5502] hover:text-white transition-colors"
-        >
-          {requestingBonus === bonus.id ? "Envoi..." : `J'ai ${bonus.label.toLowerCase()} (+${bonus.points}⭐)`}
-        </button>
       </div>
     ) : (
-      <p className="text-sm text-green-600 text-center">
-        ✅ +{bonus.points}⭐ déjà reçus pour {bonus.label.toLowerCase()} !
-      </p>
+      <p>✅ +{bonus.points}⭐ déjà reçus!</p>
     )}
   </div>
 ))}

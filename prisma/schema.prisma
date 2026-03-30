@@ -65,6 +65,7 @@ model Restaurant {
   instagramBonusStars     Int? @default(50)
   twitterBonusStars       Int? @default(50)
    bonusRequests BonusRequest[]
+     googleMapsCode String? @unique
 }
 
 
