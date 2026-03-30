@@ -26,7 +26,7 @@ export default function CustomerDashboard({
   const [claimingBonus, setClaimingBonus] = useState<string | null>(null);
   const [bonusMessage, setBonusMessage] = useState("");
 
-  // Define bonuses based on restaurant's links
+  // Define bonuses based on restaurant's links - filter out null/undefined URLs
   const bonuses = [
     {
       id: "googleMaps",
@@ -56,7 +56,7 @@ export default function CustomerDashboard({
       claimed: customer.hasClaimedTwitterBonus,
       points: restaurant.twitterBonusStars || 50,
     },
-  ].filter(b => b.url); // Only show if restaurant provided the link
+  ].filter(b => b.url && b.url.trim() !== "");
 
   const dinars = (customer.points / 10).toFixed(2);
 
@@ -180,14 +180,16 @@ export default function CustomerDashboard({
                 <div key={bonus.id} className="border-b border-[#c6c9c8] last:border-0 pb-3 last:pb-0">
                   {!bonus.claimed ? (
                     <div className="space-y-2">
-                      <a
-                        href={bonus.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="block w-full py-2 bg-[#fe5502] text-white rounded-lg text-center hover:bg-[#e0682e] transition-colors"
-                      >
-                        {bonus.label}
-                      </a>
+                      {bonus.url && (
+                        <a
+                          href={bonus.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block w-full py-2 bg-[#fe5502] text-white rounded-lg text-center hover:bg-[#e0682e] transition-colors"
+                        >
+                          {bonus.label}
+                        </a>
+                      )}
                       <button
                         onClick={() => handleClaimBonus(bonus.id)}
                         disabled={claimingBonus === bonus.id}
