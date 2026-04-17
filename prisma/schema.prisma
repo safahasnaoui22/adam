@@ -66,6 +66,9 @@ model Restaurant {
   twitterBonusStars       Int? @default(50)
    bonusRequests BonusRequest[]
      googleMapsCode String? @unique
+       tiktokUrl           String?
+  tiktokBonusStars    Int? @default(50)
+  tiktokPageId        String? // The TikTok account ID to verify
 }
 
 
@@ -102,6 +105,8 @@ model CustomerProfile {
   hasClaimedFacebookBonus   Boolean @default(false)
   hasClaimedInstagramBonus  Boolean @default(false)
   hasClaimedTwitterBonus    Boolean @default(false)
+  hasClaimedTikTokBonus   Boolean @default(false)
+   
 }
 
 model BonusRequest {

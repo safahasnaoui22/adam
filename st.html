@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Follow & Earn Stars</title>
+  <style>
+    body {
+      font-family: Arial;
+      text-align: center;
+      background: #111;
+      color: white;
+      padding-top: 100px;
+    }
+
+    .btn {
+      display: block;
+      margin: 10px auto;
+      padding: 12px 20px;
+      background: #ff9800;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    .stars {
+      font-size: 30px;
+      margin-top: 20px;
+      color: gold;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>⭐ Follow Us & Earn Stars</h1>
+
+  <!-- Instagram -->
+  <button class="btn" onclick="openInsta()">Follow on Instagram</button>
+
+  <!-- Facebook -->
+  <button class="btn" onclick="openFb()">Follow on Facebook</button>
+
+  <!-- Confirm -->
+  <button class="btn" onclick="addStars()">I followed ✔️</button>
+
+  <div class="stars" id="stars">Stars: 0 ⭐</div>
+
+  <script>
+    let stars = 0;
+
+    function openInsta() {
+      window.open("https://www.instagram.com/safadkhili03/?hl=en", "_blank");
+    }
+
+    function openFb() {
+      window.open("https://www.facebook.com/profile.php?id=61574894046695", "_blank");
+    }
+
+    function addStars() {
+      stars += 20;
+      document.getElementById("stars").innerText = "Stars: " + stars + " ⭐";
+    }
+  </script>
+
+</body>
+</html>

@@ -1,15 +1,16 @@
-// types/next-auth.d.ts
 import "next-auth";
-import { DefaultSession } from "next-auth";
 
 declare module "next-auth" {
   interface Session {
+    accessToken?: string;
+    provider?: string;
+    providerAccountId?: string;
     user: {
       id: string;
       role: string;
       restaurantId?: string;
       customerId?: string;
-      restaurantSlug?: string;  // This is optional (string | undefined)
+      restaurantSlug?: string;
       customerProfile?: {
         id: string;
         name: string;
@@ -27,6 +28,6 @@ declare module "next-auth" {
     role: string;
     restaurantId?: string;
     customerId?: string;
-    restaurantSlug?: string;  // This is optional (string | undefined)
+    restaurantSlug?: string;
   }
 }

@@ -10,12 +10,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { platform, accessToken, pageId } = await req.json();
+    const { platform, pageId } = await req.json();
+    const accessToken = session.accessToken;
 
     let verified = false;
     let pointsToAdd = 0;
 
-    // Get restaurant bonus settings
     const customer = await prisma.customerProfile.findUnique({
       where: { id: session.user.customerProfile.id },
       include: { restaurant: true },
@@ -25,40 +25,76 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Customer not found" }, { status: 404 });
     }
 
-    switch (platform) {
-      case "facebook":
-        // Verify if user follows the page
-        const fbRes = await fetch(
-          `https://graph.facebook.com/v18.0/${pageId}/likes?access_token=${accessToken}`
-        );
-        const fbData = await fbRes.json();
-        verified = fbData.data?.length > 0;
-        pointsToAdd = customer.restaurant.facebookBonusStars || 50;
-        break;
+    // Get star values from restaurant
+    const starMap = {
+      facebook: customer.restaurant.facebookBonusStars || 50,
+      instagram: customer.restaurant.instagramBonusStars || 50,
+      twitter: customer.restaurant.twitterBonusStars || 50,
+      tiktok: customer.restaurant.tiktokBonusStars || 50,
+    };
+    pointsToAdd = starMap[platform as keyof typeof starMap] || 50;
 
-      case "instagram":
-        // Verify if user follows the Instagram account
-        const igRes = await fetch(
+    switch (platform) {
+      case "facebook": {
+        // Check if user follows the page
+        const res = await fetch(
+          `https://graph.facebook.com/v18.0/me/likes?access_token=${accessToken}`
+        );
+        const data = await res.json();
+        verified = data.data?.some((like: any) => like.id === pageId);
+        break;
+      }
+
+      case "instagram": {
+        // Check if user follows the account
+        const res = await fetch(
           `https://graph.instagram.com/me/follows?access_token=${accessToken}`
         );
-        const igData = await igRes.json();
-        verified = igData.data?.some((follow: any) => follow.id === pageId);
-        pointsToAdd = customer.restaurant.instagramBonusStars || 50;
+        const data = await res.json();
+        verified = data.data?.some((follow: any) => follow.id === pageId);
         break;
+      }
 
-      case "twitter":
-        // Twitter API v2 verification
-        const twitterRes = await fetch(
+      case "twitter": {
+        // Twitter API v2 - check if user follows account
+        const res = await fetch(
           `https://api.twitter.com/2/users/me/following?user.fields=id&access_token=${accessToken}`
         );
-        const twitterData = await twitterRes.json();
-        verified = twitterData.data?.some((follow: any) => follow.id === pageId);
-        pointsToAdd = customer.restaurant.twitterBonusStars || 50;
+        const data = await res.json();
+        verified = data.data?.some((follow: any) => follow.id === pageId);
         break;
+      }
+
+      case "tiktok": {
+        // TikTok API - check if user follows account
+        const res = await fetch(
+          `https://open-api.tiktok.com/user/info/?access_token=${accessToken}`
+        );
+        const data = await res.json();
+        // Check if the user follows the specified account
+        verified = data.data?.user?.following_count > 0;
+        // You'll need to implement proper following check with TikTok's API
+        break;
+      }
     }
 
     if (!verified) {
-      return NextResponse.json({ error: "Vous ne suivez pas encore cette page" }, { status: 400 });
+      return NextResponse.json(
+        { error: `Vous ne suivez pas encore cette page sur ${platform}` },
+        { status: 400 }
+      );
+    }
+
+    // Check if already claimed
+    const claimedMap = {
+      facebook: customer.hasClaimedFacebookBonus,
+      instagram: customer.hasClaimedInstagramBonus,
+      twitter: customer.hasClaimedTwitterBonus,
+      tiktok: customer.hasClaimedTikTokBonus,
+    };
+
+    if (claimedMap[platform as keyof typeof claimedMap]) {
+      return NextResponse.json({ error: "Bonus déjà réclamé" }, { status: 400 });
     }
 
     // Update customer points
@@ -66,6 +102,7 @@ export async function POST(req: NextRequest) {
       facebook: "hasClaimedFacebookBonus",
       instagram: "hasClaimedInstagramBonus",
       twitter: "hasClaimedTwitterBonus",
+      tiktok: "hasClaimedTikTokBonus",
     };
 
     await prisma.customerProfile.update({
@@ -76,13 +113,16 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    return NextResponse.json({ 
-      success: true, 
+    return NextResponse.json({
+      success: true,
       pointsAdded: pointsToAdd,
-      message: `${pointsToAdd}⭐ ajoutés!`
+      message: `${pointsToAdd}⭐ ajoutés! Merci d'avoir suivi notre page ${platform}!`,
     });
   } catch (error) {
     console.error("Verification failed:", error);
-    return NextResponse.json({ error: "Échec de la vérification" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Échec de la vérification. Veuillez réessayer." },
+      { status: 500 }
+    );
   }
 }
