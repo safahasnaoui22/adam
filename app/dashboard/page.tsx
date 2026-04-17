@@ -56,9 +56,10 @@ export default async function DashboardPage() {
 
     // Get plan from subscription
     const plan = restaurant.subscription?.plan || SubscriptionPlan.FREE;
+    const accountStatus = restaurant.accountStatus as string;
 
     // Check account status
-    if (restaurant.accountStatus === AccountStatus.PENDING) {
+    if (accountStatus === "PENDING") {
         return (
             <div className="max-w-2xl mx-auto py-12 px-4">
                 <div className="bg-[#1e293b] shadow rounded-lg p-8 text-center">
@@ -80,7 +81,7 @@ export default async function DashboardPage() {
         );
     }
 
-    if (restaurant.accountStatus === AccountStatus.SUSPENDED) {
+    if (accountStatus === "SUSPENDED") {
         return (
             <div className="max-w-2xl mx-auto py-12 px-4">
                 <div className="bg-[#1e293b] shadow rounded-lg p-8 text-center">
@@ -122,6 +123,15 @@ export default async function DashboardPage() {
         { name: "QR Code", href: "/dashboard/qr-code", icon: "📱" },
         { name: "Demandes bonus", href: "/dashboard/bonus-requests", icon: "🎁" },
     ];
+
+    // Get plan display text
+    const getPlanText = () => {
+        if (plan === SubscriptionPlan.FREE) return "Gratuit";
+        if (plan === SubscriptionPlan.BASIC) return "Basic";
+        if (plan === SubscriptionPlan.PREMIUM) return "Premium";
+        if (plan === SubscriptionPlan.ENTERPRISE) return "Enterprise";
+        return "Gratuit";
+    };
 
     return (
         <div className="min-h-screen bg-[#0f172a]">
@@ -188,17 +198,15 @@ export default async function DashboardPage() {
                                     </div>
                                     <div className="flex space-x-4">
                                         <div className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                                            restaurant.accountStatus === AccountStatus.ACTIVE
+                                            accountStatus === "ACTIVE"
                                                 ? "bg-green-900 text-green-300"
                                                 : "bg-yellow-900 text-yellow-300"
                                         }`}>
-                                            {restaurant.accountStatus === AccountStatus.ACTIVE && "✓ Compte Actif"}
-                                            {restaurant.accountStatus === AccountStatus.PENDING && "⏳ En attente d'approbation"}
+                                            {accountStatus === "ACTIVE" && "✓ Compte Actif"}
+                                            {accountStatus === "PENDING" && "⏳ En attente d'approbation"}
                                         </div>
                                         <div className="px-3 py-1 bg-gray-700 text-[#fe5502] rounded-full text-sm font-semibold">
-                                            Plan {plan === SubscriptionPlan.FREE ? "Gratuit" : 
-                                                  plan === SubscriptionPlan.BASIC ? "Basic" : 
-                                                  plan === SubscriptionPlan.PREMIUM ? "Premium" : "Enterprise"}
+                                            Plan {getPlanText()}
                                         </div>
                                     </div>
                                 </div>
