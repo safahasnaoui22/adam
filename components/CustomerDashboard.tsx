@@ -62,14 +62,6 @@ export default function CustomerDashboard({
       claimed: customer.hasClaimedTwitterBonus,
       points: restaurant.twitterBonusStars || 50,
     },
-      {
-    id: "tiktok",
-    label: "Suivre sur TikTok",
-    url: restaurant.tiktokUrl,
-    claimed: customer.hasClaimedTikTokBonus,
-    points: restaurant.tiktokBonusStars || 50,
-    pageId: restaurant.tiktokPageId,
-  },
   ].filter(b => b.url && b.url.trim() !== "");
 
   const dinars = (customer.points / 10).toFixed(2);
@@ -223,29 +215,56 @@ export default function CustomerDashboard({
             </p>
           ) : (
             <div className="space-y-4">
-   {bonsais.map((bonus) => (
-  <div key={bonus.id}>
-    {!bonus.claimed ? (
-      <>
-        <a href={bonus.url} target="_blank" className="block w-full py-2 bg-[#fe5502] text-white rounded-lg">
-          {bonus.label}
-        </a>
-        <button
-          onClick={() => {
-            window.location.href = `/api/auth/signin/${bonus.id}?callbackUrl=${encodeURIComponent(
-              `/${restaurant.urlSlug}/dashboard?verify=${bonus.id}&pageId=${bonus.pageId}`
-            )}`;
-          }}
-          className="w-full py-2 border border-[#fe5502] text-[#fe5502] rounded-lg"
-        >
-          Vérifier et recevoir +{bonus.points}⭐
-        </button>
-      </>
-    ) : (
-      <p>✅ +{bonus.points}⭐ déjà reçus!</p>
-    )}
-  </div>
-))}
+              {bonuses.map((bonus) => (
+                <div key={bonus.id} className="border-b border-[#c6c9c8] last:border-0 pb-3 last:pb-0">
+                  {!bonus.claimed ? (
+                    <div className="space-y-2">
+                      {bonus.url && (
+                        <a
+                          href={bonus.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block w-full py-2 bg-[#fe5502] text-white rounded-lg text-center hover:bg-[#e0682e] transition-colors"
+                        >
+                          {bonus.label}
+                        </a>
+                      )}
+                      
+                      {/* Google Maps code input */}
+                      {bonus.id === "googleMaps" && (
+                        <div className="flex gap-2 mt-2">
+                          <input
+                            type="text"
+                            placeholder="Code unique du restaurant"
+                            value={googleCode}
+                            onChange={(e) => setGoogleCode(e.target.value)}
+                            className="flex-1 px-3 py-2 border border-[#c6c9c8] rounded-lg"
+                          />
+                          <button
+                            onClick={handleGoogleCodeVerify}
+                            disabled={verifying}
+                            className="px-4 py-2 border border-[#fe5502] text-[#fe5502] rounded-lg hover:bg-[#fe5502] hover:text-white transition-colors"
+                          >
+                            {verifying ? "..." : "Vérifier +⭐"}
+                          </button>
+                        </div>
+                      )}
+                      
+                      <button
+                        onClick={() => handleRequestBonus(bonus.id)}
+                        disabled={requestingBonus === bonus.id}
+                        className="w-full py-2 border border-[#fe5502] text-[#fe5502] rounded-lg hover:bg-[#fe5502] hover:text-white transition-colors"
+                      >
+                        {requestingBonus === bonus.id ? "Envoi..." : `J'ai ${bonus.label.toLowerCase()} (+${bonus.points}⭐)`}
+                      </button>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-green-600 text-center">
+                      ✅ +{bonus.points}⭐ déjà reçus pour {bonus.label.toLowerCase()} !
+                    </p>
+                  )}
+                </div>
+              ))}
             </div>
           )}
           {requestMessage && <p className="text-sm text-[#e0682e] mt-2">{requestMessage}</p>}
