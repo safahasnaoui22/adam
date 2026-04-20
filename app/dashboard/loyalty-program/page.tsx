@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner"; // optional, but we'll use simple alert for now
+import { toast } from "sonner"; 
 
 interface Reward {
   id: string;
@@ -164,15 +164,15 @@ export default function LoyaltyProgramPage() {
 
   return (
     <div className="max-w-4xl mx-auto py-8 px-4">
-      <h1 className="text-3xl font-bold text-[#282424] mb-2">Portefeuille de points</h1>
-      <p className="text-[#7f8489] mb-8">
+      <h1 className="text-3xl font-bold text-white mb-2">Portefeuille de points</h1>
+      <p className="text-gray-400 mb-8">
         Configurez les règles de gain de points et les paliers de récompenses.
       </p>
 
       {/* How it works */}
-      <div className="bg-white rounded-xl shadow p-6 mb-8">
-        <h2 className="text-xl font-semibold text-[#282424] mb-4">Comment ça marche</h2>
-        <div className="flex items-center space-x-4 text-sm text-[#7f8489]">
+      <div className="bg-[#0d1f3c] rounded-xl shadow p-6 mb-8 border border-[#1e3a5f]">
+        <h2 className="text-xl font-semibold text-white mb-4">Comment ça marche</h2>
+        <div className="flex items-center space-x-4 text-sm text-gray-400">
           <div className="flex-1 text-center">
             <div className="w-12 h-12 bg-[#ffd9b9] rounded-full flex items-center justify-center mx-auto mb-2">
               <span className="text-[#fe5502] text-xl">💰</span>
@@ -197,12 +197,12 @@ export default function LoyaltyProgramPage() {
       </div>
 
       {/* Conversion rules */}
-      <div className="bg-white rounded-xl shadow p-6 mb-8">
-        <h2 className="text-xl font-semibold text-[#282424] mb-4">Récompensez les clients avec des points</h2>
+      <div className="bg-[#0d1f3c] rounded-xl shadow p-6 mb-8 border border-[#1e3a5f]">
+        <h2 className="text-xl font-semibold text-white mb-4">Récompensez les clients avec des points</h2>
         <form onSubmit={handleUpdateProgram} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-medium text-[#282424] mb-1">
+              <label className="block text-sm font-medium text-gray-300 mb-1">
                 Palier de dépense *
               </label>
               <input
@@ -210,27 +210,27 @@ export default function LoyaltyProgramPage() {
                 step="0.01"
                 value={spendThreshold}
                 onChange={(e) => setSpendThreshold(parseFloat(e.target.value))}
-                className="w-full px-3 py-2 border border-[#c6c9c8] rounded-md focus:ring-[#fe5502] focus:border-[#fe5502]"
+                className="w-full px-3 py-2 border border-[#1e3a5f] rounded-md focus:ring-[#fe5502] focus:border-[#fe5502] bg-[#0a1628] text-white"
                 required
               />
-              <p className="text-xs text-[#7f8489] mt-1">Montant minimum d'achat pour gagner des points</p>
+              <p className="text-xs text-gray-500 mt-1">Montant minimum d'achat pour gagner des points</p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-[#282424] mb-1">
+              <label className="block text-sm font-medium text-gray-300 mb-1">
                 Points gagnés *
               </label>
               <input
                 type="number"
                 value={pointsEarned}
                 onChange={(e) => setPointsEarned(parseInt(e.target.value))}
-                className="w-full px-3 py-2 border border-[#c6c9c8] rounded-md focus:ring-[#fe5502] focus:border-[#fe5502]"
+                className="w-full px-3 py-2 border border-[#1e3a5f] rounded-md focus:ring-[#fe5502] focus:border-[#fe5502] bg-[#0a1628] text-white"
                 required
               />
-              <p className="text-xs text-[#7f8489] mt-1">Points attribués à chaque palier atteint</p>
+              <p className="text-xs text-gray-500 mt-1">Points attribués à chaque palier atteint</p>
             </div>
           </div>
-          <div className="bg-[#fdf9f4] p-4 rounded-md">
-            <p className="text-sm text-[#282424]">
+          <div className="bg-[#0a1628] p-4 rounded-md border border-[#1e3a5f]">
+            <p className="text-sm text-gray-300">
               <strong>Règle actuelle :</strong> Pour chaque {spendThreshold} DT dépensé → {pointsEarned} star(s) gagnés
             </p>
           </div>
@@ -238,7 +238,7 @@ export default function LoyaltyProgramPage() {
             <button
               type="submit"
               disabled={saving}
-              className="px-4 py-2 bg-[#fe5502] text-white rounded-md hover:bg-[#e0682e] disabled:opacity-50"
+              className="px-4 py-2 bg-[#fe5502] text-white rounded-md hover:bg-[#e0682e] disabled:opacity-50 transition-colors"
             >
               {saving ? "Enregistrement..." : "Enregistrer"}
             </button>
@@ -247,48 +247,48 @@ export default function LoyaltyProgramPage() {
       </div>
 
       {/* Rewards */}
-      <div className="bg-white rounded-xl shadow p-6">
+      <div className="bg-[#0d1f3c] rounded-xl shadow p-6 border border-[#1e3a5f]">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold text-[#282424]">Paliers de récompenses</h2>
+          <h2 className="text-xl font-semibold text-white">Paliers de récompenses</h2>
           <button
             onClick={() => setShowRewardForm(!showRewardForm)}
-            className="text-sm bg-[#fe5502] text-white px-3 py-1 rounded-md hover:bg-[#e0682e]"
+            className="text-sm bg-[#fe5502] text-white px-3 py-1 rounded-md hover:bg-[#e0682e] transition-colors"
           >
             + Ajouter une récompense
           </button>
         </div>
 
         {showRewardForm && (
-          <div className="border border-[#c6c9c8] rounded-lg p-4 mb-6 bg-[#fdf9f4]">
-            <h3 className="font-medium mb-3">Nouvelle récompense</h3>
+          <div className="border border-[#1e3a5f] rounded-lg p-4 mb-6 bg-[#0a1628]">
+            <h3 className="font-medium text-white mb-3">Nouvelle récompense</h3>
             <form onSubmit={handleCreateReward} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-[#282424]">Nom de la récompense *</label>
+                <label className="block text-sm font-medium text-gray-300">Nom de la récompense *</label>
                 <input
                   type="text"
                   value={newReward.name}
                   onChange={(e) => setNewReward({ ...newReward, name: e.target.value })}
-                  className="w-full px-3 py-2 border border-[#c6c9c8] rounded-md"
+                  className="w-full px-3 py-2 border border-[#1e3a5f] rounded-md bg-[#0a1628] text-white"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-[#282424]">Points requis *</label>
+                <label className="block text-sm font-medium text-gray-300">Points requis *</label>
                 <input
                   type="number"
                   value={newReward.pointsRequired}
                   onChange={(e) => setNewReward({ ...newReward, pointsRequired: parseInt(e.target.value) })}
-                  className="w-full px-3 py-2 border border-[#c6c9c8] rounded-md"
+                  className="w-full px-3 py-2 border border-[#1e3a5f] rounded-md bg-[#0a1628] text-white"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-[#282424]">Description (optionnel)</label>
+                <label className="block text-sm font-medium text-gray-300">Description (optionnel)</label>
                 <textarea
                   value={newReward.description}
                   onChange={(e) => setNewReward({ ...newReward, description: e.target.value })}
                   rows={2}
-                  className="w-full px-3 py-2 border border-[#c6c9c8] rounded-md"
+                  className="w-full px-3 py-2 border border-[#1e3a5f] rounded-md bg-[#0a1628] text-white"
                 />
               </div>
               <div className="flex items-center gap-2">
@@ -297,21 +297,22 @@ export default function LoyaltyProgramPage() {
                   checked={newReward.isActive}
                   onChange={(e) => setNewReward({ ...newReward, isActive: e.target.checked })}
                   id="reward-active"
+                  className="accent-[#fe5502]"
                 />
-                <label htmlFor="reward-active" className="text-sm">Actif</label>
+                <label htmlFor="reward-active" className="text-sm text-gray-300">Actif</label>
               </div>
               <div className="flex justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setShowRewardForm(false)}
-                  className="px-3 py-1 border border-[#c6c9c8] rounded-md"
+                  className="px-3 py-1 border border-[#1e3a5f] rounded-md text-gray-400 hover:bg-[#1e3a5f] hover:text-white transition-colors"
                 >
                   Annuler
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="px-3 py-1 bg-[#fe5502] text-white rounded-md hover:bg-[#e0682e]"
+                  className="px-3 py-1 bg-[#fe5502] text-white rounded-md hover:bg-[#e0682e] transition-colors"
                 >
                   Enregistrer
                 </button>
@@ -321,11 +322,11 @@ export default function LoyaltyProgramPage() {
         )}
 
         {rewards.length === 0 ? (
-          <p className="text-center text-[#7f8489] py-6">Aucune récompense configurée. Ajoutez-en une !</p>
+          <p className="text-center text-gray-400 py-6">Aucune récompense configurée. Ajoutez-en une !</p>
         ) : (
           <div className="space-y-3">
             {rewards.map((reward) => (
-              <div key={reward.id} className="border border-[#c6c9c8] rounded-lg p-4">
+              <div key={reward.id} className="border border-[#1e3a5f] rounded-lg p-4 bg-[#0a1628]">
                 {editingReward?.id === reward.id ? (
                   // Edit form
                   <div className="space-y-3">
@@ -333,18 +334,18 @@ export default function LoyaltyProgramPage() {
                       type="text"
                       value={editingReward.name}
                       onChange={(e) => setEditingReward({ ...editingReward, name: e.target.value })}
-                      className="w-full px-3 py-2 border rounded-md"
+                      className="w-full px-3 py-2 border border-[#1e3a5f] rounded-md bg-[#0a1628] text-white"
                     />
                     <input
                       type="number"
                       value={editingReward.pointsRequired}
                       onChange={(e) => setEditingReward({ ...editingReward, pointsRequired: parseInt(e.target.value) })}
-                      className="w-full px-3 py-2 border rounded-md"
+                      className="w-full px-3 py-2 border border-[#1e3a5f] rounded-md bg-[#0a1628] text-white"
                     />
                     <textarea
                       value={editingReward.description || ""}
                       onChange={(e) => setEditingReward({ ...editingReward, description: e.target.value })}
-                      className="w-full px-3 py-2 border rounded-md"
+                      className="w-full px-3 py-2 border border-[#1e3a5f] rounded-md bg-[#0a1628] text-white"
                       rows={2}
                     />
                     <div className="flex items-center gap-2">
@@ -353,20 +354,21 @@ export default function LoyaltyProgramPage() {
                         checked={editingReward.isActive}
                         onChange={(e) => setEditingReward({ ...editingReward, isActive: e.target.checked })}
                         id={`edit-active-${reward.id}`}
+                        className="accent-[#fe5502]"
                       />
-                      <label htmlFor={`edit-active-${reward.id}`}>Actif</label>
+                      <label htmlFor={`edit-active-${reward.id}`} className="text-sm text-gray-300">Actif</label>
                     </div>
                     <div className="flex justify-end gap-2">
                       <button
                         onClick={() => setEditingReward(null)}
-                        className="px-3 py-1 border rounded-md"
+                        className="px-3 py-1 border border-[#1e3a5f] rounded-md text-gray-400 hover:bg-[#1e3a5f] hover:text-white transition-colors"
                       >
                         Annuler
                       </button>
                       <button
                         onClick={() => handleUpdateReward(editingReward)}
                         disabled={saving}
-                        className="px-3 py-1 bg-[#fe5502] text-white rounded-md"
+                        className="px-3 py-1 bg-[#fe5502] text-white rounded-md hover:bg-[#e0682e] transition-colors"
                       >
                         Sauvegarder
                       </button>
@@ -377,26 +379,26 @@ export default function LoyaltyProgramPage() {
                   <div className="flex justify-between items-start">
                     <div>
                       <div className="flex items-center gap-2">
-                        <h3 className="font-semibold text-[#282424]">{reward.name}</h3>
+                        <h3 className="font-semibold text-white">{reward.name}</h3>
                         {!reward.isActive && (
-                          <span className="text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full">Inactif</span>
+                          <span className="text-xs bg-[#1e3a5f] text-gray-400 px-2 py-0.5 rounded-full">Inactif</span>
                         )}
                       </div>
-                      <p className="text-sm text-[#7f8489]">{reward.pointsRequired} points requis</p>
+                      <p className="text-sm text-gray-400">{reward.pointsRequired} points requis</p>
                       {reward.description && (
-                        <p className="text-sm text-[#7f8489] mt-1">{reward.description}</p>
+                        <p className="text-sm text-gray-500 mt-1">{reward.description}</p>
                       )}
                     </div>
                     <div className="flex gap-2">
                       <button
                         onClick={() => setEditingReward(reward)}
-                        className="text-[#fe5502] hover:text-[#e0682e]"
+                        className="text-[#fe5502] hover:text-[#e0682e] transition-colors"
                       >
                         Modifier
                       </button>
                       <button
                         onClick={() => handleDeleteReward(reward.id)}
-                        className="text-red-600 hover:text-red-800"
+                        className="text-red-500 hover:text-red-400 transition-colors"
                       >
                         Supprimer
                       </button>
