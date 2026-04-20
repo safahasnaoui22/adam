@@ -219,4 +219,4 @@ export default function RewardExchange() {
       )}
     </div>
   );
-}dashboard
+}
