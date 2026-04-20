@@ -16,7 +16,8 @@ export default function ClientDashboard() {
   const [refreshing, setRefreshing] = useState(false);
   const [showQR, setShowQR] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
-  const [activeTab, setActiveTab] = useState("rewards"); // "rewards" or "coupons"
+  const [activeTab, setActiveTab] = useState("rewards");
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
   useEffect(() => {
     // Get client info from localStorage
@@ -29,6 +30,16 @@ export default function ClientDashboard() {
     } else {
       router.push(`/client/login?restaurantId=${restaurantId}`);
     }
+
+    // Listen for beforeinstallprompt event for PWA
+    window.addEventListener("beforeinstallprompt", (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    });
+
+    return () => {
+      window.removeEventListener("beforeinstallprompt", () => {});
+    };
   }, [restaurantId, router]);
 
   const fetchClientData = async (clientId: string) => {
@@ -66,26 +77,30 @@ export default function ClientDashboard() {
     setTimeout(() => setRefreshing(false), 800);
   };
 
-  const handleAddToHomeScreen = () => {
-    // This will prompt the user to add to home screen on mobile
-    if (window.matchMedia('(display-mode: standalone)').matches) {
-      alert("L'application est déjà installée sur votre appareil!");
-      return;
-    }
-
-    // For iOS
-    if (navigator.userAgent.includes('iPhone') || navigator.userAgent.includes('iPad')) {
-      alert("Pour ajouter à l'écran d'accueil :\n1. Appuyez sur le bouton Partager\n2. Faites défiler vers le bas\n3. Appuyez sur 'Sur l'écran d'accueil'");
-    } 
-    // For Android/Chrome
-    else if ('beforeinstallprompt' in window) {
-      // @ts-ignore
-      window.deferredPrompt = event;
-      // @ts-ignore
-      window.deferredPrompt.prompt();
+  const handleAddToHomeScreen = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === "accepted") {
+        console.log("User accepted the install prompt");
+      }
+      setDeferredPrompt(null);
     } else {
-      alert("Pour ajouter à l'écran d'accueil : utilisez le menu du navigateur");
+      // Fallback instructions for iOS or browsers that don't support beforeinstallprompt
+      if (navigator.userAgent.includes('iPhone') || navigator.userAgent.includes('iPad')) {
+        alert("Pour ajouter à l'écran d'accueil :\n1. Appuyez sur le bouton Partager\n2. Faites défiler vers le bas\n3. Appuyez sur 'Sur l'écran d'accueil'");
+      } else {
+        alert("Utilisez 'Ajouter à l'écran d'accueil' dans le menu du navigateur");
+      }
     }
+  };
+
+  // Helper to get short ID (last 4 digits of customerId)
+  const getShortId = () => {
+    if (!client?.customerId) return "****";
+    const parts = client.customerId.split("-");
+    const lastPart = parts[parts.length - 1];
+    return lastPart.slice(-4);
   };
 
   if (loading) {
@@ -115,36 +130,32 @@ export default function ClientDashboard() {
     );
   }
 
-  // Mock rewards data (will come from admin configuration later)
-  const rewards = [
-    { id: 1, name: "Café", stars: 100, icon: "☕", description: "Un café offert" },
-    { id: 2, name: "Gâteau", stars: 200, icon: "🍰", description: "Une part de gâteau" },
-    { id: 3, name: "Petit-déjeuner", stars: 300, icon: "🥐", description: "Petit-déjeuner complet" },
-    { id: 4, name: "Déjeuner", stars: 500, icon: "🍝", description: "Plat du jour offert" },
-  ];
+  // Use real rewards from restaurant loyalty program if available, otherwise fallback to mock
+  const rewards = restaurant.loyaltyProgram?.rewards?.length
+    ? restaurant.loyaltyProgram.rewards.map((r: any) => ({
+        id: r.id,
+        name: r.name,
+        stars: r.pointsRequired,
+        icon: r.icon || "🎁",
+        description: r.description || ""
+      }))
+    : [
+        { id: 1, name: "Café", stars: 100, icon: "☕", description: "Un café offert" },
+        { id: 2, name: "Gâteau", stars: 200, icon: "🍰", description: "Une part de gâteau" },
+        { id: 3, name: "Petit-déjeuner", stars: 300, icon: "🥐", description: "Petit-déjeuner complet" },
+        { id: 4, name: "Déjeuner", stars: 500, icon: "🍝", description: "Plat du jour offert" },
+      ];
 
-  // Mock coupons data
-  const coupons = [
+  const coupons = restaurant.coupons || [
     { id: 1, name: "-20%", description: "Sur votre prochain café", validUntil: "30/06/2026" },
     { id: 2, name: "1+1", description: "Un gâteau acheté = un offert", validUntil: "15/07/2026" },
   ];
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Status Bar for mobile */}
-      <div className="bg-white px-4 py-2 flex justify-between items-center text-xs text-gray-600 border-b">
-        <span>9:41</span>
-        <span className="flex items-center space-x-1">
-          <span>📶</span>
-          <span>📶</span>
-          <span>🔋 98%</span>
-        </span>
-      </div>
-
-      {/* Main Content - Scrollable */}
+      {/* Main Content */}
       <div className="max-w-md mx-auto bg-white min-h-screen shadow-lg relative">
-        
-        {/* Header with Refresh, Logo, Notification */}
+        {/* Header with Refresh and Logo */}
         <div className="px-4 py-3 flex items-center justify-between border-b">
           <button 
             onClick={handleRefresh}
@@ -155,6 +166,7 @@ export default function ClientDashboard() {
             </svg>
           </button>
           
+          {/* Restaurant Logo */}
           <div className="flex-1 flex justify-center">
             {restaurant.logo ? (
               <Image 
@@ -175,16 +187,13 @@ export default function ClientDashboard() {
             <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
             </svg>
-            {client.notifications > 0 && (
-              <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
-            )}
           </button>
         </div>
 
-        {/* Client Info Section */}
+        {/* Client Info with Short ID */}
         <div className="px-4 py-6 text-center border-b">
           <h2 className="text-2xl font-bold text-gray-800">{client.name}</h2>
-          <p className="text-sm text-gray-500 mt-1">ID: {client.customerId || "CUST001"}</p>
+          <p className="text-sm text-gray-500 mt-1">ID: #{getShortId()}</p>
           <p className="text-gray-600 mt-3 italic">
             Bonjour {client.name}, comment allez-vous aujourd'hui ?
           </p>
@@ -207,11 +216,9 @@ export default function ClientDashboard() {
             <span>Mon Code QR</span>
           </button>
 
-          {/* QR Code Popup */}
           {showQR && (
             <div className="mt-4 p-4 bg-gray-50 rounded-xl text-center">
               <div className="w-48 h-48 mx-auto bg-white p-2 rounded-lg shadow-inner flex items-center justify-center">
-                {/* This would be the actual QR code */}
                 <div className="w-40 h-40 bg-gradient-to-r from-gray-800 to-gray-600 flex items-center justify-center text-white text-xs">
                   QR Code
                   <br />
@@ -223,11 +230,9 @@ export default function ClientDashboard() {
           )}
         </div>
 
-        {/* Stars Progress Section */}
+        {/* Stars Progress */}
         <div className="px-4 py-4 border-b">
           <h3 className="font-semibold text-gray-700 mb-3">Vos étoiles</h3>
-          
-          {/* Progress Bar */}
           <div className="mb-4">
             <div className="flex justify-between text-sm mb-1">
               <span className="text-gray-600">Progression</span>
@@ -241,9 +246,8 @@ export default function ClientDashboard() {
             </div>
           </div>
 
-          {/* Rewards Grid */}
           <div className="grid grid-cols-4 gap-2 mt-4">
-            {rewards.map((reward) => (
+            {rewards.map((reward: any) => (
               <div key={reward.id} className="text-center">
                 <div className={`w-full aspect-square rounded-lg flex flex-col items-center justify-center p-1 ${
                   (client.points || 0) >= reward.stars 
@@ -259,7 +263,7 @@ export default function ClientDashboard() {
           </div>
         </div>
 
-        {/* Tabs: Récompenses & Coupons */}
+        {/* Tabs */}
         <div className="px-4 py-2 border-b">
           <div className="flex space-x-4">
             <button
@@ -303,7 +307,7 @@ export default function ClientDashboard() {
                 </button>
               </div>
               <p className="text-sm text-gray-600 mt-4">Autres récompenses :</p>
-              {rewards.slice(1).map((reward) => (
+              {rewards.slice(1).map((reward: any) => (
                 <div key={reward.id} className="bg-gray-50 p-3 rounded-lg flex items-center justify-between opacity-50">
                   <div className="flex items-center space-x-3">
                     <span className="text-2xl">{reward.icon}</span>
@@ -319,7 +323,7 @@ export default function ClientDashboard() {
           ) : (
             <div className="space-y-3">
               {coupons.length > 0 ? (
-                coupons.map((coupon) => (
+                coupons.map((coupon: any) => (
                   <div key={coupon.id} className="border border-dashed border-indigo-300 bg-indigo-50 p-3 rounded-lg flex items-center justify-between">
                     <div>
                       <p className="font-bold text-indigo-700">{coupon.name}</p>
@@ -338,7 +342,7 @@ export default function ClientDashboard() {
           )}
         </div>
 
-        {/* About Restaurant Button */}
+        {/* About Restaurant */}
         <div className="px-4 py-2 border-t">
           <button
             onClick={() => setShowAbout(!showAbout)}
@@ -348,12 +352,9 @@ export default function ClientDashboard() {
             <span>À propos de {restaurant.name}</span>
           </button>
 
-          {/* About Section */}
           {showAbout && (
             <div className="mt-4 p-4 bg-gray-50 rounded-xl space-y-3">
-              {restaurant.description && (
-                <p className="text-sm text-gray-700">{restaurant.description}</p>
-              )}
+              {restaurant.description && <p className="text-sm text-gray-700">{restaurant.description}</p>}
               {restaurant.address && (
                 <div className="flex items-start space-x-2">
                   <span className="text-gray-500">📍</span>
@@ -363,17 +364,13 @@ export default function ClientDashboard() {
               {restaurant.phoneNumber && (
                 <div className="flex items-center space-x-2">
                   <span className="text-gray-500">📞</span>
-                  <a href={`tel:${restaurant.phoneNumber}`} className="text-sm text-indigo-600">
-                    {restaurant.phoneNumber}
-                  </a>
+                  <a href={`tel:${restaurant.phoneNumber}`} className="text-sm text-indigo-600">{restaurant.phoneNumber}</a>
                 </div>
               )}
               {restaurant.email && (
                 <div className="flex items-center space-x-2">
                   <span className="text-gray-500">✉️</span>
-                  <a href={`mailto:${restaurant.email}`} className="text-sm text-indigo-600">
-                    {restaurant.email}
-                  </a>
+                  <a href={`mailto:${restaurant.email}`} className="text-sm text-indigo-600">{restaurant.email}</a>
                 </div>
               )}
               {restaurant.openingHours && (
@@ -414,9 +411,6 @@ export default function ClientDashboard() {
             Powered by adam · Mentions légales
           </p>
         </div>
-
-        {/* Bottom Safe Area for iOS */}
-        <div className="h-8 bg-gray-50"></div>
       </div>
     </div>
   );
