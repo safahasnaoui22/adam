@@ -5,6 +5,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { authOptions } from "../lib/auth";
 import { AccountStatus, SubscriptionPlan } from "@prisma/client";
+import RewardExchange from "@/components/RewardExchange";
 
 async function getRestaurantData(userId: string) {
     const user = await prisma.user.findUnique({
@@ -133,6 +134,14 @@ export default async function DashboardPage() {
 
     return (
         <div className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <div className="lg:col-span-2">
+    {/* Existing welcome header and other content? Actually we want the card at top right, so we'll restructure */}
+  </div>
+  <div>
+    <RewardExchange />
+  </div>
+</div>
             {/* Status and Plan Banner */}
             <div className="bg-[#0d1f3c] shadow sm:rounded-lg border border-[#1e3a5f]">
                 <div className="px-4 py-5 sm:p-6">

@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EVENTIX — Billetterie Événementielle</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Outfit:wght@300;400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+
+:root {
+  --white: #ffffff;
+  --off-white: #f7f5f0;
+  --cream: #f0ebe0;
+  --ink: #0f0e0c;
+  --ink2: #1e1c18;
+  --slate: #3d3a33;
+  --muted: #8a8378;
+  --line: #e2ddd4;
+  --amber: #e8820c;
+  --amber-light: #fdf3e3;
+  --amber-dark: #b8620a;
+  --navy: #1a3a6e;
+  --r: 14px;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+body {
+  background: var(--white);
+  color: var(--ink);
+  font-family: 'Outfit', sans-serif;
+  overflow-x: hidden;
+  cursor: none;
+}
+
+/* ── CURSOR ── */
+.cur { position:fixed; width:10px; height:10px; background:var(--amber); border-radius:50%; pointer-events:none; z-index:9999; transform:translate(-50%,-50%); transition:width .2s,height .2s,background .2s; }
+.cur-ring { position:fixed; width:36px; height:36px; border:1.5px solid var(--amber); border-radius:50%; pointer-events:none; z-index:9998; transform:translate(-50%,-50%); transition:width .35s var(--ease),height .35s var(--ease); }
+
+/* ── NAV ── */
+nav {
+  position:fixed; top:0; left:0; right:0; z-index:200;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:0 60px; height:76px;
+  background:rgba(255,255,255,0.92);
+  backdrop-filter:blur(20px) saturate(180%);
+  border-bottom:1px solid var(--line);
+  transition:box-shadow .3s;
+}
+nav.scrolled { box-shadow:0 4px 40px rgba(0,0,0,0.08); }
+
+.nav-logo {
+  font-family:'Syne',sans-serif; font-size:22px; font-weight:800;
+  letter-spacing:3px; text-transform:uppercase;
+  color:var(--ink); text-decoration:none;
+  display:flex; align-items:center; gap:8px;
+}
+.logo-dot { width:8px; height:8px; background:var(--amber); border-radius:50%; animation:breathe 2.5s ease-in-out infinite; }
+@keyframes breathe { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.5);opacity:.7} }
+
+.nav-links { display:flex; align-items:center; gap:40px; list-style:none; }
+.nav-links a {
+  font-size:13px; font-weight:500; letter-spacing:.5px;
+  color:var(--slate); text-decoration:none;
+  position:relative; padding-bottom:3px; transition:color .3s;
+}
+.nav-links a::after { content:''; position:absolute; bottom:0; left:0; width:0; height:1.5px; background:var(--amber); transition:width .35s var(--ease); }
+.nav-links a:hover { color:var(--ink); }
+.nav-links a:hover::after { width:100%; }
+
+.nav-btn {
+  background:var(--ink) !important; color:var(--white) !important;
+  padding:11px 28px; border-radius:50px;
+  font-weight:600 !important; font-size:13px !important; letter-spacing:.5px !important;
+  transition:background .3s,transform .2s !important;
+}
+.nav-btn::after { display:none !important; }
+.nav-btn:hover { background:var(--amber) !important; transform:translateY(-1px); }
+
+/* ══════════════════════════
+   HERO — VIDEO
+══════════════════════════ */
+.hero {
+  position:relative; width:100%; height:100vh; min-height:700px;
+  overflow:hidden; display:flex; align-items:flex-end;
+}
+
+.hero-video-wrap {
+  position:absolute; inset:0; z-index:0;
+}
+/* Fallback gradient background (shows when video loads/fails) */
+.hero-video-wrap {
+  background: linear-gradient(135deg, #0d1b3e 0%, #1a3a6e 30%, #2c1810 70%, #0d0d0d 100%);
+}
+.hero-video-wrap video {
+  width:100%; height:100%;
+  object-fit:cover;
+  filter:brightness(0.5) saturate(1.15);
+}
+
+.hero-ov-bottom {
+  position:absolute; bottom:0; left:0; right:0; height:70%;
+  z-index:3;
+  background:linear-gradient(0deg,rgba(15,14,12,.96) 0%,rgba(15,14,12,.35) 60%,transparent 100%);
+}
+.hero-ov-left {
+  position:absolute; top:0; left:0; bottom:0; width:55%;
+  z-index:3;
+  background:linear-gradient(90deg,rgba(15,14,12,.55) 0%,transparent 100%);
+}
+
+.hero-inner {
+  position:relative; z-index:10; width:100%;
+  padding:0 60px 80px;
+  display:flex; align-items:flex-end; justify-content:space-between; gap:48px;
+}
+
+.hero-left { max-width:720px; }
+
+.hero-kicker {
+  display:inline-flex; align-items:center; gap:10px;
+  background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.2);
+  backdrop-filter:blur(8px);
+  border-radius:30px; padding:7px 18px;
+  font-size:11px; font-weight:600; letter-spacing:2.5px; text-transform:uppercase;
+  color:rgba(255,255,255,.9); margin-bottom:28px;
+  opacity:0; transform:translateY(16px);
+  animation:up .7s .1s var(--ease) forwards;
+}
+.kicker-live { width:7px; height:7px; background:var(--amber); border-radius:50%; animation:breathe 1.5s infinite; }
+
+.hero-title {
+  font-family:'Playfair Display',serif;
+  font-size:clamp(58px,7.5vw,112px); font-weight:900; line-height:.95;
+  color:#fff; letter-spacing:-1px;
+  opacity:0; transform:translateY(30px);
+  animation:up .9s .25s var(--ease) forwards;
+}
+.hero-title em { font-style:italic; color:var(--amber); }
+
+.hero-sub {
+  margin-top:24px; font-size:17px; font-weight:300; line-height:1.65;
+  color:rgba(255,255,255,.62); max-width:480px;
+  opacity:0; transform:translateY(20px);
+  animation:up .8s .4s var(--ease) forwards;
+}
+.hero-sub strong { color:rgba(255,255,255,.9); font-weight:500; }
+
+.hero-actions {
+  display:flex; align-items:center; gap:16px; margin-top:40px;
+  opacity:0; transform:translateY(20px);
+  animation:up .8s .55s var(--ease) forwards;
+}
+
+.btn-amber {
+  display:inline-flex; align-items:center; gap:10px;
+  background:var(--amber); color:#fff;
+  padding:16px 36px; border-radius:50px;
+  font-size:15px; font-weight:700; text-decoration:none;
+  transition:background .25s,transform .2s,box-shadow .3s;
+}
+.btn-amber:hover { background:var(--amber-dark); transform:translateY(-2px); box-shadow:0 12px 40px rgba(232,130,12,.45); }
+
+.btn-ghost-white {
+  display:inline-flex; align-items:center; gap:10px;
+  color:rgba(255,255,255,.85); border:1px solid rgba(255,255,255,.25);
+  padding:16px 28px; border-radius:50px;
+  font-size:15px; font-weight:500; text-decoration:none;
+  backdrop-filter:blur(8px); background:rgba(255,255,255,.07);
+  transition:border-color .3s,background .3s;
+}
+.btn-ghost-white:hover { border-color:rgba(255,255,255,.5); background:rgba(255,255,255,.13); }
+
+/* Stats card */
+.hero-stats-card {
+  flex-shrink:0;
+  background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.15);
+  backdrop-filter:blur(20px) saturate(180%);
+  border-radius:20px; padding:32px 36px;
+  display:flex; flex-direction:column; gap:28px; min-width:240px;
+  opacity:0; transform:translateX(30px);
+  animation:fromRight .9s .7s var(--ease) forwards;
+}
+.hs-num {
+  font-family:'Syne',sans-serif; font-size:44px; font-weight:800;
+  color:#fff; line-height:1; letter-spacing:-1px;
+}
+.hs-num .accent { color:var(--amber); }
+.hs-label { font-size:12px; color:rgba(255,255,255,.5); letter-spacing:1.5px; text-transform:uppercase; margin-top:4px; }
+.hs-div { height:1px; background:rgba(255,255,255,.1); }
+
+/* Scroll hint */
+.scroll-hint {
+  position:absolute; bottom:28px; left:50%; transform:translateX(-50%);
+  z-index:10; display:flex; flex-direction:column; align-items:center; gap:8px;
+  opacity:0; animation:up .6s 1.2s var(--ease) forwards;
+}
+.scroll-hint span { font-size:10px; letter-spacing:3px; text-transform:uppercase; color:rgba(255,255,255,.4); }
+.scroll-mouse { width:24px; height:38px; border:1.5px solid rgba(255,255,255,.3); border-radius:12px; position:relative; }
+.scroll-mouse::after {
+  content:''; position:absolute; top:7px; left:50%; transform:translateX(-50%);
+  width:4px; height:8px; background:rgba(255,255,255,.6); border-radius:2px;
+  animation:sdot 1.8s infinite;
+}
+@keyframes sdot { 0%{top:7px;opacity:1} 100%{top:20px;opacity:0} }
+
+@keyframes up { to { opacity:1; transform:translateY(0); } }
+@keyframes fromRight { to { opacity:1; transform:translateX(0); } }
+
+/* ── STRIP ── */
+.strip { background:var(--ink); color:var(--white); padding:18px 0; overflow:hidden; }
+.strip-track { display:flex; animation:marquee 22s linear infinite; white-space:nowrap; }
+.strip-item {
+  display:inline-flex; align-items:center; gap:20px;
+  padding:0 40px; font-family:'Syne',sans-serif;
+  font-size:13px; letter-spacing:3px; text-transform:uppercase;
+}
+.strip-dot { width:5px; height:5px; background:var(--amber); border-radius:50%; }
+@keyframes marquee { to { transform:translateX(-50%); } }
+
+/* ── EVENTS SECTION ── */
+.events-section { padding:110px 60px; background:var(--white); }
+
+.sec-header { display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:64px; }
+.sec-eyebrow { font-size:11px; font-weight:700; letter-spacing:3px; text-transform:uppercase; color:var(--amber); margin-bottom:10px; }
+.sec-title { font-family:'Playfair Display',serif; font-size:clamp(42px,5vw,64px); font-weight:900; line-height:1; color:var(--ink); }
+.sec-title em { font-style:italic; color:var(--amber); }
+
+.link-all {
+  display:flex; align-items:center; gap:8px;
+  color:var(--slate); font-size:13px; font-weight:600;
+  letter-spacing:.5px; text-decoration:none;
+  transition:color .3s; margin-bottom:4px;
+}
+.link-all svg { transition:transform .3s; }
+.link-all:hover { color:var(--amber); }
+.link-all:hover svg { transform:translateX(5px); }
+
+.events-grid { display:grid; grid-template-columns:1.35fr 1fr 1fr; gap:20px; }
+
+.ev-card {
+  border-radius:20px; overflow:hidden;
+  border:1px solid var(--line); background:var(--white);
+  transition:transform .45s var(--ease),box-shadow .45s var(--ease),border-color .3s;
+  opacity:0; transform:translateY(36px); cursor:none;
+}
+.ev-card.visible { animation:up .7s var(--ease) forwards; }
+.ev-card:nth-child(2) { animation-delay:.1s; }
+.ev-card:nth-child(3) { animation-delay:.2s; }
+.ev-card:hover { transform:translateY(-8px); box-shadow:0 24px 60px rgba(0,0,0,.12); border-color:transparent; }
+
+.ev-img { width:100%; overflow:hidden; position:relative; }
+.ev-card.feat .ev-img { height:300px; }
+.ev-card:not(.feat) .ev-img { height:200px; }
+
+.ev-img-inner {
+  width:100%; height:100%;
+  transition:transform .6s var(--ease);
+  display:flex; align-items:center; justify-content:center; font-size:80px;
+}
+.ev-card:hover .ev-img-inner { transform:scale(1.06); }
+
+.ev-cat {
+  position:absolute; top:16px; left:16px;
+  background:rgba(255,255,255,.92); backdrop-filter:blur(8px);
+  border-radius:30px; padding:5px 14px;
+  font-size:11px; font-weight:700; letter-spacing:1.5px;
+  text-transform:uppercase; color:var(--ink);
+}
+.ev-date-pill {
+  position:absolute; top:16px; right:16px;
+  background:var(--amber); color:#fff;
+  border-radius:12px; padding:8px 14px; text-align:center; line-height:1.1;
+}
+.ev-date-pill .day { font-family:'Syne',sans-serif; font-size:22px; font-weight:800; display:block; }
+.ev-date-pill .mon { font-size:10px; font-weight:700; letter-spacing:1px; }
+
+.ev-body { padding:24px; }
+.ev-title {
+  font-family:'Playfair Display',serif; font-size:22px; font-weight:700;
+  margin-bottom:8px; line-height:1.2; color:var(--ink);
+}
+.ev-card.feat .ev-title { font-size:26px; }
+.ev-loc { font-size:13px; color:var(--muted); display:flex; align-items:center; gap:6px; }
+
+.ev-foot {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:20px 24px; border-top:1px solid var(--line);
+}
+.ev-price-lbl { font-size:11px; color:var(--muted); margin-bottom:2px; }
+.ev-price { font-family:'Syne',sans-serif; font-size:26px; font-weight:800; color:var(--ink); }
+.ev-price sup { font-size:14px; color:var(--muted); font-family:'Outfit',sans-serif; font-weight:400; }
+
+.btn-book {
+  background:var(--ink); color:#fff; border:none;
+  padding:11px 22px; border-radius:30px;
+  font-family:'Outfit',sans-serif; font-size:13px; font-weight:700; cursor:none;
+  display:flex; align-items:center; gap:7px;
+  transition:background .3s,transform .2s;
+}
+.btn-book:hover { background:var(--amber); transform:scale(1.03); }
+
+/* ── HOW IT WORKS ── */
+.how-section {
+  padding:110px 60px; background:var(--off-white);
+  position:relative; overflow:hidden;
+}
+.how-section::before {
+  content:'HOW'; position:absolute; right:-40px; top:50%; transform:translateY(-50%);
+  font-family:'Syne',sans-serif; font-size:280px; font-weight:800;
+  color:rgba(0,0,0,.03); line-height:1; pointer-events:none;
+}
+
+.how-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:2px; margin-top:72px; }
+
+.how-card {
+  background:var(--white); padding:48px 36px;
+  position:relative; overflow:hidden; transition:background .3s;
+  opacity:0; transform:translateY(28px);
+}
+.how-card:first-child { border-radius:20px 0 0 20px; }
+.how-card:last-child  { border-radius:0 20px 20px 0; }
+.how-card.visible { animation:up .65s var(--ease) forwards; }
+.how-card:nth-child(2) { animation-delay:.1s; }
+.how-card:nth-child(3) { animation-delay:.2s; }
+.how-card:nth-child(4) { animation-delay:.3s; }
+.how-card:hover { background:var(--amber-light); }
+
+.how-num {
+  position:absolute; top:24px; right:24px;
+  font-family:'Syne',sans-serif; font-size:72px; font-weight:800;
+  color:rgba(0,0,0,.05); line-height:1; transition:color .3s;
+}
+.how-card:hover .how-num { color:rgba(232,130,12,.1); }
+
+.how-icon {
+  width:60px; height:60px; background:var(--amber-light);
+  border-radius:18px; display:flex; align-items:center; justify-content:center;
+  font-size:28px; margin-bottom:28px; transition:background .3s,transform .3s;
+}
+.how-card:hover .how-icon { background:var(--amber); transform:scale(1.05) rotate(-3deg); }
+
+.how-title { font-family:'Syne',sans-serif; font-size:20px; font-weight:700; margin-bottom:10px; color:var(--ink); }
+.how-desc { font-size:14px; color:var(--muted); line-height:1.75; }
+
+/* ── FEATURED BANNER ── */
+.feat-section { padding:0 60px 110px; }
+
+.feat-banner {
+  border-radius:28px; overflow:hidden;
+  position:relative; min-height:520px;
+  display:flex; align-items:center;
+}
+.feat-bg {
+  position:absolute; inset:0;
+  background:linear-gradient(120deg,#0b1e4a 0%,#1a3a7e 40%,#2a1e60 70%,#0d0d0d 100%);
+}
+.feat-bg::after {
+  content:''; position:absolute; inset:0;
+  background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/svg%3E");
+}
+.feat-inner {
+  position:relative; z-index:2;
+  display:flex; align-items:center; justify-content:space-between;
+  gap:60px; padding:72px; width:100%;
+}
+.feat-badge {
+  display:inline-flex; align-items:center; gap:8px;
+  background:rgba(232,130,12,.2); border:1px solid rgba(232,130,12,.4);
+  border-radius:30px; padding:6px 16px;
+  font-size:11px; font-weight:700; letter-spacing:2px; text-transform:uppercase;
+  color:var(--amber); margin-bottom:24px;
+}
+.feat-title {
+  font-family:'Playfair Display',serif;
+  font-size:72px; font-weight:900; line-height:.95;
+  color:#fff; letter-spacing:-1px; margin-bottom:20px;
+}
+.feat-title em { font-style:italic; color:var(--amber); }
+.feat-desc { font-size:16px; color:rgba(255,255,255,.6); line-height:1.7; max-width:420px; margin-bottom:36px; }
+.feat-chips { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:40px; }
+.feat-chip {
+  display:flex; align-items:center; gap:8px;
+  background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.14);
+  border-radius:30px; padding:8px 16px;
+  font-size:13px; color:rgba(255,255,255,.8); font-weight:500;
+}
+.feat-visual {
+  flex-shrink:0; width:380px; height:380px;
+  background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12);
+  border-radius:24px; display:flex; align-items:center; justify-content:center;
+  font-size:130px; animation:float 7s ease-in-out infinite;
+  position:relative; overflow:hidden;
+}
+.feat-visual::before {
+  content:''; position:absolute; inset:0;
+  background:radial-gradient(circle at 60% 40%,rgba(232,130,12,.12),transparent 65%);
+}
+@keyframes float { 0%,100%{transform:translateY(0) rotate(-1deg)} 50%{transform:translateY(-16px) rotate(1deg)} }
+
+/* ── TESTIMONIALS ── */
+.trust-section { padding:110px 60px; background:var(--cream); }
+.trust-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:24px; margin-top:64px; }
+
+.trust-card {
+  background:var(--white); border-radius:20px; padding:36px;
+  border:1px solid var(--line);
+  opacity:0; transform:translateY(28px); transition:box-shadow .4s;
+}
+.trust-card.visible { animation:up .65s var(--ease) forwards; }
+.trust-card:nth-child(2) { animation-delay:.1s; }
+.trust-card:nth-child(3) { animation-delay:.2s; }
+.trust-card:hover { box-shadow:0 16px 48px rgba(0,0,0,.08); }
+
+.trust-stars { color:var(--amber); font-size:18px; letter-spacing:3px; margin-bottom:16px; }
+.trust-quote { font-size:15px; color:var(--slate); line-height:1.75; margin-bottom:24px; font-style:italic; }
+.trust-author { display:flex; align-items:center; gap:14px; }
+.trust-av {
+  width:44px; height:44px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:16px; font-weight:700; font-family:'Syne',sans-serif;
+  background:var(--amber-light); color:var(--amber);
+}
+.trust-name { font-weight:700; font-size:14px; color:var(--ink); }
+.trust-role { font-size:12px; color:var(--muted); }
+
+/* ── FAQ ── */
+.faq-section { padding:110px 60px; background:var(--white); }
+.faq-layout { display:grid; grid-template-columns:1fr 1.4fr; gap:80px; align-items:start; margin-top:64px; }
+.faq-sticky { position:sticky; top:100px; }
+.faq-sticky-title {
+  font-family:'Playfair Display',serif; font-size:48px; font-weight:900;
+  line-height:1.05; margin-bottom:16px;
+}
+.faq-sticky-title em { font-style:italic; color:var(--amber); }
+.faq-sticky-sub { font-size:15px; color:var(--muted); line-height:1.7; margin-bottom:32px; }
+.btn-support {
+  display:inline-flex; align-items:center; gap:10px;
+  background:var(--ink); color:#fff;
+  padding:14px 28px; border-radius:50px;
+  font-size:14px; font-weight:700; text-decoration:none;
+  transition:background .3s,transform .2s;
+}
+.btn-support:hover { background:var(--amber); transform:translateY(-2px); }
+
+.faq-list { display:flex; flex-direction:column; gap:4px; }
+.faq-item {
+  background:var(--off-white); border-radius:14px; overflow:hidden;
+  border:1px solid transparent; transition:border-color .3s;
+}
+.faq-item:hover { border-color:var(--line); }
+.faq-item.open { background:var(--white); border-color:var(--amber); }
+
+.faq-q {
+  width:100%; display:flex; align-items:center; justify-content:space-between; gap:16px;
+  padding:22px 28px; background:none; border:none;
+  font-family:'Outfit',sans-serif; font-size:15px; font-weight:600; color:var(--ink);
+  text-align:left; cursor:none;
+}
+.faq-ico {
+  width:30px; height:30px; flex-shrink:0; background:var(--line); border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:20px; color:var(--slate); line-height:1;
+  transition:background .3s,transform .4s,color .3s;
+}
+.faq-item.open .faq-ico { background:var(--amber); color:#fff; transform:rotate(45deg); }
+.faq-a {
+  max-height:0; overflow:hidden;
+  font-size:14px; color:var(--muted); line-height:1.75;
+  padding:0 28px;
+  transition:max-height .5s var(--ease),padding .3s;
+}
+.faq-item.open .faq-a { max-height:200px; padding:0 28px 22px; }
+
+/* ── NEWSLETTER ── */
+.nl-section { padding:0 60px 110px; }
+.nl-box {
+  background:var(--ink); color:var(--white); border-radius:28px; padding:80px;
+  display:grid; grid-template-columns:1fr 1fr; gap:80px; align-items:center;
+  position:relative; overflow:hidden;
+}
+.nl-box::before {
+  content:''; position:absolute; bottom:-100px; right:-100px;
+  width:500px; height:500px;
+  background:radial-gradient(circle,rgba(232,130,12,.12),transparent 65%);
+  pointer-events:none;
+}
+.nl-title { font-family:'Playfair Display',serif; font-size:52px; font-weight:900; line-height:1; margin-bottom:12px; }
+.nl-title em { font-style:italic; color:var(--amber); }
+.nl-sub { font-size:15px; color:rgba(255,255,255,.55); line-height:1.7; }
+.nl-form { display:flex; flex-direction:column; gap:12px; }
+.nl-input {
+  background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.12);
+  border-radius:12px; padding:16px 22px;
+  font-family:'Outfit',sans-serif; font-size:15px; color:var(--white); outline:none;
+  transition:border-color .3s;
+}
+.nl-input::placeholder { color:rgba(255,255,255,.35); }
+.nl-input:focus { border-color:var(--amber); }
+.nl-btn {
+  background:var(--amber); color:#fff; border:none;
+  padding:16px; border-radius:12px;
+  font-family:'Outfit',sans-serif; font-size:15px; font-weight:700; cursor:none;
+  transition:background .3s,transform .2s,box-shadow .3s;
+}
+.nl-btn:hover { background:var(--amber-dark); transform:translateY(-2px); box-shadow:0 12px 30px rgba(232,130,12,.35); }
+
+/* ── FOOTER ── */
+footer {
+  background:var(--ink); color:var(--white);
+  padding:72px 60px 40px;
+  border-top:1px solid rgba(255,255,255,.06);
+}
+.footer-top {
+  display:grid; grid-template-columns:1.6fr 1fr 1fr 1fr; gap:48px;
+  padding-bottom:60px; border-bottom:1px solid rgba(255,255,255,.08);
+}
+.f-logo { font-family:'Syne',sans-serif; font-size:26px; font-weight:800; letter-spacing:3px; text-transform:uppercase; display:block; margin-bottom:16px; }
+.f-tagline { font-size:14px; color:rgba(255,255,255,.4); line-height:1.7; max-width:260px; }
+.f-col h4 { font-size:11px; font-weight:700; letter-spacing:2.5px; text-transform:uppercase; color:rgba(255,255,255,.35); margin-bottom:20px; }
+.f-col ul { list-style:none; display:flex; flex-direction:column; gap:12px; }
+.f-col a { font-size:14px; color:rgba(255,255,255,.55); text-decoration:none; transition:color .3s; }
+.f-col a:hover { color:var(--amber); }
+.footer-bottom {
+  display:flex; align-items:center; justify-content:space-between; padding-top:36px;
+}
+.f-copy { font-size:13px; color:rgba(255,255,255,.3); }
+.f-socials { display:flex; gap:12px; }
+.soc {
+  width:38px; height:38px; border:1px solid rgba(255,255,255,.12); border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  color:rgba(255,255,255,.4); text-decoration:none; font-size:14px;
+  transition:border-color .3s,color .3s,transform .2s;
+}
+.soc:hover { border-color:var(--amber); color:var(--amber); transform:translateY(-2px); }
+
+/* ── MODALS ── */
+.overlay {
+  position:fixed; inset:0; z-index:999;
+  background:rgba(15,14,12,.6); backdrop-filter:blur(10px);
+  display:flex; align-items:center; justify-content:center;
+  opacity:0; pointer-events:none; transition:opacity .4s;
+}
+.overlay.show { opacity:1; pointer-events:all; }
+.modal {
+  background:var(--white); border-radius:24px; padding:52px; width:440px; max-width:95vw;
+  position:relative;
+  transform:scale(.93) translateY(16px);
+  transition:transform .45s var(--ease);
+  box-shadow:0 40px 100px rgba(0,0,0,.25);
+}
+.overlay.show .modal { transform:scale(1) translateY(0); }
+.modal-close {
+  position:absolute; top:20px; right:20px;
+  width:32px; height:32px; background:var(--line); border:none;
+  border-radius:50%; font-size:16px; color:var(--slate); cursor:none;
+  display:flex; align-items:center; justify-content:center; transition:background .3s;
+}
+.modal-close:hover { background:#ddd; }
+.modal-eye {
+  width:56px; height:56px; background:var(--amber-light); border-radius:18px;
+  display:flex; align-items:center; justify-content:center; font-size:26px; margin-bottom:20px;
+}
+.modal-title { font-family:'Playfair Display',serif; font-size:32px; font-weight:900; margin-bottom:4px; }
+.modal-sub { font-size:14px; color:var(--muted); margin-bottom:32px; }
+.f-group { margin-bottom:16px; }
+.f-label { font-size:12px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--slate); margin-bottom:7px; display:block; }
+.f-input {
+  width:100%; background:var(--off-white); border:1px solid var(--line);
+  border-radius:12px; padding:14px 18px;
+  font-family:'Outfit',sans-serif; font-size:15px; color:var(--ink);
+  outline:none; transition:border-color .3s,box-shadow .3s;
+}
+.f-input:focus { border-color:var(--amber); box-shadow:0 0 0 3px rgba(232,130,12,.12); }
+.f-input::placeholder { color:var(--muted); }
+.modal-btn {
+  width:100%; background:var(--ink); color:#fff; border:none;
+  border-radius:14px; padding:16px;
+  font-family:'Outfit',sans-serif; font-size:16px; font-weight:700; cursor:none;
+  margin-top:8px; transition:background .3s,transform .2s,box-shadow .3s;
+}
+.modal-btn:hover { background:var(--amber); transform:translateY(-2px); box-shadow:0 12px 32px rgba(232,130,12,.3); }
+.modal-foot { text-align:center; margin-top:20px; font-size:13px; color:var(--muted); }
+.modal-foot a { color:var(--amber); text-decoration:none; font-weight:600; }
+
+/* Event image gradients */
+.g1 { background:linear-gradient(135deg,#1a1028,#3a1060,#1a1028); }
+.g2 { background:linear-gradient(135deg,#102830,#205060,#102020); }
+.g3 { background:linear-gradient(135deg,#281010,#602010,#281010); }
+
+body::after {
+  content:''; position:fixed; inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity:.018; pointer-events:none; z-index:9990;
+}
+</style>
+</head>
+<body>
+
+<div class="cur" id="cur"></div>
+<div class="cur-ring" id="curRing"></div>
+
+<!-- NAV -->
+<nav id="nav">
+  <a href="#" class="nav-logo"><span class="logo-dot"></span>EVENTIX</a>
+  <ul class="nav-links">
+    <li><a href="#events">Événements</a></li>
+    <li><a href="#how">Comment ça marche</a></li>
+    <li><a href="#faq">FAQ</a></li>
+    <li><a href="#" id="loginBtn" class="nav-btn">Se connecter</a></li>
+  </ul>
+</nav>
+
+<!-- HERO — VIDEO BG -->
+<section class="hero">
+  <div class="hero-video-wrap">
+    <video autoplay muted loop playsinline
+      src="https://cdn.coverr.co/videos/coverr-concert-crowd-at-a-music-festival-1584/1080p.mp4">
+    </video>
+  </div>
+  <div class="hero-ov-bottom"></div>
+  <div class="hero-ov-left"></div>
+
+  <div class="hero-inner">
+    <div class="hero-left">
+      <div class="hero-kicker">
+        <span class="kicker-live"></span>
+        Billetterie en ligne sécurisée
+      </div>
+      <h1 class="hero-title">
+        Vivez des<br>moments
+        <em>inoubliables</em>
+      </h1>
+      <p class="hero-sub">
+        Trouvez et réservez vos billets pour les
+        <strong>meilleurs concerts, festivals et spectacles</strong>
+        partout en France. QR code instantané, paiement sécurisé.
+      </p>
+      <div class="hero-actions">
+        <a href="#events" class="btn-amber">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          Explorer les événements
+        </a>
+        <a href="#" class="btn-ghost-white" id="signupBtn">
+          Créer un compte gratuit
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+        </a>
+      </div>
+    </div>
+
+    <div class="hero-stats-card">
+      <div>
+        <div class="hs-num"><span id="c1">0</span>K<span class="accent">+</span></div>
+        <div class="hs-label">Billets vendus</div>
+      </div>
+      <div class="hs-div"></div>
+      <div>
+        <div class="hs-num"><span id="c2">0</span></div>
+        <div class="hs-label">Événements actifs</div>
+      </div>
+      <div class="hs-div"></div>
+      <div>
+        <div class="hs-num"><span id="c3">0</span><span class="accent">%</span></div>
+        <div class="hs-label">Clients satisfaits</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="scroll-hint">
+    <div class="scroll-mouse"></div>
+    <span>Défiler</span>
+  </div>
+</section>
+
+<!-- STRIP -->
+<div class="strip">
+  <div class="strip-track">
+    <span class="strip-item">Concerts<span class="strip-dot"></span></span>
+    <span class="strip-item">Festivals<span class="strip-dot"></span></span>
+    <span class="strip-item">Spectacles<span class="strip-dot"></span></span>
+    <span class="strip-item">Conférences<span class="strip-dot"></span></span>
+    <span class="strip-item">Gastronomie<span class="strip-dot"></span></span>
+    <span class="strip-item">Sport<span class="strip-dot"></span></span>
+    <span class="strip-item">Arts & Culture<span class="strip-dot"></span></span>
+    <span class="strip-item">Cinéma<span class="strip-dot"></span></span>
+    <span class="strip-item">Concerts<span class="strip-dot"></span></span>
+    <span class="strip-item">Festivals<span class="strip-dot"></span></span>
+    <span class="strip-item">Spectacles<span class="strip-dot"></span></span>
+    <span class="strip-item">Conférences<span class="strip-dot"></span></span>
+    <span class="strip-item">Gastronomie<span class="strip-dot"></span></span>
+    <span class="strip-item">Sport<span class="strip-dot"></span></span>
+    <span class="strip-item">Arts & Culture<span class="strip-dot"></span></span>
+    <span class="strip-item">Cinéma<span class="strip-dot"></span></span>
+  </div>
+</div>
+
+<!-- EVENTS -->
+<section class="events-section" id="events">
+  <div class="sec-header">
+    <div>
+      <div class="sec-eyebrow">À l'affiche</div>
+      <h2 class="sec-title">Événements en <em>vedette</em></h2>
+    </div>
+    <a href="#" class="link-all">
+      Tous les événements
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+    </a>
+  </div>
+  <div class="events-grid">
+    <div class="ev-card feat">
+      <div class="ev-img"><div class="ev-img-inner g1">🎵</div><div class="ev-cat">Musique</div><div class="ev-date-pill"><span class="day">14</span><span class="mon">JUN</span></div></div>
+      <div class="ev-body"><div class="ev-title">Nuit Électro — Paris</div><div class="ev-loc"><svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>Zénith de Paris</div></div>
+      <div class="ev-foot"><div><div class="ev-price-lbl">À partir de</div><div class="ev-price">45€ <sup>/ pers.</sup></div></div><button class="btn-book">Réserver <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></button></div>
+    </div>
+    <div class="ev-card">
+      <div class="ev-img"><div class="ev-img-inner g2">🎭</div><div class="ev-cat">Festival</div><div class="ev-date-pill" style="background:#1a3a6e"><span class="day">22</span><span class="mon">JUL</span></div></div>
+      <div class="ev-body"><div class="ev-title">Festival Jazz Sud</div><div class="ev-loc"><svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>Marseille</div></div>
+      <div class="ev-foot"><div><div class="ev-price-lbl">À partir de</div><div class="ev-price">28€ <sup>/ pers.</sup></div></div><button class="btn-book">Réserver <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></button></div>
+    </div>
+    <div class="ev-card">
+      <div class="ev-img"><div class="ev-img-inner g3">🏆</div><div class="ev-cat">Sport</div><div class="ev-date-pill" style="background:#b84010"><span class="day">05</span><span class="mon">AOÛ</span></div></div>
+      <div class="ev-body"><div class="ev-title">Grand Prix de Lyon</div><div class="ev-loc"><svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>Stade Gerland, Lyon</div></div>
+      <div class="ev-foot"><div><div class="ev-price-lbl">À partir de</div><div class="ev-price">65€ <sup>/ pers.</sup></div></div><button class="btn-book">Réserver <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></button></div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how-section" id="how">
+  <div class="sec-eyebrow">Comment ça marche</div>
+  <h2 class="sec-title">Simple. Rapide. <em>Sécurisé.</em></h2>
+  <div class="how-grid">
+    <div class="how-card"><div class="how-num">01</div><div class="how-icon">🔍</div><div class="how-title">Explorez</div><p class="how-desc">Parcourez des centaines d'événements en France, filtrés par ville, date et catégorie.</p></div>
+    <div class="how-card"><div class="how-num">02</div><div class="how-icon">🎟️</div><div class="how-title">Choisissez</div><p class="how-desc">Sélectionnez vos places, le type de billet et la quantité souhaitée en quelques clics.</p></div>
+    <div class="how-card"><div class="how-num">03</div><div class="how-icon">💳</div><div class="how-title">Payez</div><p class="how-desc">Réglez en toute sécurité par carte bancaire ou PayPal. Transaction chiffrée SSL.</p></div>
+    <div class="how-card"><div class="how-num">04</div><div class="how-icon">📱</div><div class="how-title">Profitez</div><p class="how-desc">Recevez votre QR code par e-mail. Présentez-le à l'entrée depuis votre téléphone.</p></div>
+  </div>
+</section>
+
+<!-- FEATURED BANNER -->
+<section class="feat-section">
+  <div class="feat-banner">
+    <div class="feat-bg"></div>
+    <div class="feat-inner">
+      <div class="feat-content">
+        <div class="feat-badge">⭐ Événement Vedette</div>
+        <h2 class="feat-title">SONIC<br><em>FESTIVAL</em><br>2025</h2>
+        <p class="feat-desc">3 jours · 40 artistes · Une expérience sonore et visuelle hors du commun au cœur de Bordeaux.</p>
+        <div class="feat-chips">
+          <span class="feat-chip">📅 18–20 Juillet 2025</span>
+          <span class="feat-chip">📍 Bordeaux</span>
+          <span class="feat-chip">🎫 5 000 billets restants</span>
+        </div>
+        <a href="#" class="btn-amber" style="display:inline-flex;width:fit-content">
+          Réserver maintenant
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+        </a>
+      </div>
+      <div class="feat-visual">🎪</div>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="trust-section">
+  <div class="sec-eyebrow">Témoignages</div>
+  <h2 class="sec-title">Ils nous font <em>confiance</em></h2>
+  <div class="trust-grid">
+    <div class="trust-card"><div class="trust-stars">★★★★★</div><p class="trust-quote">"Achat ultra-simple, QR code reçu immédiatement. L'entrée au festival s'est faite en 5 secondes chrono !"</p><div class="trust-author"><div class="trust-av">SL</div><div><div class="trust-name">Sophie L.</div><div class="trust-role">Festival Jazz Sud 2024</div></div></div></div>
+    <div class="trust-card"><div class="trust-stars">★★★★★</div><p class="trust-quote">"Interface claire, paiement sécurisé, support réactif. Je recommande à 100 % pour tous vos événements."</p><div class="trust-author"><div class="trust-av">MR</div><div><div class="trust-name">Marc R.</div><div class="trust-role">Nuit Électro Paris 2024</div></div></div></div>
+    <div class="trust-card"><div class="trust-stars">★★★★★</div><p class="trust-quote">"Besoin d'un remboursement, traité en moins de 24h. Un service client tout simplement exceptionnel."</p><div class="trust-author"><div class="trust-av">AK</div><div><div class="trust-name">Amira K.</div><div class="trust-role">Grand Prix Lyon 2024</div></div></div></div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="faq-section" id="faq">
+  <div class="faq-layout">
+    <div class="faq-sticky">
+      <div class="sec-eyebrow">FAQ</div>
+      <h2 class="faq-sticky-title">Des<br><em>questions ?</em></h2>
+      <p class="faq-sticky-sub">Tout ce que vous devez savoir sur notre plateforme de billetterie en ligne.</p>
+      <a href="#" class="btn-support">💬 Contacter le support</a>
+    </div>
+    <div class="faq-list">
+      <div class="faq-item"><button class="faq-q">Comment recevoir mes billets après l'achat ?<span class="faq-ico">+</span></button><div class="faq-a">Vos billets sont envoyés par e-mail immédiatement après le paiement sous forme de QR codes uniques. Retrouvez-les aussi dans votre espace "Mes billets".</div></div>
+      <div class="faq-item"><button class="faq-q">Puis-je obtenir un remboursement ?<span class="faq-ico">+</span></button><div class="faq-a">Oui, les remboursements sont possibles jusqu'à 48h avant l'événement depuis votre espace client. Consultez notre politique pour les détails.</div></div>
+      <div class="faq-item"><button class="faq-q">Mon paiement est-il sécurisé ?<span class="faq-ico">+</span></button><div class="faq-a">Absolument. Nous utilisons Stripe, leader mondial du paiement en ligne. Toutes les transactions sont chiffrées et vos données bancaires ne sont jamais stockées.</div></div>
+      <div class="faq-item"><button class="faq-q">Comment fonctionne le scan QR à l'entrée ?<span class="faq-ico">+</span></button><div class="faq-a">Chaque billet génère un QR code unique. Nos agents utilisent une application dédiée pour le scanner à l'entrée. La validation est instantanée.</div></div>
+      <div class="faq-item"><button class="faq-q">Puis-je transférer mon billet à quelqu'un d'autre ?<span class="faq-ico">+</span></button><div class="faq-a">Oui, depuis "Mes billets" vous pouvez transférer un billet via l'adresse e-mail du destinataire. Simple et gratuit.</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- NEWSLETTER -->
+<section class="nl-section">
+  <div class="nl-box">
+    <div>
+      <h2 class="nl-title">Ne ratez<br>rien <em>d'important</em></h2>
+      <p class="nl-sub">Offres exclusives, avant-premières et nouveaux événements directement dans votre boîte mail.</p>
+    </div>
+    <div class="nl-form">
+      <input type="text" class="nl-input" placeholder="Votre prénom">
+      <input type="email" class="nl-input" placeholder="votre@email.com">
+      <button class="nl-btn">Je m'abonne — c'est gratuit</button>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-top">
+    <div>
+      <span class="f-logo">EVENTIX</span>
+      <p class="f-tagline">La plateforme de billetterie qui vous connecte aux meilleures expériences culturelles et sportives en France.</p>
+    </div>
+    <div class="f-col"><h4>Plateforme</h4><ul><li><a href="#">Événements</a></li><li><a href="#">Artistes</a></li><li><a href="#">Salles & lieux</a></li><li><a href="#">Catégories</a></li></ul></div>
+    <div class="f-col"><h4>Mon compte</h4><ul><li><a href="#">Connexion</a></li><li><a href="#">Mes billets</a></li><li><a href="#">Mes commandes</a></li><li><a href="#">Profil</a></li></ul></div>
+    <div class="f-col"><h4>Légal</h4><ul><li><a href="#">CGU</a></li><li><a href="#">Confidentialité</a></li><li><a href="#">Remboursement</a></li><li><a href="#">FAQ</a></li></ul></div>
+  </div>
+  <div class="footer-bottom">
+    <span class="f-copy">© 2025 EVENTIX. Tous droits réservés.</span>
+    <div class="f-socials">
+      <a href="#" class="soc">𝕏</a><a href="#" class="soc">in</a><a href="#" class="soc">▶</a><a href="#" class="soc">📸</a>
+    </div>
+  </div>
+</footer>
+
+<!-- LOGIN MODAL -->
+<div class="overlay" id="loginModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('loginModal')">✕</button>
+    <div class="modal-eye">🔑</div>
+    <h2 class="modal-title">Connexion</h2>
+    <p class="modal-sub">Accédez à votre espace personnel</p>
+    <div class="f-group"><label class="f-label">Email</label><input type="email" class="f-input" placeholder="votre@email.com"></div>
+    <div class="f-group"><label class="f-label">Mot de passe</label><input type="password" class="f-input" placeholder="••••••••"></div>
+    <a href="#" style="display:block;text-align:right;margin:-8px 0 12px;font-size:13px;color:var(--amber);text-decoration:none;font-weight:600">Mot de passe oublié ?</a>
+    <button class="modal-btn">Se connecter</button>
+    <div class="modal-foot">Pas encore de compte ? <a href="#" onclick="switchModal()">Créer un compte</a></div>
+  </div>
+</div>
+
+<!-- SIGNUP MODAL -->
+<div class="overlay" id="signupModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('signupModal')">✕</button>
+    <div class="modal-eye">🎉</div>
+    <h2 class="modal-title">Inscription</h2>
+    <p class="modal-sub">Créez votre compte — c'est gratuit</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="f-group"><label class="f-label">Prénom</label><input type="text" class="f-input" placeholder="Jean"></div>
+      <div class="f-group"><label class="f-label">Nom</label><input type="text" class="f-input" placeholder="Dupont"></div>
+    </div>
+    <div class="f-group"><label class="f-label">Email</label><input type="email" class="f-input" placeholder="votre@email.com"></div>
+    <div class="f-group"><label class="f-label">Mot de passe</label><input type="password" class="f-input" placeholder="••••••••"></div>
+    <button class="modal-btn">Créer mon compte</button>
+    <div class="modal-foot">Déjà un compte ? <a href="#" onclick="switchModal()">Se connecter</a></div>
+  </div>
+</div>
+
+<script>
+// CURSOR
+const cur=document.getElementById('cur'),ring=document.getElementById('curRing');
+let mx=0,my=0,rx=0,ry=0;
+window.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;});
+(function loop(){
+  cur.style.left=mx+'px';cur.style.top=my+'px';
+  rx+=(mx-rx)*.11;ry+=(my-ry)*.11;
+  ring.style.left=rx+'px';ring.style.top=ry+'px';
+  requestAnimationFrame(loop);
+})();
+document.querySelectorAll('a,button').forEach(el=>{
+  el.addEventListener('mouseenter',()=>{ring.style.width='52px';ring.style.height='52px';cur.style.transform='translate(-50%,-50%) scale(2)';});
+  el.addEventListener('mouseleave',()=>{ring.style.width='36px';ring.style.height='36px';cur.style.transform='translate(-50%,-50%) scale(1)';});
+});
+
+// NAV
+window.addEventListener('scroll',()=>{
+  document.getElementById('nav').classList.toggle('scrolled',window.scrollY>60);
+});
+
+// COUNTERS
+function countUp(el,to,delay=0){
+  setTimeout(()=>{
+    let n=0,s=to/70;
+    const t=setInterval(()=>{n=Math.min(n+s,to);el.textContent=Math.round(n);if(n>=to)clearInterval(t);},20);
+  },delay);
+}
+setTimeout(()=>{
+  countUp(document.getElementById('c1'),12,0);
+  countUp(document.getElementById('c2'),84,200);
+  countUp(document.getElementById('c3'),99,400);
+},900);
+
+// SCROLL REVEAL
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');obs.unobserve(e.target);}});
+},{threshold:0.12});
+document.querySelectorAll('.ev-card,.how-card,.trust-card').forEach(el=>obs.observe(el));
+
+const obs2=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{if(e.isIntersecting){e.target.style.opacity='1';e.target.style.transform='translateY(0)';}});
+},{threshold:0.1});
+document.querySelectorAll('.sec-header,.faq-sticky,.feat-content,.nl-box').forEach(el=>{
+  el.style.opacity='0';el.style.transform='translateY(28px)';
+  el.style.transition='opacity .8s cubic-bezier(.22,1,.36,1),transform .8s cubic-bezier(.22,1,.36,1)';
+  obs2.observe(el);
+});
+
+// FAQ
+document.querySelectorAll('.faq-q').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    const it=btn.parentElement,was=it.classList.contains('open');
+    document.querySelectorAll('.faq-item').forEach(i=>i.classList.remove('open'));
+    if(!was)it.classList.add('open');
+  });
+});
+
+// MODALS
+document.getElementById('loginBtn').addEventListener('click',e=>{e.preventDefault();openModal('loginModal');});
+document.getElementById('signupBtn').addEventListener('click',e=>{e.preventDefault();openModal('signupModal');});
+function openModal(id){document.getElementById(id).classList.add('show');}
+function closeModal(id){document.getElementById(id).classList.remove('show');}
+function switchModal(){
+  const l=document.getElementById('loginModal'),s=document.getElementById('signupModal');
+  if(l.classList.contains('show')){l.classList.remove('show');s.classList.add('show');}
+  else{s.classList.remove('show');l.classList.add('show');}
+}
+document.querySelectorAll('.overlay').forEach(o=>{
+  o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('show');});
+});
+
+// PARALLAX
+window.addEventListener('scroll',()=>{
+  const y=window.scrollY;
+  if(y<window.innerHeight){
+    const v=document.querySelector('.hero-video-wrap video');
+    if(v)v.style.transform=`translateY(${y*.3}px)`;
+    document.querySelector('.hero-left').style.transform=`translateY(${y*.12}px)`;
+    document.querySelector('.hero-stats-card').style.transform=`translateY(${y*.07}px)`;
+  }
+});
+</script>
+</body>
+</html>
