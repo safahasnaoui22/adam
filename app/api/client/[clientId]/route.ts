@@ -8,8 +8,9 @@ export async function GET(
     const { clientId } = await context.params;
 
     try {
+        // Search by the public customerId field, not the internal id
         const client = await prisma.customerProfile.findUnique({
-            where: { id: clientId },
+            where: { customerId: clientId },   // ← changed from 'id' to 'customerId'
             include: {
                 visits: {
                     orderBy: { date: "desc" },
@@ -26,11 +27,14 @@ export async function GET(
             return NextResponse.json({ error: "Client not found" }, { status: 404 });
         }
 
+        // Include the customerId in the response (already present, but explicit)
         return NextResponse.json({
             ...client,
             visits: client.visits.length,
+            customerId: client.customerId,   // ensure it's returned
         });
     } catch (error) {
+        console.error(error);
         return NextResponse.json(
             { error: "Failed to fetch client" },
             { status: 500 }

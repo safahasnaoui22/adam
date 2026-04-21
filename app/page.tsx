@@ -8,15 +8,31 @@ export default async function HomePage() {
   const session = await getServerSession(authOptions);
 
   // If user is logged in, redirect to their appropriate dashboard
-  if (session?.user) {
-    if (session.user.role === "ADMIN") {
-      redirect("/admin");
-    } else if (session.user.role === "RESTAURANT_OWNER") {
-      redirect("/dashboard");
-    } else if (session.user.role === "CUSTOMER") {
-      redirect("/client/dashboard");
+ if (session?.user?.id && session.user.role) {
+    switch (session.user.role) {
+      case "ADMIN":
+        redirect("/admin");
+        break;
+      case "RESTAURANT_OWNER":
+        redirect("/dashboard");
+        break;
+      case "CUSTOMER":
+        // For customers, ensure they have a restaurant slug before redirecting
+        if (session.user.restaurantSlug) {
+          redirect(`/${session.user.restaurantSlug}/dashboard`);
+        } else {
+          // If no slug, redirect to the generic client dashboard (or stay on homepage)
+          // To avoid the null restaurantId, we'll stay on homepage instead
+          console.warn("Customer has no restaurantSlug, staying on homepage");
+        }
+        break;
+      default:
+        // Unknown role, stay on homepage
+        console.warn("Unknown role:", session.user.role);
+        break;
     }
   }
+
 
   // If not logged in, show the landing page
   return (
