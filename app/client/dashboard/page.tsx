@@ -46,6 +46,9 @@ useEffect(() => {
     } catch (error) {
       console.error("Failed to fetch client:", error);
     }
+    const clientId = localStorage.getItem("clientId");
+const clientName = localStorage.getItem("clientName");
+console.log("Retrieved from localStorage:", { clientId, clientName });
   };
 
   const fetchRestaurantData = async () => {

@@ -53,7 +53,14 @@ export default function QRCodeScanner({ restaurantId, restaurantSlug }: QRCodeSc
           });
 
           console.log("Sign in result:", signInResult);
-
+console.log("Storing in localStorage:", {
+  clientId: data.customer.customerId,
+  clientName: data.customer.name,
+  restaurantId: restaurantId,
+});
+localStorage.setItem("clientId", data.customer.customerId);
+localStorage.setItem("clientName", data.customer.name);
+localStorage.setItem("restaurantId", restaurantId);
           if (signInResult?.ok) {
             // ✅ Store the public customerId and name in localStorage
             //    (used by the old client dashboard)
@@ -127,5 +134,6 @@ export default function QRCodeScanner({ restaurantId, restaurantSlug }: QRCodeSc
         {loading ? "Création en cours..." : "Créer mon compte"}
       </button>
     </form>
+    
   );
 }
