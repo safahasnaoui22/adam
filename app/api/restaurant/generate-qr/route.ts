@@ -15,16 +15,16 @@ export async function GET() {
 
     const restaurant = await prisma.restaurant.findUnique({
       where: { id: session.user.restaurantId },
-      select: { urlSlug: true, name: true }
+      select: { urlSlug: true, name: true, id: true }
     });
 
     if (!restaurant) {
       return NextResponse.json({ error: "Restaurant not found" }, { status: 404 });
     }
 
-    // Generate the correct URL - use restaurant slug, not client/login
+    // ✅ Generate the correct client dashboard URL with restaurantId parameter
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://adamrestaurents.vercel.app";
-    const url = `${baseUrl}/${restaurant.urlSlug}`;
+    const url = `${baseUrl}/client/dashboard?restaurantId=${restaurant.id}`;
     
     // Generate QR code as data URL
     const qrCodeDataUrl = await QRCode.toDataURL(url, {
