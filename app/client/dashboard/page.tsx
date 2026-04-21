@@ -18,30 +18,24 @@ export default function ClientDashboard() {
   const [showAbout, setShowAbout] = useState(false);
   const [activeTab, setActiveTab] = useState("rewards");
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
-
-  useEffect(() => {
-    // Get client info from localStorage
-    const clientId = localStorage.getItem("clientId");
-    const clientName = localStorage.getItem("clientName");
-    
-    if (clientId && clientName && restaurantId) {
-      fetchClientData(clientId);
-      fetchRestaurantData();
-    } else {
-      router.push(`/client/login?restaurantId=${restaurantId}`);
-    }
-
-    // Listen for beforeinstallprompt event for PWA
-    window.addEventListener("beforeinstallprompt", (e) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-    });
-
-    return () => {
-      window.removeEventListener("beforeinstallprompt", () => {});
-    };
-  }, [restaurantId, router]);
-
+useEffect(() => {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js')
+      .then(reg => console.log('Service Worker registered', reg))
+      .catch(err => console.error('Service Worker registration failed', err));
+  }
+}, []);
+useEffect(() => {
+  const customerId = localStorage.getItem("customerId");
+  const customerName = localStorage.getItem("customerName");
+  
+  if (customerId && customerName && restaurantId) {
+    fetchClientData(customerId);   // now passing the public customerId
+    fetchRestaurantData();
+  } else {
+    router.push(`/client/login?restaurantId=${restaurantId}`);
+  }
+}, [restaurantId, router]);
   const fetchClientData = async (clientId: string) => {
     try {
       const res = await fetch(`/api/client/${clientId}`);

@@ -4,18 +4,20 @@
   "description": "Programme de fidélité pour restaurants",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#fdf9f4",
+  "background_color": "#ffffff",
   "theme_color": "#fe5502",
   "icons": [
     {
-      "src": "/icon-192.png",
+      "src": "/icons/star.jpg",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
-      "src": "/icon-512.png",
+      "src": "/icons/star.jpg",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }
