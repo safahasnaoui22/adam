@@ -1,4 +1,3 @@
-// components/QRCodeScanner.tsx
 "use client";
 
 import { useState } from "react";
@@ -53,22 +52,23 @@ export default function QRCodeScanner({ restaurantId, restaurantSlug }: QRCodeSc
           });
 
           console.log("Sign in result:", signInResult);
-console.log("Storing in localStorage:", {
-  clientId: data.customer.customerId,
-  clientName: data.customer.name,
-  restaurantId: restaurantId,
-});
-localStorage.setItem("clientId", data.customer.customerId);
-localStorage.setItem("clientName", data.customer.name);
-localStorage.setItem("restaurantId", restaurantId);
+
           if (signInResult?.ok) {
             // ✅ Store the public customerId and name in localStorage
-            //    (used by the old client dashboard)
             localStorage.setItem("clientId", data.customer.customerId);
             localStorage.setItem("clientName", data.customer.name);
             localStorage.setItem("restaurantId", restaurantId);
 
-            console.log("Sign in successful, redirecting...");
+            console.log("Stored in localStorage:", {
+              clientId: data.customer.customerId,
+              clientName: data.customer.name,
+              restaurantId,
+            });
+
+            // Wait a moment for the session to be fully set
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            console.log("Sign in successful, redirecting to:", `/${restaurantSlug}/dashboard`);
             router.push(`/${restaurantSlug}/dashboard`);
             router.refresh();
           } else {
@@ -134,6 +134,5 @@ localStorage.setItem("restaurantId", restaurantId);
         {loading ? "Création en cours..." : "Créer mon compte"}
       </button>
     </form>
-    
   );
 }
