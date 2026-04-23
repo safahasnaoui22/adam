@@ -54,7 +54,7 @@ export default function QRCodeScanner({ restaurantId, restaurantSlug }: QRCodeSc
           console.log("Sign in result:", signInResult);
 
           if (signInResult?.ok) {
-            // ✅ Store the public customerId and name in localStorage
+            // Store the public customerId and name in localStorage
             localStorage.setItem("clientId", data.customer.customerId);
             localStorage.setItem("clientName", data.customer.name);
             localStorage.setItem("restaurantId", restaurantId);
@@ -68,8 +68,9 @@ export default function QRCodeScanner({ restaurantId, restaurantSlug }: QRCodeSc
             // Wait a moment for the session to be fully set
             await new Promise(resolve => setTimeout(resolve, 500));
 
-            console.log("Sign in successful, redirecting to:", `/${restaurantSlug}/dashboard`);
-            router.push(`/${restaurantSlug}/dashboard`);
+            // ✅ Redirect to the OLD dashboard with restaurantId as query parameter
+            console.log("Sign in successful, redirecting to:", `/client/dashboard?restaurantId=${restaurantId}`);
+            router.push(`/client/dashboard?restaurantId=${restaurantId}`);
             router.refresh();
           } else {
             console.error("Sign in failed:", signInResult?.error);
