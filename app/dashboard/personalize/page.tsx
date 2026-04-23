@@ -244,40 +244,48 @@ export default function PersonalizePage() {
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
-                Logo du commerce
-              </label>
-              <div className="flex items-center space-x-4">
-                {formData.logo && (
-                  <div className="w-20 h-20 relative rounded-lg overflow-hidden border border-[#1e3a5f]">
-                    <Image src={formData.logo} alt="Logo" fill className="object-cover" />
-                  </div>
-                )}
-                <div className="flex-1">
-                  <div className="border-2 border-dashed border-[#1e3a5f] rounded-lg p-4 text-center hover:border-[#fe5502] transition">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      id="logo-upload"
-                      onChange={(e) => {
-                        // Handle file upload
-                      }}
-                    />
-                    <label htmlFor="logo-upload" className="cursor-pointer">
-                      <svg className="mx-auto h-12 w-12 text-gray-500" stroke="currentColor" fill="none" viewBox="0 0 24 24">
-                        <path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                      <p className="mt-1 text-sm text-gray-400">
-                        <span className="text-[#fe5502]">Importer un logo</span>
-                      </p>
-                      <p className="text-xs text-gray-500">PNG, JPG, GIF up to 2MB</p>
-                    </label>
-                  </div>
-                </div>
-              </div>
-            </div>
+          <div>
+  <label className="block text-sm font-medium text-gray-300 mb-1">
+    Logo du commerce
+  </label>
+  <div className="flex items-center space-x-4">
+    {formData.logo && (
+      <div className="w-20 h-20 relative rounded-lg overflow-hidden border border-[#1e3a5f]">
+        <Image src={formData.logo} alt="Logo" fill className="object-cover" />
+      </div>
+    )}
+    <div className="flex-1">
+      <div className="border-2 border-dashed border-[#1e3a5f] rounded-lg p-4 text-center hover:border-[#fe5502] transition">
+        <input
+          type="file"
+          accept="image/*"
+          className="hidden"
+          id="logo-upload"
+          onChange={async (e) => {
+            const file = e.target.files?.[0];
+            if (!file) return;
+
+            // Convert file to Base64
+            const reader = new FileReader();
+            reader.onloadend = () => {
+              setFormData({ ...formData, logo: reader.result as string });
+            };
+            reader.readAsDataURL(file);
+          }}
+        />
+        <label htmlFor="logo-upload" className="cursor-pointer">
+          <svg className="mx-auto h-12 w-12 text-gray-500" stroke="currentColor" fill="none" viewBox="0 0 24 24">
+            <path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+          <p className="mt-1 text-sm text-gray-400">
+            <span className="text-[#fe5502]">Importer un logo</span>
+          </p>
+          <p className="text-xs text-gray-500">PNG, JPG, GIF up to 2MB</p>
+        </label>
+      </div>
+    </div>
+  </div>
+</div>
 
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-1">
