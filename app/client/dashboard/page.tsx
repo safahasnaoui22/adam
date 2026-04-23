@@ -20,6 +20,9 @@ export default function ClientDashboard() {
   const [typedGreeting, setTypedGreeting] = useState("");
   const fullGreeting = "comment allez-vous aujourd'hui ?";
 
+  // PWA install prompt
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+
   // Typing animation effect
   useEffect(() => {
     let i = 0;
@@ -34,12 +37,17 @@ export default function ClientDashboard() {
     return () => clearInterval(interval);
   }, []);
 
-  // Helper to get short ID from customerId
+  // Helper to get short ID from customerId (with fallback)
   const getShortId = () => {
-    if (!client?.customerId) return "****";
-    const parts = client.customerId.split("-");
-    const lastPart = parts[parts.length - 1];
-    return lastPart.slice(-4);
+    if (client?.customerId && client.customerId.includes('-')) {
+      const parts = client.customerId.split('-');
+      const lastPart = parts[parts.length - 1];
+      return lastPart.slice(-4);
+    } else if (client?.id) {
+      // fallback: use last 4 chars of internal id
+      return client.id.slice(-4);
+    }
+    return "****";
   };
 
   const fetchClientData = async (id: string) => {
@@ -85,6 +93,25 @@ export default function ClientDashboard() {
     }
   }, [restaurantId, router]);
 
+  // Register service worker
+  useEffect(() => {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js')
+        .then(reg => console.log('Service Worker registered', reg))
+        .catch(err => console.error('SW registration failed', err));
+    }
+  }, []);
+
+  // Capture beforeinstallprompt event
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+  }, []);
+
   const handleRefresh = async () => {
     setRefreshing(true);
     const clientId = localStorage.getItem("clientId");
@@ -95,17 +122,21 @@ export default function ClientDashboard() {
   };
 
   const handleAddToHomeScreen = () => {
-    if (window.matchMedia('(display-mode: standalone)').matches) {
-      alert("Déjà installé !");
-      return;
-    }
-    if (navigator.userAgent.includes('iPhone') || navigator.userAgent.includes('iPad')) {
-      alert("Pour ajouter à l'écran d'accueil :\n1. Appuyez sur le bouton Partager\n2. Faites défiler vers le bas\n3. Appuyez sur 'Sur l'écran d'accueil'");
-    } else if ('beforeinstallprompt' in window) {
-      // @ts-ignore
-      window.deferredPrompt.prompt();
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then((choiceResult: any) => {
+        if (choiceResult.outcome === 'accepted') {
+          console.log('User accepted the install prompt');
+        }
+        setDeferredPrompt(null);
+      });
     } else {
-      alert("Utilisez 'Ajouter à l'écran d'accueil' dans le menu du navigateur");
+      // fallback instructions for browsers that don't support beforeinstallprompt
+      if (navigator.userAgent.includes('iPhone') || navigator.userAgent.includes('iPad')) {
+        alert("Pour ajouter à l'écran d'accueil :\n1. Appuyez sur le bouton Partager\n2. Faites défiler vers le bas\n3. Appuyez sur 'Sur l'écran d'accueil'");
+      } else {
+        alert("Utilisez 'Ajouter à l'écran d'accueil' dans le menu du navigateur");
+      }
     }
   };
 
@@ -213,7 +244,7 @@ export default function ClientDashboard() {
               <div className="w-48 h-48 mx-auto bg-white p-2 rounded-lg shadow-inner flex items-center justify-center">
                 <div className="w-40 h-40 bg-gradient-to-r from-[#fe5502] to-[#e0682e] flex flex-col items-center justify-center text-white text-xs rounded-lg">
                   <span className="text-lg font-bold">QR Code</span>
-                  <span className="text-[10px] mt-2">{client.customerId}</span>
+                  <span className="text-[10px] mt-2">{client.customerId || client.id}</span>
                 </div>
               </div>
               <p className="text-xs text-gray-400 mt-2">Présentez ce code au staff</p>
