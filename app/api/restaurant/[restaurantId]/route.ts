@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/app/lib/prisma"
+import { prisma } from "@/app/lib/prisma";
 
 export async function GET(
     request: NextRequest,
@@ -10,13 +10,14 @@ export async function GET(
 
         const restaurant = await prisma.restaurant.findUnique({
             where: { id: restaurantId },
-            select: {
-                id: true,
-                name: true,
-                logo: true,
-                appName: true,
-                theme: true,
-                backgroundPattern: true,
+            include: {
+                loyaltyProgram: {
+                    include: {
+                        rewards: {
+                            orderBy: { pointsRequired: 'asc' }, // optional: sort by points
+                        },
+                    },
+                },
             },
         });
 
@@ -27,8 +28,10 @@ export async function GET(
             );
         }
 
+        // Remove sensitive or unnecessary fields if needed, but keep rewards
         return NextResponse.json(restaurant);
     } catch (error) {
+        console.error(error);
         return NextResponse.json(
             { error: "Failed to fetch restaurant" },
             { status: 500 }
