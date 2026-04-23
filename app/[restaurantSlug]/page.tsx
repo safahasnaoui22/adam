@@ -5,7 +5,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/lib/auth";
 import QRCodeScanner from "@/components/QRCodeScanner";
 import AutoLogin from "@/components/AutoLogin";
-
+import AutoRedirect from "@/components/AutoRedirect";
 interface PageProps {
   params: Promise<{ restaurantSlug: string }>;
 }
@@ -43,6 +43,7 @@ export default async function RestaurantLandingPage({ params }: PageProps) {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#fdf9f4] to-white">
+      <AutoRedirect restaurantSlug={restaurantSlug} />
       <div className="max-w-md mx-auto px-4 py-8">
         {/* Restaurant Logo */}
         <div className="text-center mb-8">

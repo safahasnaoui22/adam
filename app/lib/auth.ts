@@ -95,6 +95,18 @@ export const authOptions: NextAuthOptions = {
     maxAge: 365 * 24 * 60 * 60, // 1 year
     updateAge: 24 * 60 * 60,    // refresh the token every 24 hours
   },
+    cookies: {
+    sessionToken: {
+      name: `__Secure-next-auth.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: process.env.NEXTAUTH_URL?.startsWith("https://") ?? false,
+        maxAge: 365 * 24 * 60 * 60 // 1 year
+      }
+    }
+  },
   pages: {
     signIn: "/auth/signin",
   },
