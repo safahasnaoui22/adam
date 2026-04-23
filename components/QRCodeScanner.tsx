@@ -55,9 +55,10 @@ export default function QRCodeScanner({ restaurantId, restaurantSlug }: QRCodeSc
 
           if (signInResult?.ok) {
             // Store the public customerId and name in localStorage
-            localStorage.setItem("clientId", data.customer.customerId);
-            localStorage.setItem("clientName", data.customer.name);
-            localStorage.setItem("restaurantId", restaurantId);
+          localStorage.setItem("customerId", data.customer.customerId);   // changed from "clientId"
+localStorage.setItem("customerName", data.customer.name);       // optional
+localStorage.setItem("restaurantId", restaurantId);
+localStorage.setItem("restaurantSlug", restaurantSlug);
 
             console.log("Stored in localStorage:", {
               clientId: data.customer.customerId,

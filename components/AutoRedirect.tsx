@@ -9,10 +9,11 @@ export default function AutoRedirect({ restaurantSlug }: { restaurantSlug: strin
   useEffect(() => {
     const customerId = localStorage.getItem("customerId");
     const storedSlug = localStorage.getItem("restaurantSlug");
+    const restaurantId = localStorage.getItem("restaurantId");
 
-    if (customerId && storedSlug === restaurantSlug) {
-      // Already registered – redirect instantly
-      router.replace(`/${restaurantSlug}/dashboard`);
+    if (customerId && storedSlug === restaurantSlug && restaurantId) {
+      // Redirect to the existing client dashboard with the restaurantId as query parameter
+      router.replace(`/client/dashboard?restaurantId=${restaurantId}`);
     }
   }, [restaurantSlug, router]);
 

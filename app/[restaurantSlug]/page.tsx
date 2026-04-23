@@ -35,11 +35,11 @@ export default async function RestaurantLandingPage({ params }: PageProps) {
       </div>
     );
   }
-
-  const session = await getServerSession(authOptions);
-  if (session?.user?.customerProfile) {
-    redirect(`/${restaurantSlug}/dashboard`);
-  }
+const session = await getServerSession(authOptions);
+if (session?.user?.customerProfile) {
+  // Redirect to the existing client dashboard, passing the restaurantId as a query parameter
+  redirect(`/client/dashboard?restaurantId=${restaurant.id}`);
+}
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#fdf9f4] to-white">
