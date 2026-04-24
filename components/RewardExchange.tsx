@@ -119,22 +119,25 @@ export default function RewardExchange() {
       </div>
 
       {mode === "manual" && (
-        <form onSubmit={handleSubmit} className="space-y-3">
-          <input
-            type="text"
-            placeholder="Numéro de carte (ex: CUST-123456-ABC)"
-            value={customerIdInput}
-            onChange={(e) => setCustomerIdInput(e.target.value)}
-            className="w-full px-3 py-2 bg-[#1e3a5f] border border-[#2a4a7a] rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#fe5502]"
-          />
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-2 bg-[#fe5502] text-white rounded-md hover:bg-[#e0682e] transition disabled:opacity-50"
-          >
-            {loading ? "Recherche..." : "Détecter"}
-          </button>
-        </form>
+<form onSubmit={handleSubmit} className="space-y-3">
+  <input
+    type="text"
+    placeholder="Ex: CUST-123456-ABC ou 9A3F (4 derniers chiffres)"
+    value={customerIdInput}
+    onChange={(e) => setCustomerIdInput(e.target.value)}
+    className="w-full px-3 py-2 bg-[#1e3a5f] border border-[#2a4a7a] rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#fe5502]"
+  />
+  <p className="text-xs text-gray-400 mt-1">
+    Vous pouvez saisir le code complet visible sur la carte ou les 4 derniers caractères (ex: #9A3F → saisir 9A3F).
+  </p>
+  <button
+    type="submit"
+    disabled={loading}
+    className="w-full py-2 bg-[#fe5502] text-white rounded-md hover:bg-[#e0682e] transition disabled:opacity-50"
+  >
+    {loading ? "Recherche..." : "Détecter"}
+  </button>
+</form>
       )}
 
       {mode === "scan" && (
