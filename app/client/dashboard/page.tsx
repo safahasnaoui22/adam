@@ -23,7 +23,21 @@ export default function ClientDashboard() {
 
   // PWA install prompt
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+const defaultTheme = {
+  colors: {
+    primary: "#fe5502",
+    background: "#ffffff",
+    text: "#282424",
+    accent: "#e0682e",
+  },
+};
 
+const dynamicStyles = {
+  primary: restaurant?.theme?.colors?.primary || defaultTheme.colors.primary,
+  background: restaurant?.theme?.colors?.background || defaultTheme.colors.background,
+  text: restaurant?.theme?.colors?.text || defaultTheme.colors.text,
+  accent: restaurant?.theme?.colors?.accent || defaultTheme.colors.accent,
+};
   // Typing animation effect
   useEffect(() => {
     let i = 0;
