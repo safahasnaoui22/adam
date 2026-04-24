@@ -63,7 +63,7 @@ export default function ThemeSelector({
   const currentColors = selectedTheme.colors;
   const currentPattern = patterns.find(p => p.id === selectedPattern) || patterns[0];
 
-  // Combine background color and pattern
+  // Combine background color and pattern (no duplicate backgroundColor)
   const backgroundStyle = {
     backgroundColor: currentColors.background,
     backgroundImage: currentPattern.style.backgroundImage,
@@ -136,7 +136,7 @@ export default function ThemeSelector({
         <h3 className="text-lg font-semibold mb-4">📱 Aperçu (carte client)</h3>
         <div className="max-w-sm mx-auto rounded-3xl border-8 border-gray-800 overflow-hidden shadow-2xl">
           {/* Screen */}
-          <div className="relative" style={{ backgroundColor: currentColors.background, ...backgroundStyle }}>
+          <div className="relative" style={backgroundStyle}>
             {/* Content */}
             <div className="p-5 space-y-4 relative z-10">
               {/* Logo & restaurant name */}
