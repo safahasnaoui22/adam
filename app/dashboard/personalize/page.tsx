@@ -552,12 +552,15 @@ export default function PersonalizePage() {
         {/* Theme Tab */}
         {activeTab === "theme" && (
           <div className="bg-[#0d1f3c] shadow rounded-lg p-6 border border-[#1e3a5f]">
-            <ThemeSelector
-              theme={formData.theme}
-              pattern={formData.backgroundPattern}
-              onThemeChange={(theme) => setFormData({ ...formData, theme })}
-              onPatternChange={(pattern) => setFormData({ ...formData, backgroundPattern: pattern })}
-            />
+          
+<ThemeSelector
+  theme={formData.theme}
+  pattern={formData.backgroundPattern}
+  restaurantName={formData.name}               // ← add this
+  restaurantLogo={formData.logo}              // ← add this
+  onThemeChange={(theme) => setFormData({ ...formData, theme })}
+  onPatternChange={(pattern) => setFormData({ ...formData, backgroundPattern: pattern })}
+/>
           </div>
         )}
 

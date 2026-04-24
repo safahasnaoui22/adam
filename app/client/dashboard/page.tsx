@@ -258,25 +258,32 @@ export default function ClientDashboard() {
           <p className="text-xs mt-1" style={{ color: `${dynamicStyles.text}80` }}>1 DT = 10 ⭐</p>
         </div>
 
-        {/* QR Code Button with real QR code */}
-        <div className="px-4 py-4 border-b" style={{ borderColor: `${dynamicStyles.primary}30` }}>
-          <button
-            onClick={() => setShowQR(!showQR)}
-            className="w-full py-4 rounded-xl font-medium flex items-center justify-center space-x-2 transition-all transform hover:scale-[1.02] active:scale-95"
-            style={{ backgroundColor: dynamicStyles.primary, color: '#fff' }}
-          >
-            <span>📱</span>
-            <span>Mon Code QR</span>
-          </button>
-          {showQR && (
-            <div className="mt-4 p-4 rounded-xl text-center border animate-fadeIn" style={{ backgroundColor: dynamicStyles.background, borderColor: `${dynamicStyles.primary}30` }}>
-              <div className="flex justify-center">
-                <QRCodeSVG value={client.customerId || client.id} size={180} bgColor="#ffffff" fgColor={dynamicStyles.primary} level="H" />
-              </div>
-              <p className="text-xs mt-2" style={{ color: `${dynamicStyles.text}99` }}>Présentez ce code au staff</p>
-            </div>
-          )}
-        </div>
+  
+      {/* QR Code Button with real QR code (points to scan page) */}
+<div className="px-4 py-4 border-b" style={{ borderColor: `${dynamicStyles.primary}30` }}>
+  <button
+    onClick={() => setShowQR(!showQR)}
+    className="w-full py-4 rounded-xl font-medium flex items-center justify-center space-x-2 transition-all transform hover:scale-[1.02] active:scale-95"
+    style={{ backgroundColor: dynamicStyles.primary, color: '#fff' }}
+  >
+    <span>📱</span>
+    <span>Mon Code QR</span>
+  </button>
+  {showQR && (
+    <div className="mt-4 p-4 rounded-xl text-center border animate-fadeIn" style={{ backgroundColor: dynamicStyles.background, borderColor: `${dynamicStyles.primary}30` }}>
+      <div className="flex justify-center">
+        <QRCodeSVG 
+          value={`${window.location.origin}/scan/${client.customerId}`} 
+          size={180} 
+          bgColor="#ffffff" 
+          fgColor={dynamicStyles.primary} 
+          level="H" 
+        />
+      </div>
+      <p className="text-xs mt-2" style={{ color: `${dynamicStyles.text}99` }}>Présentez ce code au staff</p>
+    </div>
+  )}
+</div>
 
         {/* Stars Progress Section */}
         <div className="px-4 py-4 border-b" style={{ borderColor: `${dynamicStyles.primary}30` }}>
