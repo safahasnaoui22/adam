@@ -21,6 +21,21 @@ const patterns = [
   { id: "games", name: "Jeux", style: { backgroundImage: 'url("/patterns/games.svg")' } },
   { id: "pizza", name: "Pizza", style: { backgroundImage: 'url("/patterns/pizza.svg")' } },
 ];
+ 
+const defaultColors = {
+  primary: "#fe5502",
+  secondary: "#e0682e",
+  background: "#ffffff",
+  text: "#282424",
+  accent: "#fe5502",
+};
+
+const safeTheme = theme && typeof theme === 'object' ? theme : {};
+const colors = safeTheme.colors && typeof safeTheme.colors === 'object' 
+  ? safeTheme.colors 
+  : defaultColors;
+
+// Utilisez `colors.primary`, `colors.background`, etc. dans le reste du composant.
 
 interface ThemeSelectorProps {
   theme: any;

@@ -20,8 +20,6 @@ export default function ClientDashboard() {
   const [activeTab, setActiveTab] = useState("rewards");
   const [typedGreeting, setTypedGreeting] = useState("");
   const fullGreeting = "comment allez-vous aujourd'hui ?";
-
-  // PWA install prompt
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
   // Typing animation effect
@@ -38,7 +36,6 @@ export default function ClientDashboard() {
     return () => clearInterval(interval);
   }, []);
 
-  // Helper to get short ID from customerId (with fallback)
   const getShortId = () => {
     if (client?.customerId && client.customerId.includes('-')) {
       const parts = client.customerId.split('-');
@@ -163,7 +160,7 @@ export default function ClientDashboard() {
     );
   }
 
-  // ----- Apply theme from restaurant -----
+  // ----- Apply theme from restaurant (with fallback) -----
   const theme = restaurant?.theme || {};
   const primaryColor = theme.colors?.primary || "#fe5502";
   const secondaryColor = theme.colors?.secondary || "#e0682e";
