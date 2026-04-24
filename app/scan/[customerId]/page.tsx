@@ -9,29 +9,14 @@ interface PageProps {
   params: Promise<{ customerId: string }>;
 }
 
-// Helper to get short ID (same as client dashboard)
-function getShortId(fullCustomerId: string): string {
-  if (!fullCustomerId) return "****";
-  // If it contains hyphens, take the last part's last 4 chars
-  if (fullCustomerId.includes('-')) {
-    const parts = fullCustomerId.split('-');
-    const lastPart = parts[parts.length - 1];
-    return lastPart.slice(-4);
-  }
-  // Otherwise take last 4 chars
-  return fullCustomerId.slice(-4);
-}
-
 export default async function ScanCustomerPage({ params }: PageProps) {
   const { customerId } = await params;
   const session = await getServerSession(authOptions);
 
-  // Only restaurant owners can access this page
   if (!session?.user?.restaurantId) {
     redirect("/auth/signin");
   }
 
-  // Find the customer and ensure it belongs to the owner's restaurant
   const customer = await prisma.customerProfile.findFirst({
     where: {
       customerId: customerId,
@@ -48,7 +33,25 @@ export default async function ScanCustomerPage({ params }: PageProps) {
     notFound();
   }
 
-  const shortId = getShortId(customer.customerId);
+  // Fetch rewards for this restaurant's loyalty program
+  const loyaltyProgram = await prisma.loyaltyProgram.findFirst({
+    where: { restaurantId: session.user.restaurantId },
+    include: {
+      rewards: {
+        where: { isActive: true },
+        orderBy: { pointsRequired: "asc" },
+      },
+    },
+  });
+
+  const rewards = loyaltyProgram?.rewards || [];
+
+  // Helper to get short ID (last 4 chars)
+  const getShortId = (fullId: string) => {
+    if (!fullId) return "****";
+    // e.g., "CUST-1774687932587-XV0B49" -> "B49" (last 4)
+    return fullId.slice(-4);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
@@ -62,8 +65,8 @@ export default async function ScanCustomerPage({ params }: PageProps) {
           </div>
           <div>
             <p className="text-sm text-gray-500">ID client</p>
-            <p className="text-lg font-mono">#{shortId}</p>
-            <p className="text-xs text-gray-400 mt-1">(Complet: {customer.customerId})</p>
+            <p className="text-lg font-mono font-bold text-orange-600">#{getShortId(customer.customerId)}</p>
+            <p className="text-xs text-gray-400">{customer.customerId}</p>
           </div>
           <div>
             <p className="text-sm text-gray-500">Points actuels</p>
@@ -71,7 +74,11 @@ export default async function ScanCustomerPage({ params }: PageProps) {
           </div>
         </div>
 
-        <ScanClientForm customerId={customer.id} currentPoints={customer.points} />
+        <ScanClientForm 
+          customerId={customer.id} 
+          currentPoints={customer.points} 
+          rewards={rewards}
+        />
       </div>
     </div>
   );
