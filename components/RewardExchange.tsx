@@ -2,88 +2,35 @@
 
 import { useState } from "react";
 
-interface Reward {
-  id: string;
-  name: string;
-  pointsRequired: number;
-  description?: string;
-}
-
-interface Customer {
-  id: string;
-  name: string;
-  customerId: string;
-  points: number;
-}
-
 export default function RewardExchange() {
-  const [customer, setCustomer] = useState<Customer | null>(null);
-  const [rewards, setRewards] = useState<Reward[]>([]);
   const [customerIdInput, setCustomerIdInput] = useState("");
   const [mode, setMode] = useState<"scan" | "manual">("scan");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [redeeming, setRedeeming] = useState<string | null>(null);
-  const [successMsg, setSuccessMsg] = useState("");
 
-  const fetchCustomer = async (customerId: string) => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!customerIdInput.trim()) {
+      setError("Veuillez entrer un numéro de carte");
+      return;
+    }
+
     setLoading(true);
     setError("");
-    setSuccessMsg("");
+
     try {
-      const res = await fetch(`/api/customer/by-id/${customerId}`);
+      const res = await fetch(`/api/customer/by-id/${encodeURIComponent(customerIdInput.trim())}`);
       const data = await res.json();
-      if (res.ok) {
-        setCustomer(data.customer);
-        setRewards(data.rewards);
+      if (res.ok && data.customer && data.customer.customerId) {
+        // Redirect to the full customer page using the resolved customerId
+        window.location.href = `/scan/${data.customer.customerId}`;
       } else {
         setError(data.error || "Client non trouvé");
-        setCustomer(null);
-        setRewards([]);
       }
     } catch (err) {
       setError("Erreur de connexion");
-      setCustomer(null);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (customerIdInput.trim()) {
-      fetchCustomer(customerIdInput.trim());
-    } else {
-      setError("Veuillez entrer un numéro de carte");
-    }
-  };
-
-  const handleRedeem = async (rewardId: string, pointsRequired: number) => {
-    if (!customer) return;
-    if (confirm(`Échanger cette récompense (${pointsRequired} points) ?`)) {
-      setRedeeming(rewardId);
-      try {
-        const res = await fetch("/api/customer/redeem-reward", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            customerId: customer.id,
-            rewardId,
-          }),
-        });
-        const data = await res.json();
-        if (res.ok) {
-          setSuccessMsg(`Récompense échangée ! Nouveau solde : ${data.newPoints} points`);
-          // Refresh customer data
-          fetchCustomer(customer.customerId);
-        } else {
-          setError(data.error || "Erreur lors de l'échange");
-        }
-      } catch (err) {
-        setError("Erreur de connexion");
-      } finally {
-        setRedeeming(null);
-      }
     }
   };
 
@@ -119,25 +66,25 @@ export default function RewardExchange() {
       </div>
 
       {mode === "manual" && (
-<form onSubmit={handleSubmit} className="space-y-3">
-  <input
-    type="text"
-    placeholder="Ex: CUST-123456-ABC ou 9A3F (4 derniers chiffres)"
-    value={customerIdInput}
-    onChange={(e) => setCustomerIdInput(e.target.value)}
-    className="w-full px-3 py-2 bg-[#1e3a5f] border border-[#2a4a7a] rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#fe5502]"
-  />
-  <p className="text-xs text-gray-400 mt-1">
-    Vous pouvez saisir le code complet visible sur la carte ou les 4 derniers caractères (ex: #9A3F → saisir 9A3F).
-  </p>
-  <button
-    type="submit"
-    disabled={loading}
-    className="w-full py-2 bg-[#fe5502] text-white rounded-md hover:bg-[#e0682e] transition disabled:opacity-50"
-  >
-    {loading ? "Recherche..." : "Détecter"}
-  </button>
-</form>
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <input
+            type="text"
+            placeholder="Ex: CUST-123456-ABC ou 9A3F (4 derniers chiffres)"
+            value={customerIdInput}
+            onChange={(e) => setCustomerIdInput(e.target.value)}
+            className="w-full px-3 py-2 bg-[#1e3a5f] border border-[#2a4a7a] rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#fe5502]"
+          />
+          <p className="text-xs text-gray-400 mt-1">
+            Vous pouvez saisir le code complet visible sur la carte ou les 4 derniers caractères (ex: #9A3F → saisir 9A3F).
+          </p>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-2 bg-[#fe5502] text-white rounded-md hover:bg-[#e0682e] transition disabled:opacity-50"
+          >
+            {loading ? "Recherche..." : "Détecter"}
+          </button>
+        </form>
       )}
 
       {mode === "scan" && (
@@ -148,7 +95,15 @@ export default function RewardExchange() {
           <p className="text-sm text-gray-400 mt-2">
             Utilisez la caméra pour scanner le QR code du client
           </p>
-          <button className="mt-3 px-4 py-2 bg-[#fe5502] text-white rounded-md text-sm">
+          <button
+            onClick={() => {
+              // For a real implementation, you would integrate a QR scanner library.
+              // Here we just show a prompt for demo purposes.
+              const scanned = prompt("Simuler un scan : entrez un ID client");
+              if (scanned) window.location.href = `/scan/${scanned}`;
+            }}
+            className="mt-3 px-4 py-2 bg-[#fe5502] text-white rounded-md text-sm"
+          >
             Lancer le scanner
           </button>
         </div>
@@ -157,67 +112,6 @@ export default function RewardExchange() {
       {error && (
         <div className="mt-4 p-3 bg-red-900/30 border border-red-700 rounded-md text-red-300 text-sm">
           {error}
-        </div>
-      )}
-
-      {successMsg && (
-        <div className="mt-4 p-3 bg-green-900/30 border border-green-700 rounded-md text-green-300 text-sm">
-          {successMsg}
-        </div>
-      )}
-
-      {customer && (
-        <div className="mt-6 border-t border-[#1e3a5f] pt-4">
-          <div className="flex justify-between items-start mb-3">
-            <div>
-              <p className="text-sm text-gray-400">Client</p>
-              <p className="text-lg font-semibold text-white">{customer.name}</p>
-              <p className="text-xs text-gray-400">ID: {customer.customerId}</p>
-            </div>
-            <div className="text-right">
-              <p className="text-sm text-gray-400">Points disponibles</p>
-              <p className="text-2xl font-bold text-[#fe5502]">{customer.points}</p>
-            </div>
-          </div>
-
-          {rewards.length > 0 && (
-            <div>
-              <p className="text-sm font-medium text-white mb-2">Récompenses disponibles</p>
-              <div className="space-y-2 max-h-60 overflow-y-auto">
-                {rewards.map((reward) => {
-                  const isAvailable = customer.points >= reward.pointsRequired;
-                  return (
-                    <div
-                      key={reward.id}
-                      className={`flex justify-between items-center p-3 rounded-md ${
-                        isAvailable ? "bg-[#1e3a5f]" : "bg-[#0a1528] opacity-60"
-                      }`}
-                    >
-                      <div>
-                        <p className="text-white font-medium">{reward.name}</p>
-                        <p className="text-xs text-gray-400">{reward.pointsRequired} points</p>
-                        {reward.description && (
-                          <p className="text-xs text-gray-400">{reward.description}</p>
-                        )}
-                      </div>
-                      {isAvailable && (
-                        <button
-                          onClick={() => handleRedeem(reward.id, reward.pointsRequired)}
-                          disabled={redeeming === reward.id}
-                          className="px-3 py-1 bg-[#fe5502] text-white text-sm rounded-md hover:bg-[#e0682e] disabled:opacity-50"
-                        >
-                          {redeeming === reward.id ? "..." : "Échanger"}
-                        </button>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-          {rewards.length === 0 && (
-            <p className="text-sm text-gray-400">Aucune récompense configurée.</p>
-          )}
         </div>
       )}
     </div>
