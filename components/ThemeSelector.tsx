@@ -41,27 +41,47 @@ const patterns = [
   {
     id: "watermelon",
     name: "Pastèque",
-    style: { backgroundImage: 'url("/patterns/watermelon.svg")' },
+    style: {
+      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Ctext x='10' y='25' font-size='22'%3E🍉%3C/text%3E%3C/svg%3E")`,
+      backgroundSize: "40px 40px",
+      backgroundRepeat: "repeat",
+    },
   },
   {
     id: "coffee",
     name: "Café",
-    style: { backgroundImage: 'url("/patterns/coffee.svg")' },
+    style: {
+      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='45' height='45' viewBox='0 0 45 45'%3E%3Ctext x='12' y='30' font-size='26'%3E☕%3C/text%3E%3C/svg%3E")`,
+      backgroundSize: "45px 45px",
+      backgroundRepeat: "repeat",
+    },
   },
   {
     id: "flowers",
     name: "Fleurs",
-    style: { backgroundImage: 'url("/patterns/flowers.svg")' },
+    style: {
+      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='70' height='70' viewBox='0 0 70 70'%3E%3Ctext x='10' y='25' font-size='18'%3E🌸%3C/text%3E%3Ctext x='35' y='50' font-size='22'%3E🌻%3C/text%3E%3Ctext x='55' y='20' font-size='16'%3E🌺%3C/text%3E%3C/svg%3E")`,
+      backgroundSize: "70px 70px",
+      backgroundRepeat: "repeat",
+    },
   },
   {
     id: "games",
     name: "Jeux",
-    style: { backgroundImage: 'url("/patterns/games.svg")' },
+    style: {
+      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='50' height='50' viewBox='0 0 50 50'%3E%3Ctext x='12' y='32' font-size='28'%3E🎮%3C/text%3E%3C/svg%3E")`,
+      backgroundSize: "50px 50px",
+      backgroundRepeat: "repeat",
+    },
   },
   {
     id: "pizza",
     name: "Pizza",
-    style: { backgroundImage: 'url("/patterns/pizza.svg")' },
+    style: {
+      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='55' height='55' viewBox='0 0 55 55'%3E%3Ctext x='14' y='35' font-size='32'%3E🍕%3C/text%3E%3C/svg%3E")`,
+      backgroundSize: "55px 55px",
+      backgroundRepeat: "repeat",
+    },
   },
 ];
 

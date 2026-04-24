@@ -138,10 +138,10 @@ export default function ClientDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0a1628] flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#f9fafb" }}>
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#fe5502] mb-4"></div>
-          <p className="text-gray-400">Chargement de votre carte...</p>
+          <p className="text-gray-500">Chargement de votre carte...</p>
         </div>
       </div>
     );
@@ -149,9 +149,9 @@ export default function ClientDashboard() {
 
   if (!client || !restaurant) {
     return (
-      <div className="min-h-screen bg-[#0a1628] flex items-center justify-center p-4">
+      <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: "#f9fafb" }}>
         <div className="text-center">
-          <p className="text-red-400 mb-4">Erreur de chargement des données</p>
+          <p className="text-red-500 mb-4">Erreur de chargement des données</p>
           <button onClick={handleRefresh} className="px-4 py-2 bg-[#fe5502] text-white rounded-lg hover:bg-[#e0682e] transition">
             Réessayer
           </button>
@@ -160,13 +160,13 @@ export default function ClientDashboard() {
     );
   }
 
-  // ----- Apply theme from restaurant (with fallback) -----
+  // ----- Apply theme from restaurant with neutral fallback -----
   const theme = restaurant?.theme || {};
   const primaryColor = theme.colors?.primary || "#fe5502";
   const secondaryColor = theme.colors?.secondary || "#e0682e";
-  const bgColor = theme.colors?.background || "#0a1628";
-  const cardBgColor = theme.colors?.cardBackground || "#0d1f3c";
-  const textColor = theme.colors?.text || "#ffffff";
+  const bgColor = theme.colors?.background || "#ffffff";
+  const cardBgColor = theme.colors?.cardBackground || "#ffffff";
+  const textColor = theme.colors?.text || "#1f2937";
   const accentColor = theme.colors?.accent || primaryColor;
 
   const dynamicStyles = {
@@ -198,22 +198,22 @@ export default function ClientDashboard() {
   return (
     <div className="min-h-screen" style={{ backgroundColor: dynamicStyles.background }}>
       <div
-        className="max-w-md mx-auto min-h-screen shadow-2xl relative border-x"
+        className="max-w-md mx-auto min-h-screen shadow-lg relative border-x"
         style={{
           backgroundColor: dynamicStyles.cardBg,
-          borderColor: `${dynamicStyles.primary}30`,
+          borderColor: `${dynamicStyles.primary}20`,
           color: dynamicStyles.text,
         }}
       >
         {/* Header */}
         <div
-          className="px-4 py-3 flex items-center justify-between border-b sticky top-0 z-10 backdrop-blur-sm"
+          className="px-4 py-3 flex items-center justify-between border-b sticky top-0 z-10 bg-opacity-95 backdrop-blur-sm"
           style={{
-            borderColor: `${dynamicStyles.primary}30`,
-            backgroundColor: `${dynamicStyles.cardBg}cc`,
+            borderColor: `${dynamicStyles.primary}20`,
+            backgroundColor: dynamicStyles.cardBg,
           }}
         >
-          <button onClick={handleRefresh} className="p-2 rounded-full transition-colors hover:bg-opacity-20" style={{ color: dynamicStyles.text }}>
+          <button onClick={handleRefresh} className="p-2 rounded-full hover:bg-gray-100 transition-colors" style={{ color: dynamicStyles.text }}>
             <svg className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
@@ -227,7 +227,7 @@ export default function ClientDashboard() {
               </div>
             )}
           </div>
-          <button className="p-2 rounded-full transition-colors hover:bg-opacity-20" style={{ color: dynamicStyles.text }}>
+          <button className="p-2 rounded-full hover:bg-gray-100 transition-colors" style={{ color: dynamicStyles.text }}>
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
             </svg>
@@ -235,7 +235,7 @@ export default function ClientDashboard() {
         </div>
 
         {/* Client Info */}
-        <div className="px-4 py-6 text-center border-b" style={{ borderColor: `${dynamicStyles.primary}30` }}>
+        <div className="px-4 py-6 text-center border-b" style={{ borderColor: `${dynamicStyles.primary}20` }}>
           <h2 className="text-2xl font-bold" style={{ color: dynamicStyles.text }}>{client.name}</h2>
           <p className="text-sm mt-1" style={{ color: `${dynamicStyles.text}99` }}>ID: #{getShortId()}</p>
           <p className="mt-3 italic" style={{ color: `${dynamicStyles.text}cc` }}>
@@ -249,19 +249,19 @@ export default function ClientDashboard() {
 
         {/* Balance */}
         <div
-          className="px-4 py-4 border-b bg-gradient-to-r"
+          className="px-4 py-4 border-b"
           style={{
-            backgroundImage: `linear-gradient(to right, ${dynamicStyles.background}, ${dynamicStyles.cardBg})`,
-            borderColor: `${dynamicStyles.primary}30`,
+            borderColor: `${dynamicStyles.primary}20`,
+            background: `linear-gradient(135deg, ${dynamicStyles.primary}10, ${dynamicStyles.cardBg})`,
           }}
         >
-          <p className="text-sm" style={{ color: `${dynamicStyles.text}99` }}>Votre solde est</p>
+          <p className="text-sm" style={{ color: `${dynamicStyles.text}80` }}>Votre solde est</p>
           <p className="text-3xl font-bold" style={{ color: dynamicStyles.primary }}>{client.points || 0} ⭐</p>
-          <p className="text-xs mt-1" style={{ color: `${dynamicStyles.text}80` }}>1 DT = 10 ⭐</p>
+          <p className="text-xs mt-1" style={{ color: `${dynamicStyles.text}70` }}>1 DT = 10 ⭐</p>
         </div>
 
         {/* QR Code Button */}
-        <div className="px-4 py-4 border-b" style={{ borderColor: `${dynamicStyles.primary}30` }}>
+        <div className="px-4 py-4 border-b" style={{ borderColor: `${dynamicStyles.primary}20` }}>
           <button
             onClick={() => setShowQR(!showQR)}
             className="w-full py-4 rounded-xl font-medium flex items-center justify-center space-x-2 transition-all transform hover:scale-[1.02] active:scale-95"
@@ -273,7 +273,7 @@ export default function ClientDashboard() {
           {showQR && (
             <div
               className="mt-4 p-4 rounded-xl text-center border animate-fadeIn"
-              style={{ backgroundColor: dynamicStyles.background, borderColor: `${dynamicStyles.primary}30` }}
+              style={{ backgroundColor: dynamicStyles.background, borderColor: `${dynamicStyles.primary}20` }}
             >
               <div className="flex justify-center">
                 <QRCodeSVG
@@ -284,21 +284,21 @@ export default function ClientDashboard() {
                   level="H"
                 />
               </div>
-              <p className="text-xs mt-2" style={{ color: `${dynamicStyles.text}99` }}>Présentez ce code au staff</p>
+              <p className="text-xs mt-2" style={{ color: `${dynamicStyles.text}80` }}>Présentez ce code au staff</p>
             </div>
           )}
         </div>
 
         {/* Stars Progress */}
-        <div className="px-4 py-4 border-b" style={{ borderColor: `${dynamicStyles.primary}30` }}>
+        <div className="px-4 py-4 border-b" style={{ borderColor: `${dynamicStyles.primary}20` }}>
           <h3 className="font-semibold mb-3" style={{ color: dynamicStyles.text }}>Vos étoiles</h3>
           {nextReward ? (
             <div className="mb-4">
               <div className="flex justify-between text-sm mb-1">
-                <span style={{ color: `${dynamicStyles.text}99` }}>Prochaine récompense: {nextReward.name}</span>
+                <span style={{ color: `${dynamicStyles.text}80` }}>Prochaine récompense: {nextReward.name}</span>
                 <span className="font-medium" style={{ color: dynamicStyles.primary }}>{client.points || 0} / {nextReward.stars} ⭐</span>
               </div>
-              <div className="w-full rounded-full h-3" style={{ backgroundColor: `${dynamicStyles.primary}30` }}>
+              <div className="w-full rounded-full h-3" style={{ backgroundColor: `${dynamicStyles.primary}20` }}>
                 <div
                   className="rounded-full h-3 transition-all duration-500"
                   style={{ width: `${Math.min(currentProgress, 100)}%`, backgroundColor: dynamicStyles.primary }}
@@ -306,7 +306,7 @@ export default function ClientDashboard() {
               </div>
             </div>
           ) : (
-            <p className="text-sm" style={{ color: `${dynamicStyles.text}99` }}>Aucune récompense configurée pour le moment.</p>
+            <p className="text-sm" style={{ color: `${dynamicStyles.text}80` }}>Aucune récompense configurée pour le moment.</p>
           )}
 
           {rewards.length > 0 && (
@@ -318,8 +318,8 @@ export default function ClientDashboard() {
                       (client.points || 0) >= reward.stars ? "shadow-lg scale-105" : ""
                     }`}
                     style={{
-                      backgroundColor: (client.points || 0) >= reward.stars ? dynamicStyles.primary : `${dynamicStyles.primary}20`,
-                      border: `1px solid ${(client.points || 0) >= reward.stars ? dynamicStyles.primary : `${dynamicStyles.primary}40`}`,
+                      backgroundColor: (client.points || 0) >= reward.stars ? dynamicStyles.primary : `${dynamicStyles.primary}10`,
+                      border: `1px solid ${(client.points || 0) >= reward.stars ? dynamicStyles.primary : `${dynamicStyles.primary}20`}`,
                       color: (client.points || 0) >= reward.stars ? "#fff" : dynamicStyles.text,
                     }}
                   >
@@ -336,7 +336,7 @@ export default function ClientDashboard() {
         {/* Coupons Tab (if any) */}
         {coupons.length > 0 && (
           <>
-            <div className="px-4 py-2 border-b" style={{ borderColor: `${dynamicStyles.primary}30` }}>
+            <div className="px-4 py-2 border-b" style={{ borderColor: `${dynamicStyles.primary}20` }}>
               <div className="flex space-x-4">
                 <button
                   onClick={() => setActiveTab("rewards")}
@@ -384,11 +384,11 @@ export default function ClientDashboard() {
         )}
 
         {/* About Restaurant */}
-        <div className="px-4 py-2 border-t" style={{ borderColor: `${dynamicStyles.primary}30` }}>
+        <div className="px-4 py-2 border-t" style={{ borderColor: `${dynamicStyles.primary}20` }}>
           <button
             onClick={() => setShowAbout(!showAbout)}
-            className="w-full py-3 border rounded-xl font-medium flex items-center justify-center space-x-2 transition hover:bg-opacity-20"
-            style={{ borderColor: `${dynamicStyles.primary}50`, color: dynamicStyles.text }}
+            className="w-full py-3 border rounded-xl font-medium flex items-center justify-center space-x-2 transition hover:bg-gray-50"
+            style={{ borderColor: `${dynamicStyles.primary}30`, color: dynamicStyles.text }}
           >
             <span>ℹ️</span>
             <span>À propos de {restaurant.name}</span>
@@ -396,7 +396,7 @@ export default function ClientDashboard() {
           {showAbout && (
             <div
               className="mt-4 p-4 rounded-xl space-y-3 border animate-fadeIn"
-              style={{ backgroundColor: dynamicStyles.background, borderColor: `${dynamicStyles.primary}30` }}
+              style={{ backgroundColor: dynamicStyles.background, borderColor: `${dynamicStyles.primary}20` }}
             >
               {restaurant.description && <p className="text-sm" style={{ color: dynamicStyles.text }}>{restaurant.description}</p>}
               {restaurant.address && (
@@ -432,8 +432,8 @@ export default function ClientDashboard() {
               )}
               <button
                 onClick={() => setShowAbout(false)}
-                className="w-full mt-2 py-2 rounded-lg text-sm font-medium transition"
-                style={{ backgroundColor: `${dynamicStyles.primary}20`, color: dynamicStyles.text }}
+                className="w-full mt-2 py-2 rounded-lg text-sm font-medium transition hover:bg-gray-100"
+                style={{ backgroundColor: `${dynamicStyles.primary}10`, color: dynamicStyles.text }}
               >
                 Compris !
               </button>
@@ -442,7 +442,7 @@ export default function ClientDashboard() {
         </div>
 
         {/* Add to Home Screen */}
-        <div className="px-4 py-4 border-t" style={{ borderColor: `${dynamicStyles.primary}30`, backgroundColor: dynamicStyles.background }}>
+        <div className="px-4 py-4 border-t" style={{ borderColor: `${dynamicStyles.primary}20`, backgroundColor: dynamicStyles.background }}>
           <button
             onClick={handleAddToHomeScreen}
             className="w-full py-4 border-2 rounded-xl font-medium flex items-center justify-center space-x-2 transition-all transform hover:scale-[1.02] active:scale-95"
@@ -453,7 +453,7 @@ export default function ClientDashboard() {
             </svg>
             <span>Ajouter à l'écran d'accueil</span>
           </button>
-          <p className="text-xs text-center mt-3" style={{ color: `${dynamicStyles.text}80` }}>Powered by adam · Mentions légales</p>
+          <p className="text-xs text-center mt-3" style={{ color: `${dynamicStyles.text}60` }}>Powered by adam · Mentions légales</p>
         </div>
       </div>
       <style jsx>{`
