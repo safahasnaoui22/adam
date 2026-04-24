@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { QRCodeSVG } from "qrcode.react"; // install if not present: npm install qrcode.react
+import { QRCodeSVG } from "qrcode.react";
 
 export default function ClientDashboard() {
   const searchParams = useSearchParams();
@@ -23,21 +23,7 @@ export default function ClientDashboard() {
 
   // PWA install prompt
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
-const defaultTheme = {
-  colors: {
-    primary: "#fe5502",
-    background: "#ffffff",
-    text: "#282424",
-    accent: "#e0682e",
-  },
-};
 
-const dynamicStyles = {
-  primary: restaurant?.theme?.colors?.primary || defaultTheme.colors.primary,
-  background: restaurant?.theme?.colors?.background || defaultTheme.colors.background,
-  text: restaurant?.theme?.colors?.text || defaultTheme.colors.text,
-  accent: restaurant?.theme?.colors?.accent || defaultTheme.colors.accent,
-};
   // Typing animation effect
   useEffect(() => {
     let i = 0;
@@ -59,7 +45,6 @@ const dynamicStyles = {
       const lastPart = parts[parts.length - 1];
       return lastPart.slice(-4);
     } else if (client?.id) {
-      // fallback: use last 4 chars of internal id
       return client.id.slice(-4);
     }
     return "****";
@@ -96,9 +81,9 @@ const dynamicStyles = {
   };
 
   useEffect(() => {
-    let clientId = localStorage.getItem("clientId");
-    let clientName = localStorage.getItem("clientName");
-    let storedRestaurantId = localStorage.getItem("restaurantId");
+    const clientId = localStorage.getItem("clientId");
+    const clientName = localStorage.getItem("clientName");
+    const storedRestaurantId = localStorage.getItem("restaurantId");
 
     if (clientId && clientName && storedRestaurantId) {
       fetchClientData(clientId);
@@ -146,32 +131,12 @@ const dynamicStyles = {
         setDeferredPrompt(null);
       });
     } else {
-      // fallback instructions for browsers that don't support beforeinstallprompt
       if (navigator.userAgent.includes('iPhone') || navigator.userAgent.includes('iPad')) {
         alert("Pour ajouter à l'écran d'accueil :\n1. Appuyez sur le bouton Partager\n2. Faites défiler vers le bas\n3. Appuyez sur 'Sur l'écran d'accueil'");
       } else {
         alert("Utilisez 'Ajouter à l'écran d'accueil' dans le menu du navigateur");
       }
     }
-  };
-
-  // Apply theme from restaurant (if any)
-  const theme = restaurant?.theme || {};
-  const primaryColor = theme.colors?.primary || "#fe5502";
-  const secondaryColor = theme.colors?.secondary || "#e0682e";
-  const bgColor = theme.colors?.background || "#0a1628";
-  const cardBgColor = theme.colors?.cardBackground || "#0d1f3c";
-  const textColor = theme.colors?.text || "#ffffff";
-  const accentColor = theme.colors?.accent || primaryColor;
-
-  // Build dynamic style object
-  const dynamicStyles = {
-    primary: primaryColor,
-    secondary: secondaryColor,
-    background: bgColor,
-    cardBg: cardBgColor,
-    text: textColor,
-    accent: accentColor,
   };
 
   if (loading) {
@@ -198,39 +163,59 @@ const dynamicStyles = {
     );
   }
 
-  // Get rewards from restaurant's loyalty program (no fallback)
+  // ----- Apply theme from restaurant -----
+  const theme = restaurant?.theme || {};
+  const primaryColor = theme.colors?.primary || "#fe5502";
+  const secondaryColor = theme.colors?.secondary || "#e0682e";
+  const bgColor = theme.colors?.background || "#0a1628";
+  const cardBgColor = theme.colors?.cardBackground || "#0d1f3c";
+  const textColor = theme.colors?.text || "#ffffff";
+  const accentColor = theme.colors?.accent || primaryColor;
+
+  const dynamicStyles = {
+    primary: primaryColor,
+    secondary: secondaryColor,
+    background: bgColor,
+    cardBg: cardBgColor,
+    text: textColor,
+    accent: accentColor,
+  };
+
+  // ----- Rewards (no fallback – only real ones) -----
   const rewards = restaurant.loyaltyProgram?.rewards?.length
     ? restaurant.loyaltyProgram.rewards.map((r: any) => ({
         id: r.id,
         name: r.name,
         stars: r.pointsRequired,
         icon: "🎁",
-        description: r.description || ""
+        description: r.description || "",
       }))
-    : []; // No static fallback anymore
+    : [];
 
-  const coupons = restaurant.coupons || []; // remove static coupons too
+  const coupons = restaurant.coupons || [];
 
-  // Calculate next reward for progress bar
   const sortedRewards = [...rewards].sort((a, b) => a.stars - b.stars);
   const nextReward = sortedRewards.find(r => r.stars > (client.points || 0));
   const currentProgress = nextReward ? (client.points / nextReward.stars) * 100 : 100;
 
   return (
-    <div 
-      className="min-h-screen" 
-      style={{ backgroundColor: dynamicStyles.background }}
-    >
-      <div 
-        className="max-w-md mx-auto min-h-screen shadow-2xl relative border-x" 
-        style={{ 
+    <div className="min-h-screen" style={{ backgroundColor: dynamicStyles.background }}>
+      <div
+        className="max-w-md mx-auto min-h-screen shadow-2xl relative border-x"
+        style={{
           backgroundColor: dynamicStyles.cardBg,
           borderColor: `${dynamicStyles.primary}30`,
-          color: dynamicStyles.text
+          color: dynamicStyles.text,
         }}
       >
         {/* Header */}
-        <div className="px-4 py-3 flex items-center justify-between border-b sticky top-0 z-10 backdrop-blur-sm" style={{ borderColor: `${dynamicStyles.primary}30`, backgroundColor: `${dynamicStyles.cardBg}cc` }}>
+        <div
+          className="px-4 py-3 flex items-center justify-between border-b sticky top-0 z-10 backdrop-blur-sm"
+          style={{
+            borderColor: `${dynamicStyles.primary}30`,
+            backgroundColor: `${dynamicStyles.cardBg}cc`,
+          }}
+        >
           <button onClick={handleRefresh} className="p-2 rounded-full transition-colors hover:bg-opacity-20" style={{ color: dynamicStyles.text }}>
             <svg className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -252,7 +237,7 @@ const dynamicStyles = {
           </button>
         </div>
 
-        {/* Client Info with Typing Animation */}
+        {/* Client Info */}
         <div className="px-4 py-6 text-center border-b" style={{ borderColor: `${dynamicStyles.primary}30` }}>
           <h2 className="text-2xl font-bold" style={{ color: dynamicStyles.text }}>{client.name}</h2>
           <p className="text-sm mt-1" style={{ color: `${dynamicStyles.text}99` }}>ID: #{getShortId()}</p>
@@ -265,41 +250,49 @@ const dynamicStyles = {
           </p>
         </div>
 
-        {/* Balance Section with gradient */}
-        <div className="px-4 py-4 border-b bg-gradient-to-r" style={{ backgroundImage: `linear-gradient(to right, ${dynamicStyles.background}, ${dynamicStyles.cardBg})`, borderColor: `${dynamicStyles.primary}30` }}>
+        {/* Balance */}
+        <div
+          className="px-4 py-4 border-b bg-gradient-to-r"
+          style={{
+            backgroundImage: `linear-gradient(to right, ${dynamicStyles.background}, ${dynamicStyles.cardBg})`,
+            borderColor: `${dynamicStyles.primary}30`,
+          }}
+        >
           <p className="text-sm" style={{ color: `${dynamicStyles.text}99` }}>Votre solde est</p>
           <p className="text-3xl font-bold" style={{ color: dynamicStyles.primary }}>{client.points || 0} ⭐</p>
           <p className="text-xs mt-1" style={{ color: `${dynamicStyles.text}80` }}>1 DT = 10 ⭐</p>
         </div>
 
-  
-      {/* QR Code Button with real QR code (points to scan page) */}
-<div className="px-4 py-4 border-b" style={{ borderColor: `${dynamicStyles.primary}30` }}>
-  <button
-    onClick={() => setShowQR(!showQR)}
-    className="w-full py-4 rounded-xl font-medium flex items-center justify-center space-x-2 transition-all transform hover:scale-[1.02] active:scale-95"
-    style={{ backgroundColor: dynamicStyles.primary, color: '#fff' }}
-  >
-    <span>📱</span>
-    <span>Mon Code QR</span>
-  </button>
-  {showQR && (
-    <div className="mt-4 p-4 rounded-xl text-center border animate-fadeIn" style={{ backgroundColor: dynamicStyles.background, borderColor: `${dynamicStyles.primary}30` }}>
-      <div className="flex justify-center">
-        <QRCodeSVG 
-          value={`${window.location.origin}/scan/${client.customerId}`} 
-          size={180} 
-          bgColor="#ffffff" 
-          fgColor={dynamicStyles.primary} 
-          level="H" 
-        />
-      </div>
-      <p className="text-xs mt-2" style={{ color: `${dynamicStyles.text}99` }}>Présentez ce code au staff</p>
-    </div>
-  )}
-</div>
+        {/* QR Code Button */}
+        <div className="px-4 py-4 border-b" style={{ borderColor: `${dynamicStyles.primary}30` }}>
+          <button
+            onClick={() => setShowQR(!showQR)}
+            className="w-full py-4 rounded-xl font-medium flex items-center justify-center space-x-2 transition-all transform hover:scale-[1.02] active:scale-95"
+            style={{ backgroundColor: dynamicStyles.primary, color: "#fff" }}
+          >
+            <span>📱</span>
+            <span>Mon Code QR</span>
+          </button>
+          {showQR && (
+            <div
+              className="mt-4 p-4 rounded-xl text-center border animate-fadeIn"
+              style={{ backgroundColor: dynamicStyles.background, borderColor: `${dynamicStyles.primary}30` }}
+            >
+              <div className="flex justify-center">
+                <QRCodeSVG
+                  value={`${window.location.origin}/scan/${client.customerId}`}
+                  size={180}
+                  bgColor="#ffffff"
+                  fgColor={dynamicStyles.primary}
+                  level="H"
+                />
+              </div>
+              <p className="text-xs mt-2" style={{ color: `${dynamicStyles.text}99` }}>Présentez ce code au staff</p>
+            </div>
+          )}
+        </div>
 
-        {/* Stars Progress Section */}
+        {/* Stars Progress */}
         <div className="px-4 py-4 border-b" style={{ borderColor: `${dynamicStyles.primary}30` }}>
           <h3 className="font-semibold mb-3" style={{ color: dynamicStyles.text }}>Vos étoiles</h3>
           {nextReward ? (
@@ -312,27 +305,25 @@ const dynamicStyles = {
                 <div
                   className="rounded-full h-3 transition-all duration-500"
                   style={{ width: `${Math.min(currentProgress, 100)}%`, backgroundColor: dynamicStyles.primary }}
-                ></div>
+                />
               </div>
             </div>
           ) : (
             <p className="text-sm" style={{ color: `${dynamicStyles.text}99` }}>Aucune récompense configurée pour le moment.</p>
           )}
-          {/* Rewards grid */}
+
           {rewards.length > 0 && (
             <div className="grid grid-cols-4 gap-2 mt-4">
               {rewards.map((reward: any) => (
                 <div key={reward.id} className="text-center group">
                   <div
                     className={`w-full aspect-square rounded-xl flex flex-col items-center justify-center p-1 transition-all duration-200 ${
-                      (client.points || 0) >= reward.stars
-                        ? 'shadow-lg scale-105'
-                        : ''
+                      (client.points || 0) >= reward.stars ? "shadow-lg scale-105" : ""
                     }`}
                     style={{
                       backgroundColor: (client.points || 0) >= reward.stars ? dynamicStyles.primary : `${dynamicStyles.primary}20`,
                       border: `1px solid ${(client.points || 0) >= reward.stars ? dynamicStyles.primary : `${dynamicStyles.primary}40`}`,
-                      color: (client.points || 0) >= reward.stars ? '#fff' : dynamicStyles.text,
+                      color: (client.points || 0) >= reward.stars ? "#fff" : dynamicStyles.text,
                     }}
                   >
                     <span className="text-2xl">{reward.icon}</span>
@@ -345,7 +336,7 @@ const dynamicStyles = {
           )}
         </div>
 
-        {/* Tabs (rewards/coupons) - rewards are already shown above, but we keep tabs for coupons */}
+        {/* Coupons Tab (if any) */}
         {coupons.length > 0 && (
           <>
             <div className="px-4 py-2 border-b" style={{ borderColor: `${dynamicStyles.primary}30` }}>
@@ -373,10 +364,14 @@ const dynamicStyles = {
               </div>
             </div>
             <div className="px-4 py-4 min-h-[200px] animate-fadeIn">
-              {activeTab === "coupons" ? (
+              {activeTab === "coupons" && (
                 <div className="space-y-3">
                   {coupons.map((coupon: any) => (
-                    <div key={coupon.id} className="border border-dashed p-3 rounded-xl flex items-center justify-between" style={{ borderColor: dynamicStyles.primary, backgroundColor: `${dynamicStyles.primary}10` }}>
+                    <div
+                      key={coupon.id}
+                      className="border border-dashed p-3 rounded-xl flex items-center justify-between"
+                      style={{ borderColor: dynamicStyles.primary, backgroundColor: `${dynamicStyles.primary}10` }}
+                    >
                       <div>
                         <p className="font-bold" style={{ color: dynamicStyles.primary }}>{coupon.name}</p>
                         <p className="text-xs" style={{ color: `${dynamicStyles.text}99` }}>{coupon.description}</p>
@@ -385,25 +380,6 @@ const dynamicStyles = {
                       <button className="px-3 py-1 text-white text-sm rounded-lg" style={{ backgroundColor: dynamicStyles.primary }}>Activer</button>
                     </div>
                   ))}
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {rewards.length > 0 ? (
-                    rewards.map((reward: any) => (
-                      <div key={reward.id} className="p-3 rounded-xl flex items-center justify-between" style={{ backgroundColor: `${dynamicStyles.primary}10`, borderLeft: `4px solid ${dynamicStyles.primary}` }}>
-                        <div>
-                          <p className="font-medium" style={{ color: dynamicStyles.text }}>{reward.name}</p>
-                          <p className="text-xs" style={{ color: `${dynamicStyles.text}99` }}>{reward.stars} points requis</p>
-                          {reward.description && <p className="text-xs text-gray-400">{reward.description}</p>}
-                        </div>
-                        {client.points >= reward.stars && (
-                          <button className="px-3 py-1 rounded-lg text-sm" style={{ backgroundColor: dynamicStyles.primary, color: '#fff' }}>Échanger</button>
-                        )}
-                      </div>
-                    ))
-                  ) : (
-                    <p className="text-center" style={{ color: `${dynamicStyles.text}99` }}>Aucune récompense configurée.</p>
-                  )}
                 </div>
               )}
             </div>
@@ -421,10 +397,11 @@ const dynamicStyles = {
             <span>À propos de {restaurant.name}</span>
           </button>
           {showAbout && (
-            <div className="mt-4 p-4 rounded-xl space-y-3 border animate-fadeIn" style={{ backgroundColor: dynamicStyles.background, borderColor: `${dynamicStyles.primary}30` }}>
-              {restaurant.description && (
-                <p className="text-sm" style={{ color: dynamicStyles.text }}>{restaurant.description}</p>
-              )}
+            <div
+              className="mt-4 p-4 rounded-xl space-y-3 border animate-fadeIn"
+              style={{ backgroundColor: dynamicStyles.background, borderColor: `${dynamicStyles.primary}30` }}
+            >
+              {restaurant.description && <p className="text-sm" style={{ color: dynamicStyles.text }}>{restaurant.description}</p>}
               {restaurant.address && (
                 <div className="flex items-start space-x-2">
                   <span>📍</span>
@@ -450,7 +427,7 @@ const dynamicStyles = {
                     {Object.entries(restaurant.openingHours).map(([day, hours]: any) => (
                       <div key={day} className="flex justify-between gap-4">
                         <span>{day}:</span>
-                        <span>{hours.closed ? 'Fermé' : `${hours.open} - ${hours.close}`}</span>
+                        <span>{hours.closed ? "Fermé" : `${hours.open} - ${hours.close}`}</span>
                       </div>
                     ))}
                   </div>
