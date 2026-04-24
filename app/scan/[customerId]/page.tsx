@@ -1,4 +1,3 @@
-// app/scan/[customerId]/page.tsx
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/lib/auth";
 import { redirect, notFound } from "next/navigation";
@@ -33,7 +32,6 @@ export default async function ScanCustomerPage({ params }: PageProps) {
     notFound();
   }
 
-  // Fetch rewards for this restaurant's loyalty program
   const loyaltyProgram = await prisma.loyaltyProgram.findFirst({
     where: { restaurantId: session.user.restaurantId },
     include: {
@@ -44,20 +42,20 @@ export default async function ScanCustomerPage({ params }: PageProps) {
     },
   });
 
-  const rewards = loyaltyProgram?.rewards || [];
+  const rewards = (loyaltyProgram?.rewards || []).map((r) => ({
+    id: r.id,
+    name: r.name,
+    pointsRequired: r.pointsRequired,
+    description: r.description ?? undefined, // convert null to undefined
+  }));
 
-  // Helper to get short ID (last 4 chars)
-  const getShortId = (fullId: string) => {
-    if (!fullId) return "****";
-    // e.g., "CUST-1774687932587-XV0B49" -> "B49" (last 4)
-    return fullId.slice(-4);
-  };
+  const getShortId = (fullId: string) => fullId.slice(-4);
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
       <div className="max-w-md mx-auto bg-white rounded-2xl shadow-lg p-6">
         <h1 className="text-2xl font-bold text-center mb-6">Fiche client</h1>
-        
+
         <div className="space-y-4 mb-6">
           <div>
             <p className="text-sm text-gray-500">Nom</p>
@@ -74,9 +72,9 @@ export default async function ScanCustomerPage({ params }: PageProps) {
           </div>
         </div>
 
-        <ScanClientForm 
-          customerId={customer.id} 
-          currentPoints={customer.points} 
+        <ScanClientForm
+          customerId={customer.id}
+          currentPoints={customer.points}
           rewards={rewards}
         />
       </div>
