@@ -11,11 +11,12 @@ export default function DashboardNav() {
     { name: "Tableau de bord", href: "/dashboard", icon: "📊" },
     { name: "Personnaliser la carte", href: "/dashboard/personalize", icon: "🎨" },
     { name: "Programme de fidélité", href: "/dashboard/loyalty-program", icon: "⭐" },
-    { name: "Clients", href: "/dashboard/clients", icon: "👥" },
+   
     { name: "QR Code", href: "/dashboard/qr-code", icon: "📱" },
     { name: "Demandes de bonus", href: "/dashboard/bonus-requests", icon: "🎁" },
-     { name: "Cartes client", href: "/dashboard/clients" },          // ✨ new
-  { name: "Activités", href: "/dashboard/activities" },   
+     { name: "Cartes client", href: "/dashboard/clients" , icon: "👥" },          // ✨ new
+  { name: "Activités", href: "/dashboard/activities" },
+   { name: "Statistiques", href: "/dashboard/stats" },    
   ];
 
   return (
