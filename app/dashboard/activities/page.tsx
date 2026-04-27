@@ -16,15 +16,15 @@ export default async function ActivitiesPage() {
       },
     },
     include: {
-      user: { select: { name: true, email: true } },
+      user: { select: { id: true, name: true, email: true } },
     },
     orderBy: { createdAt: "desc" },
   });
 
   const staff = await prisma.user.findMany({
     where: {
-      restaurant: { id: session.user.restaurantId },   // ✅ use relation filter
-      role: { in: ["RESTAURANT_OWNER"] },               // you can add "STAFF" if needed
+      restaurant: { id: session.user.restaurantId },
+      role: { in: ["RESTAURANT_OWNER"] },
     },
     select: { id: true, name: true, email: true },
   });
