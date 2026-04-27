@@ -8,7 +8,11 @@ interface Activity {
   action: string;
   details: any;
   createdAt: Date;
-  user: { name: string | null; email: string | null };
+  user: {
+    id: string;
+    name: string | null;
+    email: string | null;
+  };
 }
 
 interface Staff {
