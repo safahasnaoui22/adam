@@ -1,26 +1,38 @@
-// app/dashboard/stats/page.tsx
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/lib/auth";
 import { redirect } from "next/navigation";
-import StatsClient from "@/components/StatsClient";
+import { prisma } from "@/app/lib/prisma";
 
 export default async function StatsPage() {
   const session = await getServerSession(authOptions);
   if (!session?.user?.restaurantId) redirect("/auth/signin");
 
-  const res = await fetch(`${process.env.NEXTAUTH_URL}/api/restaurant/simple-stats`, {
-    cache: "no-store",
-    headers: {
-      cookie: `next-auth.session-token=${session.user.id}`,
-    },
-  });
-  const data = await res.json();
+  const restaurantId = session.user.restaurantId;
+
+  const totalCustomers = await prisma.customerProfile.count({ where: { restaurantId } });
+  const totalPoints = (await prisma.customerProfile.aggregate({
+    where: { restaurantId },
+    _sum: { points: true },
+  }))._sum.points || 0;
+  const totalVisits = await prisma.visit.count({ where: { customer: { restaurantId } } });
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold text-white mb-2">Statistiques simplifiées</h1>
-      <p className="text-gray-400 mb-6">Aperçu rapide de votre activité</p>
-      <StatsClient data={data} />
+      <h1 className="text-2xl font-bold text-white mb-2">Statistiques</h1>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-[#0d1f3c] p-4 rounded-lg border border-[#1e3a5f]">
+          <p className="text-gray-400">Total clients</p>
+          <p className="text-2xl font-bold text-white">{totalCustomers}</p>
+        </div>
+        <div className="bg-[#0d1f3c] p-4 rounded-lg border border-[#1e3a5f]">
+          <p className="text-gray-400">Points distribués</p>
+          <p className="text-2xl font-bold text-white">{totalPoints}⭐</p>
+        </div>
+        <div className="bg-[#0d1f3c] p-4 rounded-lg border border-[#1e3a5f]">
+          <p className="text-gray-400">Visites</p>
+          <p className="text-2xl font-bold text-white">{totalVisits}</p>
+        </div>
+      </div>
     </div>
   );
 }
