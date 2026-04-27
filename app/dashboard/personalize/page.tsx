@@ -106,31 +106,32 @@ export default function PersonalizePage() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSaving(true);
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setSaving(true);
 
-    try {
-      const res = await fetch("/api/restaurant/profile", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
+  try {
+    const res = await fetch("/api/restaurant/profile", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(formData),
+    });
 
-      if (res.ok) {
-        router.push("/dashboard");
-        router.refresh();
-      } else {
-        const data = await res.json();
-        alert(data.error || "Failed to save");
-      }
-    } catch (error) {
-      alert("Failed to save changes");
-    } finally {
-      setSaving(false);
+    if (res.ok) {
+      // Stay on the same page, show a success message
+      alert("Paramètres enregistrés avec succès !");
+      // Optionally refresh the data
+      await fetchRestaurant();
+    } else {
+      const data = await res.json();
+      alert(data.error || "Failed to save");
     }
-  };
-
+  } catch (error) {
+    alert("Failed to save changes");
+  } finally {
+    setSaving(false);
+  }
+};
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">

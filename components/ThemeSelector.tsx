@@ -4,42 +4,18 @@
 import { useState, useEffect } from "react";
 
 const themes = [
-  {
-    id: "warm",
-    name: "Chaleureux",
-    colors: { primary: "#f97316", background: "#fff7ed", text: "#431407", accent: "#ea580c" },
-  },
-  {
-    id: "fresh",
-    name: "Frais",
-    colors: { primary: "#06b6d4", background: "#ecfeff", text: "#164e63", accent: "#0891b2" },
-  },
-  {
-    id: "elegant",
-    name: "Élégant",
-    colors: { primary: "#a855f7", background: "#faf5ff", text: "#4a044e", accent: "#9333ea" },
-  },
-  {
-    id: "soft",
-    name: "Rose doux",
-    colors: { primary: "#ec4899", background: "#fdf2f8", text: "#831843", accent: "#db2777" },
-  },
-  {
-    id: "sunset",
-    name: "Sunset",
-    colors: { primary: "#f97316", background: "#fff1e6", text: "#2d1b0e", accent: "#c2410c" },
-  },
-  {
-    id: "bold",
-    name: "Noir & Audacieux",
-    colors: { primary: "#1e1e1e", background: "#0a0a0a", text: "#ffffff", accent: "#f59e0b" },
-  },
+  { id: "warm", name: "Chaleureux", colors: { primary: "#f97316", background: "#fff7ed", text: "#431407", accent: "#ea580c" } },
+  { id: "fresh", name: "Frais", colors: { primary: "#06b6d4", background: "#ecfeff", text: "#164e63", accent: "#0891b2" } },
+  { id: "elegant", name: "Élégant", colors: { primary: "#a855f7", background: "#faf5ff", text: "#4a044e", accent: "#9333ea" } },
+  { id: "soft", name: "Rose doux", colors: { primary: "#ec4899", background: "#fdf2f8", text: "#831843", accent: "#db2777" } },
+  { id: "sunset", name: "Sunset", colors: { primary: "#f97316", background: "#fff1e6", text: "#2d1b0e", accent: "#c2410c" } },
+  { id: "bold", name: "Noir & Audacieux", colors: { primary: "#1e1e1e", background: "#0a0a0a", text: "#ffffff", accent: "#f59e0b" } },
 ];
 
-// Inside ThemeSelector.tsx, before the component
+// Helper function to create visible emoji patterns
 const createPatternSVG = (emoji: string, size: number, fontSize: number) => {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
-    <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="${fontSize}" font-family="Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, Android Emoji, EmojiOne Color, Twemoji Mozilla, sans-serif" fill="#000000" opacity="0.35">${emoji}</text>
+    <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="${fontSize}" font-family="Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, Android Emoji, EmojiOne Color, Twemoji Mozilla, sans-serif" fill="#000000" opacity="0.7">${emoji}</text>
   </svg>`;
   return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
 };
@@ -144,22 +120,22 @@ export default function ThemeSelector({
 
   const currentPattern = patterns.find((p) => p.id === selectedPattern) || patterns[0];
 
+  // SINGLE background style – no blend mode, no duplicate overlay
   const backgroundStyle = {
     backgroundColor: colors.background,
     backgroundImage: currentPattern.style.backgroundImage,
     backgroundSize: "40px 40px",
     backgroundRepeat: "repeat",
-    backgroundBlendMode: "overlay",
   };
 
   const getPatternPreviewStyle = (p: (typeof patterns)[0]) => {
     if (p.id === "none") {
-      return { backgroundColor: "#f3f4f6" };
+      return { backgroundColor: "#e5e7eb" };
     }
     return {
       backgroundImage: p.style.backgroundImage,
       backgroundSize: "40px 40px",
-      backgroundColor: colors.background,
+      backgroundColor: "#f3f4f6", // neutral background for preview button
       backgroundRepeat: "repeat",
       width: "100%",
       height: "60px",
@@ -178,9 +154,10 @@ export default function ThemeSelector({
             {themes.map((t) => (
               <button
                 key={t.id}
+                type="button" // ✅ Prevent form submission
                 onClick={() => handleThemeChange(t)}
                 className={`p-3 rounded-xl border-2 transition-all ${
-                  selectedTheme.id === t.id ? "border-[#fe5502] shadow-md" : "border-gray-200 hover:border-gray-300"
+                  selectedTheme.id === t.id ? "border-[#fe5502] shadow-md ring-2 ring-[#fe5502]/50" : "border-gray-200 hover:border-gray-300"
                 }`}
                 style={{ backgroundColor: t.colors.background }}
               >
@@ -202,12 +179,13 @@ export default function ThemeSelector({
             {patterns.map((p) => (
               <button
                 key={p.id}
+                type="button" // ✅ Prevent form submission
                 onClick={() => handlePatternChange(p.id)}
                 className={`p-2 rounded-lg border-2 transition ${
-                  selectedPattern === p.id ? "border-[#fe5502]" : "border-gray-200 hover:border-gray-300"
+                  selectedPattern === p.id ? "border-[#fe5502] bg-[#fe5502]/5" : "border-gray-200 hover:border-gray-300"
                 }`}
               >
-                <div className="h-12 rounded-md mb-1" style={getPatternPreviewStyle(p)} />
+                <div className="h-12 rounded-md mb-1 overflow-hidden" style={getPatternPreviewStyle(p)} />
                 <span className="text-xs text-gray-600">{p.name}</span>
               </button>
             ))}
@@ -215,10 +193,11 @@ export default function ThemeSelector({
         </div>
       </div>
 
-      {/* Right: Live preview of the customer card */}
+      {/* Right: Live preview of the customer card (pattern visible) */}
       <div className="sticky top-8">
         <h3 className="text-lg font-semibold mb-4">📱 Aperçu (carte client)</h3>
         <div className="max-w-sm mx-auto rounded-3xl border-8 border-gray-800 overflow-hidden shadow-2xl">
+          {/* Single container with pattern as background – no duplicate overlay */}
           <div className="relative" style={backgroundStyle}>
             <div className="p-5 space-y-4 relative z-10">
               {/* Logo & restaurant name */}
@@ -241,30 +220,20 @@ export default function ThemeSelector({
                 </p>
               </div>
 
-              {/* Example customer */}
-              <div className="bg-white/20 backdrop-blur-sm rounded-xl p-3 text-center">
-                <p className="text-sm" style={{ color: colors.text }}>
-                  Bonjour,
-                </p>
-                <p className="text-lg font-semibold" style={{ color: colors.primary }}>
-                  Marie Dupont
-                </p>
-                <p className="text-xs" style={{ color: colors.text }}>
-                  ID: CUST1234
-                </p>
+              {/* Example customer – slightly transparent to let pattern show through */}
+              <div className="rounded-xl p-3 text-center" style={{ backgroundColor: `${colors.background}cc`, backdropFilter: "blur(4px)" }}>
+                <p className="text-sm" style={{ color: colors.text }}>Bonjour,</p>
+                <p className="text-lg font-semibold" style={{ color: colors.primary }}>Marie Dupont</p>
+                <p className="text-xs" style={{ color: colors.text }}>ID: CUST1234</p>
               </div>
 
               {/* Points */}
               <div className="text-center">
-                <span className="text-2xl font-bold" style={{ color: colors.primary }}>
-                  240 ⭐
-                </span>
-                <p className="text-xs opacity-80" style={{ color: colors.text }}>
-                  ≈ 24 DT
-                </p>
+                <span className="text-2xl font-bold" style={{ color: colors.primary }}>240 ⭐</span>
+                <p className="text-xs opacity-80" style={{ color: colors.text }}>≈ 24 DT</p>
               </div>
 
-              {/* Progression */}
+              {/* Progress bar */}
               <div>
                 <div className="flex justify-between text-sm mb-1" style={{ color: colors.text }}>
                   <span>Prochaine récompense</span>
@@ -273,38 +242,24 @@ export default function ThemeSelector({
                 <div className="w-full bg-gray-200 rounded-full h-2">
                   <div className="h-2 rounded-full" style={{ width: "80%", backgroundColor: colors.primary }} />
                 </div>
-                <p className="text-xs mt-1 text-center" style={{ color: colors.text }}>
-                  🎁 Café offert
-                </p>
+                <p className="text-xs mt-1 text-center" style={{ color: colors.text }}>🎁 Café offert</p>
               </div>
 
-              {/* Récompenses disponibles */}
+              {/* Sample rewards */}
               <div className="grid grid-cols-3 gap-2">
                 {[100, 200, 300].map((pts) => (
                   <div key={pts} className="p-2 rounded-lg text-center" style={{ backgroundColor: `${colors.primary}20` }}>
                     <span className="text-lg">☕</span>
-                    <p className="text-xs font-semibold" style={{ color: colors.primary }}>
-                      {pts}⭐
-                    </p>
+                    <p className="text-xs font-semibold" style={{ color: colors.primary }}>{pts}⭐</p>
                   </div>
                 ))}
               </div>
 
-              {/* Bouton QR code */}
+              {/* QR button */}
               <button className="w-full py-2 rounded-lg font-medium text-white" style={{ backgroundColor: colors.primary }}>
                 Mon QR code
               </button>
             </div>
-            {selectedPattern !== "none" && (
-              <div
-                className="absolute inset-0 pointer-events-none opacity-20"
-                style={{
-                  backgroundImage: currentPattern.style.backgroundImage,
-                  backgroundSize: "40px 40px",
-                  backgroundRepeat: "repeat",
-                }}
-              />
-            )}
           </div>
         </div>
         <p className="text-xs text-center text-gray-500 mt-3">
