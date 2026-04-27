@@ -38,10 +38,19 @@ const themes = [
 
 // Inside ThemeSelector.tsx, before the component
 const createPatternSVG = (emoji: string, size: number, fontSize: number) => {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
-    <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="${fontSize}" font-family="Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, Android Emoji, EmojiOne Color, Twemoji Mozilla, sans-serif" fill="#000000" opacity="0.35">${emoji}</text>
-  </svg>`;
-  return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+  const svg = `
+  <svg xmlns='http://www.w3.org/2000/svg' width='${size}' height='${size}' viewBox='0 0 ${size} ${size}'>
+    <text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle'
+      font-size='${fontSize}'
+      font-family='Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif'
+      fill='black'
+      opacity='0.6'>
+      ${emoji}
+    </text>
+  </svg>
+  `;
+
+  return `url("data:image/svg+xml;utf8,${encodeURIComponent(svg)}")`;
 };
 
 const patterns = [
@@ -147,9 +156,9 @@ export default function ThemeSelector({
   const backgroundStyle = {
     backgroundColor: colors.background,
     backgroundImage: currentPattern.style.backgroundImage,
-    backgroundSize: "40px 40px",
+  
     backgroundRepeat: "repeat",
-    backgroundBlendMode: "overlay",
+   
   };
 
   const getPatternPreviewStyle = (p: (typeof patterns)[0]) => {
@@ -297,12 +306,13 @@ export default function ThemeSelector({
             </div>
             {selectedPattern !== "none" && (
               <div
-                className="absolute inset-0 pointer-events-none opacity-20"
-                style={{
-                  backgroundImage: currentPattern.style.backgroundImage,
-                  backgroundSize: "40px 40px",
-                  backgroundRepeat: "repeat",
-                }}
+           className="absolute inset-0 pointer-events-none"
+style={{
+  backgroundImage: currentPattern.style.backgroundImage,
+  backgroundSize: currentPattern.style.backgroundSize,
+  backgroundRepeat: "repeat",
+  opacity: 0.45, // stronger so visible on phone
+}}
               />
             )}
           </div>
