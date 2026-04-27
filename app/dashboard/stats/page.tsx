@@ -10,15 +10,16 @@ export default async function StatsPage() {
   const restaurantId = session.user.restaurantId;
 
   const totalCustomers = await prisma.customerProfile.count({ where: { restaurantId } });
-  const totalPoints = (await prisma.customerProfile.aggregate({
+  const totalPointsAgg = await prisma.customerProfile.aggregate({
     where: { restaurantId },
     _sum: { points: true },
-  }))._sum.points || 0;
+  });
+  const totalPoints = totalPointsAgg._sum.points || 0;
   const totalVisits = await prisma.visit.count({ where: { customer: { restaurantId } } });
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold text-white mb-2">Statistiques</h1>
+      <h1 className="text-2xl font-bold text-white mb-4">Statistiques</h1>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-[#0d1f3c] p-4 rounded-lg border border-[#1e3a5f]">
           <p className="text-gray-400">Total clients</p>
