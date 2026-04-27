@@ -11,7 +11,9 @@ export default async function ActivitiesPage() {
 
   const activities = await prisma.activityLog.findMany({
     where: {
-      user: { restaurantId: session.user.restaurantId },
+      user: {
+        restaurant: { id: session.user.restaurantId }   // ✅ fixed
+      }
     },
     include: {
       user: { select: { name: true, email: true } },
@@ -19,11 +21,10 @@ export default async function ActivitiesPage() {
     orderBy: { createdAt: "desc" },
   });
 
-  // Get staff members (users with role RESTAURANT_OWNER or other staff roles)
   const staff = await prisma.user.findMany({
     where: {
-      restaurantId: session.user.restaurantId,
-      role: { in: ["RESTAURANT_OWNER", "STAFF"] }, // add STAFF role if needed
+      restaurantId: session.user.restaurantId,          // ✅ this works because User has restaurantId scalar
+      role: { in: ["RESTAURANT_OWNER"] },               // you can add "STAFF" if needed
     },
     select: { id: true, name: true, email: true },
   });
