@@ -14,6 +14,8 @@ export default function DashboardNav() {
     { name: "Clients", href: "/dashboard/clients", icon: "👥" },
     { name: "QR Code", href: "/dashboard/qr-code", icon: "📱" },
     { name: "Demandes de bonus", href: "/dashboard/bonus-requests", icon: "🎁" },
+     { name: "Cartes client", href: "/dashboard/clients" },          // ✨ new
+  { name: "Activités", href: "/dashboard/activities" },   
   ];
 
   return (

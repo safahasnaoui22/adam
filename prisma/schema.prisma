@@ -20,8 +20,17 @@ model User {
   adminLogs       AdminLog[]       @relation("AdminActions")
   customerProfile CustomerProfile?
   restaurant      Restaurant?
+   activityLogs    ActivityLog[] 
 }
 
+model ActivityLog {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  action    String
+  details   Json?
+  createdAt DateTime @default(now())
+}
 model Restaurant {
   id                String            @id @default(cuid())
   name              String
