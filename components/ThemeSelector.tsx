@@ -1,3 +1,4 @@
+// components/ThemeSelector.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -35,14 +36,10 @@ const themes = [
   },
 ];
 
-// SVG pattern generator
+// Inside ThemeSelector.tsx, before the component
 const createPatternSVG = (emoji: string, size: number, fontSize: number) => {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
-    <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle"
-      font-size="${fontSize}"
-      font-family="Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif"
-      fill="#000000"
-      opacity="0.6">${emoji}</text>
+    <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="${fontSize}" font-family="Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, Android Emoji, EmojiOne Color, Twemoji Mozilla, sans-serif" fill="#000000" opacity="0.35">${emoji}</text>
   </svg>`;
   return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
 };
@@ -147,9 +144,12 @@ export default function ThemeSelector({
 
   const currentPattern = patterns.find((p) => p.id === selectedPattern) || patterns[0];
 
-  // CLEAN BACKGROUND (color only)
   const backgroundStyle = {
     backgroundColor: colors.background,
+    backgroundImage: currentPattern.style.backgroundImage,
+    backgroundSize: "40px 40px",
+    backgroundRepeat: "repeat",
+    backgroundBlendMode: "overlay",
   };
 
   const getPatternPreviewStyle = (p: (typeof patterns)[0]) => {
@@ -157,7 +157,10 @@ export default function ThemeSelector({
       return { backgroundColor: "#f3f4f6" };
     }
     return {
-      ...p.style,
+      backgroundImage: p.style.backgroundImage,
+      backgroundSize: "40px 40px",
+      backgroundColor: colors.background,
+      backgroundRepeat: "repeat",
       width: "100%",
       height: "60px",
       borderRadius: "0.5rem",
@@ -167,7 +170,7 @@ export default function ThemeSelector({
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-      {/* LEFT */}
+      {/* Left: Controls */}
       <div className="space-y-8">
         <div>
           <h3 className="text-lg font-semibold mb-4">🎨 Thème de couleur</h3>
@@ -181,7 +184,7 @@ export default function ThemeSelector({
                 }`}
                 style={{ backgroundColor: t.colors.background }}
               >
-                <div className="flex gap-2 mb-2">
+                <div className="flex items-center gap-2 mb-2">
                   <div className="w-6 h-6 rounded-full" style={{ backgroundColor: t.colors.primary }} />
                   <div className="w-6 h-6 rounded-full" style={{ backgroundColor: t.colors.accent }} />
                 </div>
@@ -194,7 +197,7 @@ export default function ThemeSelector({
         </div>
 
         <div>
-          <h3 className="text-lg font-semibold mb-4">🖼️ Motif d’arrière-plan</h3>
+          <h3 className="text-lg font-semibold mb-4">🖼️ Motif d’arrière‑plan</h3>
           <div className="grid grid-cols-3 gap-3">
             {patterns.map((p) => (
               <button
@@ -204,7 +207,7 @@ export default function ThemeSelector({
                   selectedPattern === p.id ? "border-[#fe5502]" : "border-gray-200 hover:border-gray-300"
                 }`}
               >
-                <div style={getPatternPreviewStyle(p)} />
+                <div className="h-12 rounded-md mb-1" style={getPatternPreviewStyle(p)} />
                 <span className="text-xs text-gray-600">{p.name}</span>
               </button>
             ))}
@@ -212,26 +215,16 @@ export default function ThemeSelector({
         </div>
       </div>
 
-      {/* RIGHT */}
+      {/* Right: Live preview of the customer card */}
       <div className="sticky top-8">
-        <h3 className="text-lg font-semibold mb-4">📱 Aperçu</h3>
-
+        <h3 className="text-lg font-semibold mb-4">📱 Aperçu (carte client)</h3>
         <div className="max-w-sm mx-auto rounded-3xl border-8 border-gray-800 overflow-hidden shadow-2xl">
           <div className="relative" style={backgroundStyle}>
-            
-            {/* PATTERN OVERLAY */}
-            {selectedPattern !== "none" && (
-              <div
-                className="absolute inset-0 pointer-events-none opacity-30"
-                style={{ ...currentPattern.style }}
-              />
-            )}
-
             <div className="p-5 space-y-4 relative z-10">
-              
+              {/* Logo & restaurant name */}
               <div className="text-center">
                 {restaurantLogo ? (
-                  <img src={restaurantLogo} className="w-16 h-16 rounded-full mx-auto object-cover" />
+                  <img src={restaurantLogo} alt="Logo" className="w-16 h-16 rounded-full mx-auto object-cover" />
                 ) : (
                   <div
                     className="w-16 h-16 rounded-full mx-auto flex items-center justify-center text-2xl"
@@ -243,23 +236,80 @@ export default function ThemeSelector({
                 <h2 className="text-xl font-bold mt-2" style={{ color: colors.text }}>
                   {restaurantName}
                 </h2>
+                <p className="text-sm opacity-80" style={{ color: colors.text }}>
+                  Programme de fidélité
+                </p>
               </div>
 
+              {/* Example customer */}
+              <div className="bg-white/20 backdrop-blur-sm rounded-xl p-3 text-center">
+                <p className="text-sm" style={{ color: colors.text }}>
+                  Bonjour,
+                </p>
+                <p className="text-lg font-semibold" style={{ color: colors.primary }}>
+                  Marie Dupont
+                </p>
+                <p className="text-xs" style={{ color: colors.text }}>
+                  ID: CUST1234
+                </p>
+              </div>
+
+              {/* Points */}
               <div className="text-center">
                 <span className="text-2xl font-bold" style={{ color: colors.primary }}>
                   240 ⭐
                 </span>
+                <p className="text-xs opacity-80" style={{ color: colors.text }}>
+                  ≈ 24 DT
+                </p>
               </div>
 
-              <button
-                className="w-full py-2 rounded-lg text-white"
-                style={{ backgroundColor: colors.primary }}
-              >
+              {/* Progression */}
+              <div>
+                <div className="flex justify-between text-sm mb-1" style={{ color: colors.text }}>
+                  <span>Prochaine récompense</span>
+                  <span>240 / 300 ⭐</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div className="h-2 rounded-full" style={{ width: "80%", backgroundColor: colors.primary }} />
+                </div>
+                <p className="text-xs mt-1 text-center" style={{ color: colors.text }}>
+                  🎁 Café offert
+                </p>
+              </div>
+
+              {/* Récompenses disponibles */}
+              <div className="grid grid-cols-3 gap-2">
+                {[100, 200, 300].map((pts) => (
+                  <div key={pts} className="p-2 rounded-lg text-center" style={{ backgroundColor: `${colors.primary}20` }}>
+                    <span className="text-lg">☕</span>
+                    <p className="text-xs font-semibold" style={{ color: colors.primary }}>
+                      {pts}⭐
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Bouton QR code */}
+              <button className="w-full py-2 rounded-lg font-medium text-white" style={{ backgroundColor: colors.primary }}>
                 Mon QR code
               </button>
             </div>
+            {selectedPattern !== "none" && (
+              <div
+                className="absolute inset-0 pointer-events-none opacity-20"
+                style={{
+                  backgroundImage: currentPattern.style.backgroundImage,
+                  backgroundSize: "40px 40px",
+                  backgroundRepeat: "repeat",
+                }}
+              />
+            )}
           </div>
         </div>
+        <p className="text-xs text-center text-gray-500 mt-3">
+          L’aperçu utilise le logo et le nom de votre commerce. Les couleurs s’appliqueront automatiquement aux clients.
+        </p>
       </div>
     </div>
   );
