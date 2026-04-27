@@ -1,6 +1,6 @@
 // components/ClientTable.tsx
 "use client";
-
+import Link from "next/link";
 import { useState } from "react";
 
 interface Customer {
@@ -62,7 +62,11 @@ export default function ClientTable({ customers }: { customers: Customer[] }) {
           <tbody className="divide-y divide-[#1e3a5f]">
             {filtered.map((customer) => (
               <tr key={customer.id} className="hover:bg-[#1e3a5f]/50">
-                <td className="px-4 py-3 text-sm text-white">{customer.name}</td>
+                <td className="px-4 py-3 text-sm text-white">
+  <Link href={`/dashboard/clients/${customer.id}`} className="hover:text-[#fe5502] transition">
+    {customer.name}
+  </Link>
+</td>
                 <td className="px-4 py-3 text-sm text-gray-400">{customer.customerId.slice(-6)}</td>
                 <td className="px-4 py-3 text-sm text-[#fe5502]">{customer.points}⭐</td>
                 <td className="px-4 py-3 text-sm text-gray-400">
