@@ -42,7 +42,7 @@ const patterns = [
     id: "watermelon",
     name: "Pastèque",
     style: {
-      backgroundImage: "url('/patterns/watermelon.png')",
+      backgroundImage: "url('/patterns/watermelon.jpg')",
       backgroundSize: "40px 40px",
       backgroundRepeat: "repeat",
     },
@@ -51,7 +51,7 @@ const patterns = [
     id: "coffee",
     name: "Café",
     style: {
-      backgroundImage: "url('/patterns/coffee.png')",
+      backgroundImage: "url('/patterns/coffee.jpg')",
       backgroundSize: "45px 45px",
       backgroundRepeat: "repeat",
     },
@@ -60,7 +60,7 @@ const patterns = [
     id: "flowers",
     name: "Fleurs",
     style: {
-      backgroundImage: "url('/patterns/flower.png')",
+      backgroundImage: "url('/patterns/flower.jpg')",
       backgroundSize: "70px 70px",
       backgroundRepeat: "repeat",
     },
@@ -69,7 +69,7 @@ const patterns = [
     id: "games",
     name: "Jeux",
     style: {
-      backgroundImage: "url('/patterns/game.png')",
+      backgroundImage: "url('/patterns/game.jpg')",
       backgroundSize: "50px 50px",
       backgroundRepeat: "repeat",
     },
@@ -78,7 +78,7 @@ const patterns = [
     id: "pizza",
     name: "Pizza",
     style: {
-      backgroundImage: "url('/patterns/pizza.png')",
+      backgroundImage: "url('/patterns/pizza.jpg')",
       backgroundSize: "55px 55px",
       backgroundRepeat: "repeat",
     },
