@@ -16,7 +16,7 @@ export default function DashboardNav() {
     { name: "Demandes de bonus", href: "/dashboard/bonus-requests", icon: "🎁" },
      { name: "Cartes client", href: "/dashboard/clients" , icon: "👥" },          // ✨ new
   { name: "Activités", href: "/dashboard/activities" },
-   { name: "Statistiques", href: "/dashboard/stats" },    
+  
   ];
 
   return (
