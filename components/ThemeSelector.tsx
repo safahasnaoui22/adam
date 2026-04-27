@@ -55,11 +55,12 @@ const createPatternSVG = (emoji: string, size: number, fontSize: number) => {
 
 const patterns = [
   { id: "none", name: "Aucun", style: {} },
+
   {
     id: "watermelon",
     name: "Pastèque",
     style: {
-      backgroundImage: createPatternSVG("🍉", 40, 22),
+      backgroundImage: "url('/patterns/watermelon.jpg')",
       backgroundSize: "40px 40px",
       backgroundRepeat: "repeat",
     },
@@ -68,7 +69,7 @@ const patterns = [
     id: "coffee",
     name: "Café",
     style: {
-      backgroundImage: createPatternSVG("☕", 45, 26),
+      backgroundImage: "url('/patterns/coffee.jpg')",
       backgroundSize: "45px 45px",
       backgroundRepeat: "repeat",
     },
@@ -77,7 +78,7 @@ const patterns = [
     id: "flowers",
     name: "Fleurs",
     style: {
-      backgroundImage: createPatternSVG("🌸", 70, 22),
+      backgroundImage: "url('/patterns/flower.jpg')",
       backgroundSize: "70px 70px",
       backgroundRepeat: "repeat",
     },
@@ -86,7 +87,7 @@ const patterns = [
     id: "games",
     name: "Jeux",
     style: {
-      backgroundImage: createPatternSVG("🎮", 50, 28),
+      backgroundImage: "url('/patterns/game.jpg')",
       backgroundSize: "50px 50px",
       backgroundRepeat: "repeat",
     },
@@ -95,7 +96,7 @@ const patterns = [
     id: "pizza",
     name: "Pizza",
     style: {
-      backgroundImage: createPatternSVG("🍕", 55, 32),
+      backgroundImage: "url('/patterns/pizza.jpg')",
       backgroundSize: "55px 55px",
       backgroundRepeat: "repeat",
     },
