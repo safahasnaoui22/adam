@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { QRCodeSVG } from "qrcode.react";
+import { getPatternStyle } from "@/lib/patterns";
 
 export default function ClientDashboard() {
   const searchParams = useSearchParams();
@@ -178,6 +179,9 @@ export default function ClientDashboard() {
     accent: accentColor,
   };
 
+  // Apply pattern from restaurant settings
+  const patternStyle = getPatternStyle(restaurant.backgroundPattern || "none");
+
   // ----- Rewards (no fallback – only real ones) -----
   const rewards = restaurant.loyaltyProgram?.rewards?.length
     ? restaurant.loyaltyProgram.rewards.map((r: any) => ({
@@ -201,6 +205,7 @@ export default function ClientDashboard() {
         className="max-w-md mx-auto min-h-screen shadow-lg relative border-x"
         style={{
           backgroundColor: dynamicStyles.cardBg,
+          ...patternStyle,
           borderColor: `${dynamicStyles.primary}20`,
           color: dynamicStyles.text,
         }}
