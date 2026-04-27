@@ -12,59 +12,48 @@ const themes = [
   { id: "bold", name: "Noir & Audacieux", colors: { primary: "#1e1e1e", background: "#0a0a0a", text: "#ffffff", accent: "#f59e0b" } },
 ];
 
-// Helper function to create visible emoji patterns
-const createPatternSVG = (emoji: string, size: number, fontSize: number) => {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
-    <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="${fontSize}" font-family="Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, Android Emoji, EmojiOne Color, Twemoji Mozilla, sans-serif" fill="#000000" opacity="0.7">${emoji}</text>
-  </svg>`;
-  return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
-};
-
+// Reliable CSS‑only patterns (no emojis, no external images)
 const patterns = [
   { id: "none", name: "Aucun", style: {} },
   {
-    id: "watermelon",
-    name: "Pastèque",
+    id: "dots",
+    name: "Points",
     style: {
-      backgroundImage: createPatternSVG("🍉", 40, 22),
-      backgroundSize: "40px 40px",
-      backgroundRepeat: "repeat",
+      backgroundImage: "radial-gradient(circle at 2px 2px, rgba(0,0,0,0.15) 1px, transparent 1px)",
+      backgroundSize: "20px 20px",
     },
   },
   {
-    id: "coffee",
-    name: "Café",
+    id: "lines",
+    name: "Lignes",
     style: {
-      backgroundImage: createPatternSVG("☕", 45, 26),
-      backgroundSize: "45px 45px",
-      backgroundRepeat: "repeat",
+      backgroundImage: "repeating-linear-gradient(45deg, rgba(0,0,0,0.08) 0px, rgba(0,0,0,0.08) 2px, transparent 2px, transparent 12px)",
+      backgroundSize: "16px 16px",
     },
   },
   {
-    id: "flowers",
-    name: "Fleurs",
+    id: "waves",
+    name: "Vagues",
     style: {
-      backgroundImage: createPatternSVG("🌸", 70, 22),
-      backgroundSize: "70px 70px",
-      backgroundRepeat: "repeat",
+      backgroundImage: "repeating-linear-gradient(0deg, rgba(0,0,0,0.08) 0px, rgba(0,0,0,0.08) 2px, transparent 2px, transparent 14px)",
+      backgroundSize: "100% 16px",
     },
   },
   {
-    id: "games",
-    name: "Jeux",
+    id: "cross",
+    name: "Croix",
     style: {
-      backgroundImage: createPatternSVG("🎮", 50, 28),
-      backgroundSize: "50px 50px",
-      backgroundRepeat: "repeat",
+      backgroundImage:
+        "linear-gradient(45deg, rgba(0,0,0,0.1) 1px, transparent 1px), linear-gradient(-45deg, rgba(0,0,0,0.1) 1px, transparent 1px)",
+      backgroundSize: "20px 20px",
     },
   },
   {
-    id: "pizza",
-    name: "Pizza",
+    id: "stripes",
+    name: "Rayures",
     style: {
-      backgroundImage: createPatternSVG("🍕", 55, 32),
-      backgroundSize: "55px 55px",
-      backgroundRepeat: "repeat",
+      backgroundImage: "repeating-linear-gradient(90deg, rgba(0,0,0,0.1) 0px, rgba(0,0,0,0.1) 2px, transparent 2px, transparent 12px)",
+      backgroundSize: "16px 16px",
     },
   },
 ];
@@ -120,11 +109,10 @@ export default function ThemeSelector({
 
   const currentPattern = patterns.find((p) => p.id === selectedPattern) || patterns[0];
 
-  // SINGLE background style – no blend mode, no duplicate overlay
   const backgroundStyle = {
     backgroundColor: colors.background,
     backgroundImage: currentPattern.style.backgroundImage,
-    backgroundSize: "40px 40px",
+    backgroundSize: currentPattern.style.backgroundSize,
     backgroundRepeat: "repeat",
   };
 
@@ -134,8 +122,8 @@ export default function ThemeSelector({
     }
     return {
       backgroundImage: p.style.backgroundImage,
-      backgroundSize: "40px 40px",
-      backgroundColor: "#f3f4f6", // neutral background for preview button
+      backgroundSize: p.style.backgroundSize || "20px 20px",
+      backgroundColor: "#f3f4f6",
       backgroundRepeat: "repeat",
       width: "100%",
       height: "60px",
@@ -146,7 +134,6 @@ export default function ThemeSelector({
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-      {/* Left: Controls */}
       <div className="space-y-8">
         <div>
           <h3 className="text-lg font-semibold mb-4">🎨 Thème de couleur</h3>
@@ -154,7 +141,7 @@ export default function ThemeSelector({
             {themes.map((t) => (
               <button
                 key={t.id}
-                type="button" // ✅ Prevent form submission
+                type="button"
                 onClick={() => handleThemeChange(t)}
                 className={`p-3 rounded-xl border-2 transition-all ${
                   selectedTheme.id === t.id ? "border-[#fe5502] shadow-md ring-2 ring-[#fe5502]/50" : "border-gray-200 hover:border-gray-300"
@@ -165,9 +152,7 @@ export default function ThemeSelector({
                   <div className="w-6 h-6 rounded-full" style={{ backgroundColor: t.colors.primary }} />
                   <div className="w-6 h-6 rounded-full" style={{ backgroundColor: t.colors.accent }} />
                 </div>
-                <span className="text-sm font-medium" style={{ color: t.colors.text }}>
-                  {t.name}
-                </span>
+                <span className="text-sm font-medium" style={{ color: t.colors.text }}>{t.name}</span>
               </button>
             ))}
           </div>
@@ -179,7 +164,7 @@ export default function ThemeSelector({
             {patterns.map((p) => (
               <button
                 key={p.id}
-                type="button" // ✅ Prevent form submission
+                type="button"
                 onClick={() => handlePatternChange(p.id)}
                 className={`p-2 rounded-lg border-2 transition ${
                   selectedPattern === p.id ? "border-[#fe5502] bg-[#fe5502]/5" : "border-gray-200 hover:border-gray-300"
@@ -193,47 +178,35 @@ export default function ThemeSelector({
         </div>
       </div>
 
-      {/* Right: Live preview of the customer card (pattern visible) */}
+      {/* Right: Live preview */}
       <div className="sticky top-8">
         <h3 className="text-lg font-semibold mb-4">📱 Aperçu (carte client)</h3>
         <div className="max-w-sm mx-auto rounded-3xl border-8 border-gray-800 overflow-hidden shadow-2xl">
-          {/* Single container with pattern as background – no duplicate overlay */}
           <div className="relative" style={backgroundStyle}>
             <div className="p-5 space-y-4 relative z-10">
-              {/* Logo & restaurant name */}
               <div className="text-center">
                 {restaurantLogo ? (
                   <img src={restaurantLogo} alt="Logo" className="w-16 h-16 rounded-full mx-auto object-cover" />
                 ) : (
-                  <div
-                    className="w-16 h-16 rounded-full mx-auto flex items-center justify-center text-2xl"
-                    style={{ backgroundColor: colors.primary, color: "white" }}
-                  >
+                  <div className="w-16 h-16 rounded-full mx-auto flex items-center justify-center text-2xl" style={{ backgroundColor: colors.primary, color: "white" }}>
                     🏠
                   </div>
                 )}
-                <h2 className="text-xl font-bold mt-2" style={{ color: colors.text }}>
-                  {restaurantName}
-                </h2>
-                <p className="text-sm opacity-80" style={{ color: colors.text }}>
-                  Programme de fidélité
-                </p>
+                <h2 className="text-xl font-bold mt-2" style={{ color: colors.text }}>{restaurantName}</h2>
+                <p className="text-sm opacity-80" style={{ color: colors.text }}>Programme de fidélité</p>
               </div>
 
-              {/* Example customer – slightly transparent to let pattern show through */}
               <div className="rounded-xl p-3 text-center" style={{ backgroundColor: `${colors.background}cc`, backdropFilter: "blur(4px)" }}>
                 <p className="text-sm" style={{ color: colors.text }}>Bonjour,</p>
                 <p className="text-lg font-semibold" style={{ color: colors.primary }}>Marie Dupont</p>
                 <p className="text-xs" style={{ color: colors.text }}>ID: CUST1234</p>
               </div>
 
-              {/* Points */}
               <div className="text-center">
                 <span className="text-2xl font-bold" style={{ color: colors.primary }}>240 ⭐</span>
                 <p className="text-xs opacity-80" style={{ color: colors.text }}>≈ 24 DT</p>
               </div>
 
-              {/* Progress bar */}
               <div>
                 <div className="flex justify-between text-sm mb-1" style={{ color: colors.text }}>
                   <span>Prochaine récompense</span>
@@ -245,7 +218,6 @@ export default function ThemeSelector({
                 <p className="text-xs mt-1 text-center" style={{ color: colors.text }}>🎁 Café offert</p>
               </div>
 
-              {/* Sample rewards */}
               <div className="grid grid-cols-3 gap-2">
                 {[100, 200, 300].map((pts) => (
                   <div key={pts} className="p-2 rounded-lg text-center" style={{ backgroundColor: `${colors.primary}20` }}>
@@ -255,7 +227,6 @@ export default function ThemeSelector({
                 ))}
               </div>
 
-              {/* QR button */}
               <button className="w-full py-2 rounded-lg font-medium text-white" style={{ backgroundColor: colors.primary }}>
                 Mon QR code
               </button>
