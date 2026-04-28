@@ -174,22 +174,62 @@ export default async function DashboardPage() {
                 </div>
             </div>
 
-            {/* Three stat cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-[#0d1f3c] rounded-lg border border-[#1e3a5f] p-5">
-                    <p className="text-gray-400 text-sm">Clients Inscrits</p>
-                    <p className="text-3xl font-bold text-white mt-1">{stats.totalCustomers}</p>
-                </div>
-                <div className="bg-[#0d1f3c] rounded-lg border border-[#1e3a5f] p-5">
-                    <p className="text-gray-400 text-sm">Points Consommés</p>
-                    <p className="text-3xl font-bold text-white mt-1">{stats.totalPointsConsumed}⭐</p>
-                </div>
-                <div className="bg-[#0d1f3c] rounded-lg border border-[#1e3a5f] p-5">
-                    <p className="text-gray-400 text-sm">Taux d'Échange</p>
-                    <p className="text-3xl font-bold text-white mt-1">{stats.exchangeRate}%</p>
-                </div>
-            </div>
+     
+          {/* Four stat cards with animated border and 3D effect */}
+<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+  {/* Clients Inscrits */}
+  <div className="group relative bg-[#0d1f3c] rounded-xl border border-[#1e3a5f] overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-orange-500/20 hover:border-orange-500/50">
+    <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+    <div className="relative p-5 z-10">
+      <div className="flex items-center justify-between">
+        <span className="text-3xl">👥</span>
+        <span className="text-xs text-gray-500 bg-gray-800 px-2 py-1 rounded-full">Stats</span>
+      </div>
+      <p className="text-gray-400 text-sm mt-3">Clients Inscrits</p>
+      <p className="text-3xl font-bold text-white mt-1">{stats.totalCustomers}</p>
+    </div>
+  </div>
 
+  {/* Stars distribués */}
+  <div className="group relative bg-[#0d1f3c] rounded-xl border border-[#1e3a5f] overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-yellow-500/20 hover:border-yellow-500/50">
+    <div className="absolute inset-0 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none">
+    </div>
+    <div className="relative p-5 z-10">
+      <div className="flex items-center justify-between">
+        <span className="text-3xl">🌟</span>
+        <span className="text-xs text-gray-500 bg-gray-800 px-2 py-1 rounded-full">Stars</span>
+      </div>
+      <p className="text-gray-400 text-sm mt-3">Stars distribués</p>
+      <p className="text-3xl font-bold text-white mt-1">{stats.totalPointsEarned}⭐</p>
+    </div>
+  </div>
+
+  {/* Points Consommés */}
+  <div className="group relative bg-[#0d1f3c] rounded-xl border border-[#1e3a5f] overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-red-500/20 hover:border-red-500/50">
+    <div className="absolute inset-0 bg-gradient-to-r from-red-500/20 to-pink-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+    <div className="relative p-5 z-10">
+      <div className="flex items-center justify-between">
+        <span className="text-3xl">🔥</span>
+        <span className="text-xs text-gray-500 bg-gray-800 px-2 py-1 rounded-full">Dépenses</span>
+      </div>
+      <p className="text-gray-400 text-sm mt-3">Points Consommés</p>
+      <p className="text-3xl font-bold text-white mt-1">{stats.totalPointsConsumed}⭐</p>
+    </div>
+  </div>
+
+  {/* Taux d'Échange */}
+  <div className="group relative bg-[#0d1f3c] rounded-xl border border-[#1e3a5f] overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-green-500/20 hover:border-green-500/50">
+    <div className="absolute inset-0 bg-gradient-to-r from-green-500/20 to-emerald-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+    <div className="relative p-5 z-10">
+      <div className="flex items-center justify-between">
+        <span className="text-3xl">🔄</span>
+        <span className="text-xs text-gray-500 bg-gray-800 px-2 py-1 rounded-full">Taux</span>
+      </div>
+      <p className="text-gray-400 text-sm mt-3">Taux d'Échange</p>
+      <p className="text-3xl font-bold text-white mt-1">{stats.exchangeRate}%</p>
+    </div>
+  </div>
+</div>
             {/* Performance de fidélité block (static) */}
           {/* Performance de fidélité block (animated) */}
 <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-green-900/40 to-emerald-900/20 border border-green-500/30 shadow-lg hover:shadow-green-500/20 transition-all duration-300">
