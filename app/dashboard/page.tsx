@@ -166,43 +166,7 @@ export default async function DashboardPage() {
 
     return (
         <div className="space-y-6">
-            {/* Status Banner */}
-            <div className="bg-[#0d1f3c] shadow sm:rounded-lg border border-[#1e3a5f]">
-                <div className="px-4 py-5 sm:p-6">
-                    <div className="flex items-center justify-between flex-wrap gap-4">
-                        <div>
-                            <h2 className="text-lg font-medium text-white">Statut de votre compte</h2>
-                            <p className="mt-1 text-sm text-gray-400">Consultez l'état de votre compte et votre abonnement actuel</p>
-                        </div>
-                        <div className="flex space-x-4">
-                            <div className={`px-3 py-1 rounded-full text-sm font-semibold ${getStatusStyles()}`}>
-                                {getStatusDisplay()}
-                            </div>
-                            <div className="px-3 py-1 bg-[#1e3a5f] text-[#fe5502] rounded-full text-sm font-semibold border border-[#fe5502]">
-                                Plan {getPlanDisplay()}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Welcome Header with Progress */}
-            <div className="bg-[#0d1f3c] shadow sm:rounded-lg border border-[#1e3a5f]">
-                <div className="px-4 py-5 sm:p-6">
-                    <h1 className="text-2xl font-bold text-white">Bienvenue sur votre tableau de bord de fidélité</h1>
-                    <p className="mt-1 text-sm text-gray-400">Démarrer avec Adam</p>
-                    <div className="mt-4">
-                        <div className="flex items-center justify-between mb-1">
-                            <span className="text-sm font-medium text-white">{stepsCompleted} sur 4 étapes terminées</span>
-                            <span className="text-sm font-medium text-[#fe5502]">{Math.round((stepsCompleted / 4) * 100)}%</span>
-                        </div>
-                        <div className="w-full bg-[#1e3a5f] rounded-full h-2.5">
-                            <div className="bg-[#fe5502] h-2.5 rounded-full" style={{ width: `${(stepsCompleted / 4) * 100}%` }}></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
+       
             {/* Reward Exchange component - centered */}
             <div className="flex justify-center">
                 <div className="w-full max-w-2xl">
@@ -256,6 +220,42 @@ export default async function DashboardPage() {
                         <span className="text-xs text-gray-500">Statique</span>
                         <div className="w-24 h-2 bg-gray-700 rounded-full">
                             <div className="w-0 h-2 bg-[#fe5502] rounded-full"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+     {/* Status Banner */}
+            <div className="bg-[#0d1f3c] shadow sm:rounded-lg border border-[#1e3a5f]">
+                <div className="px-4 py-5 sm:p-6">
+                    <div className="flex items-center justify-between flex-wrap gap-4">
+                        <div>
+                            <h2 className="text-lg font-medium text-white">Statut de votre compte</h2>
+                            <p className="mt-1 text-sm text-gray-400">Consultez l'état de votre compte et votre abonnement actuel</p>
+                        </div>
+                        <div className="flex space-x-4">
+                            <div className={`px-3 py-1 rounded-full text-sm font-semibold ${getStatusStyles()}`}>
+                                {getStatusDisplay()}
+                            </div>
+                            <div className="px-3 py-1 bg-[#1e3a5f] text-[#fe5502] rounded-full text-sm font-semibold border border-[#fe5502]">
+                                Plan {getPlanDisplay()}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Welcome Header with Progress */}
+            <div className="bg-[#0d1f3c] shadow sm:rounded-lg border border-[#1e3a5f]">
+                <div className="px-4 py-5 sm:p-6">
+                    <h1 className="text-2xl font-bold text-white">Bienvenue sur votre tableau de bord de fidélité</h1>
+                    <p className="mt-1 text-sm text-gray-400">Démarrer avec Adam</p>
+                    <div className="mt-4">
+                        <div className="flex items-center justify-between mb-1">
+                            <span className="text-sm font-medium text-white">{stepsCompleted} sur 4 étapes terminées</span>
+                            <span className="text-sm font-medium text-[#fe5502]">{Math.round((stepsCompleted / 4) * 100)}%</span>
+                        </div>
+                        <div className="w-full bg-[#1e3a5f] rounded-full h-2.5">
+                            <div className="bg-[#fe5502] h-2.5 rounded-full" style={{ width: `${(stepsCompleted / 4) * 100}%` }}></div>
                         </div>
                     </div>
                 </div>
