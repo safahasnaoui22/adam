@@ -191,39 +191,63 @@ export default async function DashboardPage() {
             </div>
 
             {/* Performance de fidélité block (static) */}
-            <div className="bg-gradient-to-r from-[#1e3a5f] to-[#0a1628] rounded-xl border border-[#fe5502]/30 p-6">
-                <div className="flex justify-between items-start flex-wrap gap-4">
-                    <div>
-                        <h3 className="text-lg font-semibold text-white">Performance de fidélité cette période</h3>
-                        <p className="text-sm text-gray-400">30 derniers jours</p>
-                    </div>
-                    <div className="text-right">
-                        <p className="text-2xl font-bold text-[#fe5502]">+0 DT</p>
-                        <p className="text-xs text-gray-400">Faible échantillon</p>
-                    </div>
-                </div>
-                <p className="text-sm text-gray-300 mt-2">Revenus supplémentaires grâce à la fidélité</p>
-                <div className="mt-4 grid grid-cols-2 gap-4">
-                    <div>
-                        <p className="text-xs text-gray-400">Basé sur 10.00 DT/visite</p>
-                        <p className="text-xl font-semibold text-white mt-1">0</p>
-                        <p className="text-xs text-gray-400">Clients récurrents</p>
-                    </div>
-                    <div>
-                        <p className="text-sm text-[#fe5502] font-medium">0</p>
-                        <p className="text-xs text-gray-400">Visites supplémentaires</p>
-                    </div>
-                </div>
-                <div className="mt-4 pt-3 border-t border-[#1e3a5f]">
-                    <p className="text-sm text-gray-400">Activité tampons vs. 30 jours précédents</p>
-                    <div className="flex items-center gap-2 mt-2">
-                        <span className="text-xs text-gray-500">Statique</span>
-                        <div className="w-24 h-2 bg-gray-700 rounded-full">
-                            <div className="w-0 h-2 bg-[#fe5502] rounded-full"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+          {/* Performance de fidélité block (animated) */}
+<div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-green-900/40 to-emerald-900/20 border border-green-500/30 shadow-lg hover:shadow-green-500/20 transition-all duration-300">
+  {/* Animated gradient overlay (shimmer) */}
+  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-green-500/10 to-transparent animate-shimmer"></div>
+  
+  <div className="relative p-6 z-10">
+    <div className="flex justify-between items-start flex-wrap gap-4">
+      <div className="flex items-center gap-2">
+        <div className="p-2 bg-green-500/20 rounded-lg animate-pulse">
+          <svg className="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+          </svg>
+        </div>
+        <div>
+          <h3 className="text-lg font-semibold text-white">Performance de fidélité cette période</h3>
+          <p className="text-sm text-gray-400">30 derniers jours</p>
+        </div>
+      </div>
+      <div className="text-right">
+        <p className="text-2xl font-bold text-green-400 animate-pulse">+0 DT</p>
+        <p className="text-xs text-gray-400">Faible échantillon</p>
+      </div>
+    </div>
+
+    <p className="text-sm text-gray-300 mt-2 flex items-center gap-1">
+      <span>💰</span> Revenus supplémentaires grâce à la fidélité
+    </p>
+
+    <div className="mt-4 grid grid-cols-2 gap-4">
+      <div className="bg-white/5 rounded-lg p-3 backdrop-blur-sm transition-transform hover:scale-105">
+        <p className="text-xs text-gray-400">Basé sur 10.00 DT/visite</p>
+        <p className="text-2xl font-bold text-white mt-1">0</p>
+        <p className="text-xs text-gray-400">Clients récurrents</p>
+      </div>
+      <div className="bg-white/5 rounded-lg p-3 backdrop-blur-sm transition-transform hover:scale-105">
+        <p className="text-xs text-gray-400">Visites supplémentaires</p>
+        <p className="text-2xl font-bold text-green-400 mt-1">0</p>
+        <p className="text-xs text-gray-400">+0% vs période précédente</p>
+      </div>
+    </div>
+
+    <div className="mt-5 pt-3 border-t border-green-500/20">
+      <div className="flex justify-between items-center">
+        <p className="text-sm text-gray-400 flex items-center gap-1">
+          <span>📊</span> Activité tampons vs. 30 jours précédents
+        </p>
+        <span className="text-xs text-gray-500 bg-gray-800 px-2 py-1 rounded-full">Statique</span>
+      </div>
+      <div className="flex items-center gap-2 mt-2">
+        <div className="flex-1 h-2 bg-gray-700 rounded-full overflow-hidden">
+          <div className="w-1/3 h-full bg-gradient-to-r from-green-500 to-emerald-400 rounded-full animate-pulse"></div>
+        </div>
+        <span className="text-xs text-gray-400">+0%</span>
+      </div>
+    </div>
+  </div>
+</div>
      {/* Status Banner */}
             <div className="bg-[#0d1f3c] shadow sm:rounded-lg border border-[#1e3a5f]">
                 <div className="px-4 py-5 sm:p-6">
