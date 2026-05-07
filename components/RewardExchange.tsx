@@ -12,28 +12,67 @@ export default function RewardExchange() {
   const scannerRef = useRef<Html5QrcodeScanner | null>(null);
   const containerId = "qr-scanner-container";
 
-  // Cleanup scanner when leaving scan mode
+  // Cleanup scanner when component unmounts or mode changes
   useEffect(() => {
-    if (!scanning && scannerRef.current) {
-      scannerRef.current.clear();
-      scannerRef.current = null;
+    return () => {
+      if (scannerRef.current) {
+        scannerRef.current.clear();
+        scannerRef.current = null;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (mode === "scan" && scanning) {
+      // Small delay to ensure the DOM element is rendered
+      setTimeout(() => {
+        if (document.getElementById(containerId)) {
+          startScanner();
+        } else {
+          console.error("Container not found");
+          setError("Erreur d'initialisation de la caméra");
+        }
+      }, 200);
+    } else {
+      // Stop scanner when leaving scan mode
+      if (scannerRef.current) {
+        scannerRef.current.clear();
+        scannerRef.current = null;
+      }
     }
-  }, [scanning]);
+  }, [mode, scanning]);
 
   const startScanner = () => {
     if (scannerRef.current) {
       scannerRef.current.clear();
+      scannerRef.current = null;
     }
-    scannerRef.current = new Html5QrcodeScanner(
-      containerId,
-      {
-        fps: 10,
-        qrbox: { width: 250, height: 250 },
-        aspectRatio: 1.0,
-      },
-      false
-    );
-    scannerRef.current.render(onScanSuccess, onScanError);
+
+    try {
+      // Ensure the container has explicit size (the scanner may not work without it)
+      const container = document.getElementById(containerId);
+      if (container) {
+        container.style.width = "100%";
+        container.style.minHeight = "300px";
+      }
+
+      scannerRef.current = new Html5QrcodeScanner(
+        containerId,
+        {
+          fps: 10,
+          qrbox: { width: 250, height: 250 },
+          aspectRatio: 1.0,
+          showTorchButtonIfSupported: true,
+          showZoomSliderIfSupported: true,
+        },
+        false
+      );
+      scannerRef.current.render(onScanSuccess, onScanError);
+    } catch (err) {
+      console.error(err);
+      setError("Impossible d'accéder à la caméra. Vérifiez les permissions.");
+      setScanning(false);
+    }
   };
 
   const onScanSuccess = (decodedText: string) => {
@@ -45,7 +84,6 @@ export default function RewardExchange() {
     setScanning(false);
     // Process scanned customer ID
     let customerId = decodedText;
-    // If it's a full URL, extract the last part after /scan/
     const scanMatch = decodedText.match(/\/scan\/([^\/?#]+)/);
     if (scanMatch) {
       customerId = scanMatch[1];
@@ -55,37 +93,38 @@ export default function RewardExchange() {
 
   const onScanError = (err: any) => {
     console.error(err);
-    // Optionally show a non-intrusive error message
-    setError("Erreur de lecture, réessayez");
-    setTimeout(() => setError(""), 2000);
+    // Only show error if it's not a normal "no QR code found" message
+    if (err && !err.includes("No QR code found")) {
+      setError("Erreur de lecture, réessayez");
+      setTimeout(() => setError(""), 2000);
+    }
   };
 
-const handleManualSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  let rawInput = customerIdInput.trim();
-  if (!rawInput) {
-    setError("Veuillez entrer un numéro de carte");
-    return;
-  }
-  // Remove leading '#' if present
-  if (rawInput.startsWith('#')) rawInput = rawInput.slice(1);
-
-  setLoading(true);
-  setError("");
-  try {
-    const res = await fetch(`/api/customer/by-id/${encodeURIComponent(rawInput)}`);
-    const data = await res.json();
-    if (res.ok && data.customer && data.customer.customerId) {
-      window.location.href = `/scan/${data.customer.customerId}`;
-    } else {
-      setError(data.error || "Client non trouvé");
+  const handleManualSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    let rawInput = customerIdInput.trim();
+    if (!rawInput) {
+      setError("Veuillez entrer un numéro de carte");
+      return;
     }
-  } catch {
-    setError("Erreur de connexion");
-  } finally {
-    setLoading(false);
-  }
-};
+    if (rawInput.startsWith("#")) rawInput = rawInput.slice(1);
+
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch(`/api/customer/by-id/${encodeURIComponent(rawInput)}`);
+      const data = await res.json();
+      if (res.ok && data.customer && data.customer.customerId) {
+        window.location.href = `/scan/${data.customer.customerId}`;
+      } else {
+        setError(data.error || "Client non trouvé");
+      }
+    } catch {
+      setError("Erreur de connexion");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="bg-[#0d1f3c] rounded-lg shadow border border-[#1e3a5f] p-6">
@@ -101,8 +140,6 @@ const handleManualSubmit = async (e: React.FormEvent) => {
             setMode("scan");
             setScanning(true);
             setError("");
-            // Slight delay to ensure container is rendered
-            setTimeout(() => startScanner(), 100);
           }}
           className={`flex-1 py-2 rounded-md text-sm font-medium transition-colors ${
             mode === "scan"
@@ -134,10 +171,12 @@ const handleManualSubmit = async (e: React.FormEvent) => {
 
       {mode === "scan" && scanning && (
         <div className="mt-2 mb-4">
-          <div id={containerId} className="overflow-hidden rounded-lg bg-black" />
-          {error && (
-            <p className="text-xs text-red-400 mt-2">{error}</p>
-          )}
+          <div
+            id={containerId}
+            className="overflow-hidden rounded-lg bg-black"
+            style={{ minHeight: "300px", width: "100%" }}
+          />
+          {error && <p className="text-xs text-red-400 mt-2">{error}</p>}
           <p className="text-xs text-gray-400 mt-2 text-center">
             Placez le QR code du client devant la caméra.
           </p>
