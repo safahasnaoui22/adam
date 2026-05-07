@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Html5QrcodeScanner } from "html5-qrcode";
+import { Html5Qrcode } from "html5-qrcode";
 
 export default function RewardExchange() {
   const [customerIdInput, setCustomerIdInput] = useState("");
@@ -9,65 +9,46 @@ export default function RewardExchange() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [scanning, setScanning] = useState(false);
-  const scannerRef = useRef<Html5QrcodeScanner | null>(null);
-  const containerId = "qr-scanner-container";
+  const html5QrCodeRef = useRef<Html5Qrcode | null>(null);
+  const containerId = "qr-reader";
 
-  // Cleanup scanner when component unmounts or mode changes
   useEffect(() => {
     return () => {
-      if (scannerRef.current) {
-        scannerRef.current.clear();
-        scannerRef.current = null;
+      if (html5QrCodeRef.current && html5QrCodeRef.current.isScanning) {
+        html5QrCodeRef.current.stop().catch(console.error);
+        html5QrCodeRef.current.clear();
       }
     };
   }, []);
 
-  useEffect(() => {
-    if (mode === "scan" && scanning) {
-      // Small delay to ensure the DOM element is rendered
-      setTimeout(() => {
-        if (document.getElementById(containerId)) {
-          startScanner();
-        } else {
-          console.error("Container not found");
-          setError("Erreur d'initialisation de la caméra");
-        }
-      }, 200);
-    } else {
-      // Stop scanner when leaving scan mode
-      if (scannerRef.current) {
-        scannerRef.current.clear();
-        scannerRef.current = null;
-      }
-    }
-  }, [mode, scanning]);
-
-  const startScanner = () => {
-    if (scannerRef.current) {
-      scannerRef.current.clear();
-      scannerRef.current = null;
+  const startScanner = async () => {
+    if (html5QrCodeRef.current && html5QrCodeRef.current.isScanning) {
+      await html5QrCodeRef.current.stop();
+      html5QrCodeRef.current.clear();
     }
 
+    html5QrCodeRef.current = new Html5Qrcode(containerId);
     try {
-      // Ensure the container has explicit size (the scanner may not work without it)
-      const container = document.getElementById(containerId);
-      if (container) {
-        container.style.width = "100%";
-        container.style.minHeight = "300px";
-      }
-
-      scannerRef.current = new Html5QrcodeScanner(
-        containerId,
+      await html5QrCodeRef.current.start(
+        { facingMode: "environment" }, // use back camera
         {
           fps: 10,
           qrbox: { width: 250, height: 250 },
-          aspectRatio: 1.0,
-          showTorchButtonIfSupported: true,
-          showZoomSliderIfSupported: true,
         },
-        false
+        (decodedText) => {
+          // on success
+          let customerId = decodedText;
+          const scanMatch = decodedText.match(/\/scan\/([^\/?#]+)/);
+          if (scanMatch) customerId = scanMatch[1];
+          window.location.href = `/scan/${customerId}`;
+        },
+        (errorMessage) => {
+          // ignore most errors, only log significant ones
+          if (errorMessage && !errorMessage.includes("NoMultiCode")) {
+            console.warn(errorMessage);
+          }
+        }
       );
-      scannerRef.current.render(onScanSuccess, onScanError);
     } catch (err) {
       console.error(err);
       setError("Impossible d'accéder à la caméra. Vérifiez les permissions.");
@@ -75,30 +56,20 @@ export default function RewardExchange() {
     }
   };
 
-  const onScanSuccess = (decodedText: string) => {
-    // Stop scanning and close camera
-    if (scannerRef.current) {
-      scannerRef.current.clear();
-      scannerRef.current = null;
+  const stopScanner = async () => {
+    if (html5QrCodeRef.current && html5QrCodeRef.current.isScanning) {
+      await html5QrCodeRef.current.stop();
+      html5QrCodeRef.current.clear();
     }
-    setScanning(false);
-    // Process scanned customer ID
-    let customerId = decodedText;
-    const scanMatch = decodedText.match(/\/scan\/([^\/?#]+)/);
-    if (scanMatch) {
-      customerId = scanMatch[1];
-    }
-    window.location.href = `/scan/${customerId}`;
   };
 
-  const onScanError = (err: any) => {
-    console.error(err);
-    // Only show error if it's not a normal "no QR code found" message
-    if (err && !err.includes("No QR code found")) {
-      setError("Erreur de lecture, réessayez");
-      setTimeout(() => setError(""), 2000);
+  useEffect(() => {
+    if (mode === "scan" && scanning) {
+      startScanner();
+    } else if (mode !== "scan") {
+      stopScanner();
     }
-  };
+  }, [mode, scanning]);
 
   const handleManualSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -108,7 +79,6 @@ export default function RewardExchange() {
       return;
     }
     if (rawInput.startsWith("#")) rawInput = rawInput.slice(1);
-
     setLoading(true);
     setError("");
     try {
@@ -154,10 +124,6 @@ export default function RewardExchange() {
             setMode("manual");
             setScanning(false);
             setError("");
-            if (scannerRef.current) {
-              scannerRef.current.clear();
-              scannerRef.current = null;
-            }
           }}
           className={`flex-1 py-2 rounded-md text-sm font-medium transition-colors ${
             mode === "manual"
@@ -171,11 +137,7 @@ export default function RewardExchange() {
 
       {mode === "scan" && scanning && (
         <div className="mt-2 mb-4">
-          <div
-            id={containerId}
-            className="overflow-hidden rounded-lg bg-black"
-            style={{ minHeight: "300px", width: "100%" }}
-          />
+          <div id={containerId} className="overflow-hidden rounded-lg" style={{ minHeight: "300px", width: "100%" }} />
           {error && <p className="text-xs text-red-400 mt-2">{error}</p>}
           <p className="text-xs text-gray-400 mt-2 text-center">
             Placez le QR code du client devant la caméra.
