@@ -414,31 +414,6 @@ export default async function DashboardPage() {
                 </div>
             </div>
 
-            {/* Quick Stats */}
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                <div className="bg-[#0d1f3c] shadow sm:rounded-lg border border-[#1e3a5f]">
-                    <div className="px-4 py-5 sm:p-6">
-                        <dt className="text-sm font-medium text-gray-400 truncate">Total clients</dt>
-                        <dd className="mt-1 text-3xl font-semibold text-white">{restaurant.customers.length}</dd>
-                    </div>
-                </div>
-                <div className="bg-[#0d1f3c] shadow sm:rounded-lg border border-[#1e3a5f]">
-                    <div className="px-4 py-5 sm:p-6">
-                        <dt className="text-sm font-medium text-gray-400 truncate">Points distribués</dt>
-                        <dd className="mt-1 text-3xl font-semibold text-white">{restaurant.customers.reduce((sum, c) => sum + c.points, 0)}</dd>
-                    </div>
-                </div>
-                <div className="bg-[#0d1f3c] shadow sm:rounded-lg border border-[#1e3a5f]">
-                    <div className="px-4 py-5 sm:p-6">
-                        <dt className="text-sm font-medium text-gray-400 truncate">URL de la carte</dt>
-                        <dd className="mt-1 text-sm font-medium text-[#fe5502]">
-                            <a href={`https://${restaurant.urlSlug}.Adam.tn`} target="_blank" rel="noopener noreferrer" className="hover:text-[#e0682e]">
-                                {restaurant.urlSlug}.Adam.tn
-                            </a>
-                        </dd>
-                    </div>
-                </div>
-            </div>
         </div>
     );
 }

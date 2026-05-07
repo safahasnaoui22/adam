@@ -60,28 +60,32 @@ export default function RewardExchange() {
     setTimeout(() => setError(""), 2000);
   };
 
-  const handleManualSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!customerIdInput.trim()) {
-      setError("Veuillez entrer un numéro de carte");
-      return;
+const handleManualSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  let rawInput = customerIdInput.trim();
+  if (!rawInput) {
+    setError("Veuillez entrer un numéro de carte");
+    return;
+  }
+  // Remove leading '#' if present
+  if (rawInput.startsWith('#')) rawInput = rawInput.slice(1);
+
+  setLoading(true);
+  setError("");
+  try {
+    const res = await fetch(`/api/customer/by-id/${encodeURIComponent(rawInput)}`);
+    const data = await res.json();
+    if (res.ok && data.customer && data.customer.customerId) {
+      window.location.href = `/scan/${data.customer.customerId}`;
+    } else {
+      setError(data.error || "Client non trouvé");
     }
-    setLoading(true);
-    setError("");
-    try {
-      const res = await fetch(`/api/customer/by-id/${encodeURIComponent(customerIdInput.trim())}`);
-      const data = await res.json();
-      if (res.ok && data.customer && data.customer.customerId) {
-        window.location.href = `/scan/${data.customer.customerId}`;
-      } else {
-        setError(data.error || "Client non trouvé");
-      }
-    } catch {
-      setError("Erreur de connexion");
-    } finally {
-      setLoading(false);
-    }
-  };
+  } catch {
+    setError("Erreur de connexion");
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="bg-[#0d1f3c] rounded-lg shadow border border-[#1e3a5f] p-6">

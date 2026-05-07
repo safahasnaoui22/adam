@@ -1,4 +1,3 @@
-// app/api/customer/by-id/[id]/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/app/lib/prisma";
 
@@ -6,7 +5,13 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params;
+  let { id } = await params;
+  console.log("[API] Received ID:", id); // debug
+
+  // Remove leading '#' if present
+  if (id.startsWith('#')) {
+    id = id.slice(1);
+  }
 
   try {
     // 1. Try exact match on full customerId
@@ -29,7 +34,7 @@ export async function GET(
       return NextResponse.json({ error: "Client non trouvé" }, { status: 404 });
     }
 
-    // 3. Fetch available rewards for this customer's restaurant
+    // 3. Fetch available rewards
     const loyaltyProgram = await prisma.loyaltyProgram.findFirst({
       where: { restaurantId: customer.restaurantId },
       include: {
