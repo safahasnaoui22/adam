@@ -38,17 +38,15 @@ export default function BonusRequestsPage() {
 
   const handleApprove = async (id: string) => {
     setProcessing(id);
-
     try {
       const res = await fetch(`/api/restaurant/bonus-requests/${id}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "approve" }),
       });
-
       if (res.ok) {
-        setRequests(requests.filter((r) => r.id !== id));
-        alert("✅ Bonus approuvé ! Les points ont été ajoutés.");
+        setRequests(requests.filter(r => r.id !== id));
+        alert("✅ Bonus approuvé! Les points ont été ajoutés.");
       } else {
         alert("Erreur lors de l'approbation");
       }
@@ -62,19 +60,14 @@ export default function BonusRequestsPage() {
   const handleReject = async (id: string) => {
     const reason = prompt("Raison du rejet (optionnel):");
     setProcessing(id);
-
     try {
       const res = await fetch(`/api/restaurant/bonus-requests/${id}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "reject",
-          rejectReason: reason || undefined,
-        }),
+        body: JSON.stringify({ action: "reject", rejectReason: reason || undefined }),
       });
-
       if (res.ok) {
-        setRequests(requests.filter((r) => r.id !== id));
+        setRequests(requests.filter(r => r.id !== id));
         alert("Demande rejetée");
       } else {
         alert("Erreur lors du rejet");
@@ -93,102 +86,71 @@ export default function BonusRequestsPage() {
       instagram: "Instagram",
       twitter: "Twitter/X",
     };
-
     return map[platform] || platform;
   };
 
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-[60vh]">
-        <div className="h-12 w-12 rounded-full border-b-2 border-blue-400 animate-spin"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#fe5502]"></div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-5xl mx-auto py-10 px-4">
-      {/* Header */}
-      <div className="mb-10">
-        <h1 className="text-4xl font-bold text-white mb-3 tracking-wide">
-          Demandes de bonus
-        </h1>
-
-        <p className="text-gray-300 text-lg">
-          Vérifiez les demandes des clients et approuvez-les pour leur ajouter
-          des points.
-        </p>
-      </div>
+    <div className="max-w-4xl mx-auto py-8 px-4">
+      <h1 className="text-3xl font-bold text-[#282424] mb-2">Demandes de bonus</h1>
+      <p className="text-[#7f8489] mb-8">
+        Vérifiez les demandes des clients et approuvez-les pour leur ajouter des points.
+      </p>
 
       {requests.length === 0 ? (
-        <div className="bg-gradient-to-br from-[#0B1F3A] to-[#102C57] border border-blue-900 rounded-2xl shadow-2xl p-10 text-center">
-          <p className="text-gray-300 text-lg">
-            Aucune demande en attente
-          </p>
+        <div className="bg-white rounded-lg shadow p-8 text-center">
+          <p className="text-[#7f8489]">Aucune demande en attente</p>
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-4">
           {requests.map((request) => (
-            <div
-              key={request.id}
-              className="bg-gradient-to-br from-[#0B1F3A] to-[#102C57] border border-blue-900 rounded-2xl shadow-2xl p-7"
-            >
-              {/* Top section */}
-              <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4 mb-6">
+            <div key={request.id} className="bg-white rounded-lg shadow p-6">
+              <div className="flex justify-between items-start mb-4">
                 <div>
-                  <h3 className="text-xl font-semibold text-white">
-                    {request.customer.name}
-                  </h3>
-
-                  <p className="text-sm text-gray-300 mt-1">
-                    ID: {request.customer.customerId}
-                  </p>
+                  <h3 className="font-semibold text-[#282424]">{request.customer.name}</h3>
+                  <p className="text-sm text-[#7f8489]">ID: {request.customer.customerId}</p>
                 </div>
-
-                <span className="inline-flex px-4 py-2 rounded-full bg-[#132B4F] border border-blue-700 text-blue-200 text-sm font-medium">
+                <span className="px-3 py-1 bg-[#ffd9b9] text-[#e0682e] rounded-full text-sm">
                   {getPlatformLabel(request.platform)}
                 </span>
               </div>
-
-              {/* Proof section */}
+              
               {request.proofName && (
-                <div className="mb-6 p-5 rounded-xl bg-[#132B4F] border border-blue-700">
-                  <p className="text-sm text-white">
-                    <span className="font-semibold">
-                      Nom fourni :
-                    </span>{" "}
-                    {request.proofName}
+                <div className="mb-4 p-3 bg-[#fdf9f4] rounded-lg">
+                  <p className="text-sm">
+                    <span className="font-medium">Nom fourni:</span> {request.proofName}
                   </p>
-
-                  <p className="text-xs text-gray-300 mt-2">
-                    Vérifiez sur Google Maps que ce nom a laissé un avis.
+                  <p className="text-xs text-[#7f8489] mt-1">
+                    Vérifiez sur Google Maps que ce nom a laissé un avis
                   </p>
                 </div>
               )}
-
-              {/* Bottom section */}
-              <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
-                <p className="text-sm text-gray-300">
-                  Demandé le{" "}
-                  {new Date(request.requestedAt).toLocaleDateString()}
+              
+              <div className="flex justify-between items-center">
+                <p className="text-xs text-[#7f8489]">
+                  Demandé le {new Date(request.requestedAt).toLocaleDateString()}
                 </p>
-
-                <div className="flex flex-wrap gap-3">
+                <div className="flex gap-3">
                   <button
                     onClick={() => handleReject(request.id)}
                     disabled={processing === request.id}
-                    className="px-5 py-3 rounded-xl border border-red-400 text-red-300 hover:bg-red-500/10 transition-all duration-300 font-medium"
+                    className="px-4 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition-colors"
                   >
                     Rejeter
                   </button>
-
                   <button
                     onClick={() => handleApprove(request.id)}
                     disabled={processing === request.id}
-                    className="px-5 py-3 rounded-xl bg-blue-500 hover:bg-blue-600 text-white transition-all duration-300 font-medium shadow-lg"
+                    className="px-4 py-2 bg-[#fe5502] text-white rounded-lg hover:bg-[#e0682e] transition-colors"
                   >
-                    {processing === request.id
-                      ? "Traitement..."
-                      : "Approuver +⭐"}
+                    {processing === request.id ? "..." : "Approuver +⭐"}
                   </button>
                 </div>
               </div>
