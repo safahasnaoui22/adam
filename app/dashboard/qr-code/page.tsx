@@ -19,7 +19,7 @@ export default function QRCodePage() {
     try {
       const res = await fetch("/api/restaurant/generate-qr");
       const data = await res.json();
-
+      
       if (res.ok) {
         setQrCode(data.qrCode);
         setRestaurantUrl(data.url);
@@ -43,156 +43,153 @@ export default function QRCodePage() {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-10 w-10 border-b-2 border-blue-400 mb-4"></div>
-          <p className="text-gray-300 text-lg">
-            Génération de votre QR code...
-          </p>
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#fe5502] mb-4"></div>
+          <p className="text-gray-400">Génération de votre QR code...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto py-10 px-4">
-      {/* Header */}
-      <div className="mb-10">
-        <h1 className="text-4xl font-bold text-white mb-3 tracking-wide">
-          QR Code de votre restaurant
-        </h1>
-        <p className="text-gray-300 text-lg">
-          Vos clients scannent ce code pour accéder à leur carte de fidélité
-        </p>
-      </div>
-
+    <div className="max-w-4xl mx-auto py-8 px-4">
+      <h1 className="text-3xl font-bold text-white mb-2">QR Code de votre restaurant</h1>
+      <p className="text-gray-400 mb-8">
+        Vos clients scannent ce code pour accéder à leur carte de fidélité
+      </p>
+      
       {error && (
-        <div className="bg-red-100 text-red-700 p-4 rounded-xl mb-8 border border-red-200">
+        <div className="bg-[#ffd9b9] text-[#e0682e] p-4 rounded-md mb-6">
           {error}
         </div>
       )}
 
       {qrCode && (
-        <div className="grid lg:grid-cols-2 gap-8">
-          {/* LEFT SIDE */}
-          <div className="bg-gradient-to-br from-[#0B1F3A] to-[#102C57] border border-blue-900 rounded-2xl shadow-2xl p-8">
-            <div className="text-center mb-8">
-              <div className="inline-block p-5 bg-[#132B4F] rounded-2xl border border-blue-700 shadow-inner">
-                <Image
-                  src={qrCode}
-                  alt="QR Code"
-                  width={300}
+        <div className="grid md:grid-cols-2 gap-8">
+          {/* Left side - QR Code */}
+          <div className="bg-[#0d1f3c] p-8 rounded-xl shadow-lg border border-[#1e3a5f]">
+            <div className="mb-6 text-center">
+              <div className="inline-block p-4 bg-[#0a1628] rounded-xl">
+                <Image 
+                  src={qrCode} 
+                  alt="QR Code" 
+                  width={300} 
                   height={300}
-                  className="mx-auto rounded-lg"
+                  className="mx-auto"
                 />
               </div>
             </div>
-
-            <div className="flex flex-wrap justify-center gap-4">
+            
+            <div className="flex justify-center space-x-4">
               <button
                 onClick={() => {
-                  const link = document.createElement("a");
+                  const link = document.createElement('a');
                   link.href = qrCode;
                   link.download = `qr-${Date.now()}.png`;
                   link.click();
                 }}
-                className="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-medium transition-all duration-300 shadow-lg"
+                className="px-4 py-2 bg-[#fe5502] text-white rounded-lg hover:bg-[#e0682e] flex items-center transition-colors"
               >
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
                 Télécharger PNG
               </button>
-
+              
               <button
                 onClick={generateQRCode}
-                className="px-6 py-3 border border-blue-700 bg-[#132B4F] hover:bg-[#1A3A66] text-white rounded-xl font-medium transition-all duration-300"
+                className="px-4 py-2 border border-[#1e3a5f] rounded-lg hover:bg-[#1e3a5f] hover:text-white flex items-center transition-colors text-gray-400"
               >
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
                 Régénérer
               </button>
             </div>
           </div>
 
-          {/* RIGHT SIDE */}
+          {/* Right side - Instructions */}
           <div className="space-y-6">
-            {/* Instructions */}
-            <div className="bg-gradient-to-br from-[#0B1F3A] to-[#102C57] border border-blue-900 rounded-2xl shadow-2xl p-8">
-              <h2 className="text-2xl font-semibold text-white mb-6">
-                Comment utiliser ce QR code ?
-              </h2>
-
-              <div className="space-y-5">
-                {[
-                  {
-                    title: "Imprimez le QR code",
-                    desc: "Placez-le sur vos tables, comptoir ou vitrine",
-                  },
-                  {
-                    title: "Client scanne le code",
-                    desc: "Avec l’appareil photo de son téléphone",
-                  },
-                  {
-                    title: "Client entre son nom",
-                    desc: "Son compte est créé automatiquement",
-                  },
-                  {
-                    title: "Carte de fidélité digitale",
-                    desc: "Le client accumule des tampons à chaque visite",
-                  },
-                ].map((step, index) => (
-                  <div
-                    key={index}
-                    className="flex items-start gap-4"
-                  >
-                    <div className="w-9 h-9 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold flex-shrink-0">
-                      {index + 1}
-                    </div>
-
-                    <div>
-                      <p className="font-medium text-white">
-                        {step.title}
-                      </p>
-                      <p className="text-sm text-gray-300">
-                        {step.desc}
-                      </p>
-                    </div>
+            <div className="bg-[#0d1f3c] p-6 rounded-xl shadow-lg border border-[#1e3a5f]">
+              <h2 className="text-xl font-semibold mb-4 text-white">Comment utiliser ce QR code ?</h2>
+              
+              <div className="space-y-4">
+                <div className="flex items-start space-x-3">
+                  <div className="flex-shrink-0 w-8 h-8 bg-[#ffd9b9] text-[#fe5502] rounded-full flex items-center justify-center font-bold">
+                    1
                   </div>
-                ))}
+                  <div>
+                    <p className="font-medium text-white">Imprimez le QR code</p>
+                    <p className="text-sm text-gray-400">Placez-le sur vos tables, comptoir, ou vitrine</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start space-x-3">
+                  <div className="flex-shrink-0 w-8 h-8 bg-[#ffd9b9] text-[#fe5502] rounded-full flex items-center justify-center font-bold">
+                    2
+                  </div>
+                  <div>
+                    <p className="font-medium text-white">Client scanne le code</p>
+                    <p className="text-sm text-gray-400">Avec l'appareil photo de son téléphone</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start space-x-3">
+                  <div className="flex-shrink-0 w-8 h-8 bg-[#ffd9b9] text-[#fe5502] rounded-full flex items-center justify-center font-bold">
+                    3
+                  </div>
+                  <div>
+                    <p className="font-medium text-white">Client entre son nom</p>
+                    <p className="text-sm text-gray-400">Son compte est créé automatiquement</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start space-x-3">
+                  <div className="flex-shrink-0 w-8 h-8 bg-[#ffd9b9] text-[#fe5502] rounded-full flex items-center justify-center font-bold">
+                    4
+                  </div>
+                  <div>
+                    <p className="font-medium text-white">Carte de fidélité digitale</p>
+                    <p className="text-sm text-gray-400">Le client accumule des tampons à chaque visite</p>
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* Direct Link */}
-            <div className="bg-gradient-to-br from-[#0B1F3A] to-[#102C57] border border-blue-900 rounded-2xl shadow-2xl p-8">
-              <h2 className="text-xl font-semibold text-white mb-4">
-                Lien direct
-              </h2>
-
-              <div className="flex flex-col md:flex-row gap-3">
+            <div className="bg-[#0d1f3c] p-6 rounded-xl shadow-lg border border-[#1e3a5f]">
+              <h2 className="text-lg font-semibold mb-3 text-white">Lien direct</h2>
+              <div className="flex items-center space-x-2">
                 <input
                   type="text"
                   value={restaurantUrl}
                   readOnly
-                  className="flex-1 px-4 py-3 rounded-xl bg-[#132B4F] border border-blue-700 text-white outline-none"
+                  className="flex-1 px-3 py-2 border border-[#1e3a5f] rounded-lg bg-[#0a1628] text-sm text-white"
                 />
-
                 <button
                   onClick={handleCopyUrl}
-                  className="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-medium transition-all duration-300"
+                  className="px-4 py-2 bg-[#1e3a5f] text-gray-400 rounded-lg hover:bg-[#ffd9b9] hover:text-[#fe5502] flex items-center transition-colors"
                 >
-                  {copied ? "✓ Copié" : "Copier"}
+                  {copied ? (
+                    <>✓ Copié</>
+                  ) : (
+                    <>
+                      <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                      </svg>
+                      Copier
+                    </>
+                  )}
                 </button>
               </div>
             </div>
 
-            {/* Stats */}
-            <div className="bg-gradient-to-br from-[#0B1F3A] to-[#102C57] border border-blue-900 rounded-2xl shadow-2xl p-8">
-              <h3 className="text-xl font-semibold text-white mb-3">
-                📊 Statistiques
-              </h3>
-
-              <p className="text-gray-300 text-sm mb-5 leading-relaxed">
-                Suivez le nombre de clients qui scannent votre QR code
-                et rejoignent votre programme de fidélité.
+            <div className="bg-[#ffd9b9] p-6 rounded-xl">
+              <h3 className="font-semibold text-[#e0682e] mb-2">📊 Statistiques</h3>
+              <p className="text-sm text-[#7f8489] mb-4">
+                Suivez le nombre de clients qui scannent votre QR code et rejoignent votre programme.
               </p>
-
               <Link
                 href="/dashboard/clients"
-                className="inline-flex items-center text-blue-300 hover:text-white font-medium transition-colors duration-300"
+                className="text-[#fe5502] hover:text-[#e0682e] text-sm font-medium inline-flex items-center transition-colors"
               >
                 Voir mes clients →
               </Link>
