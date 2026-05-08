@@ -23,7 +23,7 @@ export default function ClientDashboard() {
   const fullGreeting = "comment allez-vous aujourd'hui ?";
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
-  // Typing animation effect
+  // Typing animation
   useEffect(() => {
     let i = 0;
     const interval = setInterval(() => {
@@ -91,16 +91,14 @@ export default function ClientDashboard() {
     }
   }, [restaurantId, router]);
 
-  // Register service worker
+  // Register service worker (ignore errors)
   useEffect(() => {
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js')
-        .then(reg => console.log('Service Worker registered', reg))
-        .catch(err => console.error('SW registration failed', err));
+      navigator.serviceWorker.register('/sw.js').catch(err => console.warn('SW registration failed', err));
     }
   }, []);
 
-  // Capture beforeinstallprompt event
+  // Capture beforeinstallprompt
   useEffect(() => {
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
@@ -116,6 +114,8 @@ export default function ClientDashboard() {
     if (clientId) {
       await fetchClientData(clientId);
     }
+    const storedRestaurantId = localStorage.getItem("restaurantId");
+    if (storedRestaurantId) await fetchRestaurantData(storedRestaurantId);
     setTimeout(() => setRefreshing(false), 800);
   };
 
@@ -137,6 +137,7 @@ export default function ClientDashboard() {
     }
   };
 
+  // ----- Loading & error states -----
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#f9fafb" }}>
@@ -161,14 +162,13 @@ export default function ClientDashboard() {
     );
   }
 
-  // ----- Apply theme from restaurant with neutral fallback -----
+  // ----- Safely compute styles and rewards -----
   const theme = restaurant?.theme || {};
   const primaryColor = theme.colors?.primary || "#fe5502";
   const secondaryColor = theme.colors?.secondary || "#e0682e";
   const bgColor = theme.colors?.background || "#ffffff";
   const cardBgColor = theme.colors?.cardBackground || "#ffffff";
   const textColor = theme.colors?.text || "#1f2937";
-  const accentColor = theme.colors?.accent || primaryColor;
 
   const dynamicStyles = {
     primary: primaryColor,
@@ -176,22 +176,24 @@ export default function ClientDashboard() {
     background: bgColor,
     cardBg: cardBgColor,
     text: textColor,
-    accent: accentColor,
   };
 
-  // Apply pattern from restaurant settings
-  const patternStyle = getPatternStyle(restaurant.backgroundPattern || "none");
+  // Pattern style – safe fallback
+  let patternStyle = {};
+  try {
+    patternStyle = getPatternStyle(restaurant.backgroundPattern || "none");
+  } catch (e) {
+    console.warn("Pattern error", e);
+  }
 
-  // ----- Rewards (no fallback – only real ones) -----
-  const rewards = restaurant.loyaltyProgram?.rewards?.length
-    ? restaurant.loyaltyProgram.rewards.map((r: any) => ({
-        id: r.id,
-        name: r.name,
-        stars: r.pointsRequired,
-        icon: "🎁",
-        description: r.description || "",
-      }))
-    : [];
+  // Rewards – safe
+  const rewards = (restaurant.loyaltyProgram?.rewards || []).map((r: any) => ({
+    id: r.id,
+    name: r.name,
+    stars: r.pointsRequired,
+    icon: "🎁",
+    description: r.description || "",
+  }));
 
   const coupons = restaurant.coupons || [];
 
