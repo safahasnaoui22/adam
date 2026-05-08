@@ -32,8 +32,11 @@ export default function RewardExchange() {
       await html5QrCodeRef.current.start(
         { facingMode: "environment" }, // use back camera
         {
-          fps: 10,
+          fps: 30, // increased from 10 for faster detection
           qrbox: { width: 250, height: 250 },
+          experimentalFeatures: {
+            useBarCodeDetectorIfSupported: true, // enables faster barcode/QR detection
+          },
         },
         (decodedText) => {
           // on success
@@ -44,7 +47,7 @@ export default function RewardExchange() {
         },
         (errorMessage) => {
           // ignore most errors, only log significant ones
-          if (errorMessage && !errorMessage.includes("NoMultiCode")) {
+          if (errorMessage && !errorMessage.includes("NoMultiCode") && !errorMessage.includes("No QR")) {
             console.warn(errorMessage);
           }
         }
@@ -65,7 +68,10 @@ export default function RewardExchange() {
 
   useEffect(() => {
     if (mode === "scan" && scanning) {
-      startScanner();
+      // Small delay to ensure DOM container is ready
+      setTimeout(() => {
+        startScanner();
+      }, 100);
     } else if (mode !== "scan") {
       stopScanner();
     }
@@ -97,7 +103,7 @@ export default function RewardExchange() {
   };
 
   return (
-    <div className="bg-[#0d1f3c] rounded-lg shadow border border-[#1e3a5f] p-6">
+    <div className="bg-[#0d1f3c] rounded-2xl shadow-2xl border border-[#1e3a5f]/40 p-6 transition-all duration-300">
       <div className="flex items-center gap-3 mb-4">
         <span className="text-2xl">🎁</span>
         <h2 className="text-xl font-semibold text-white">Échanger une récompense</h2>
@@ -137,10 +143,10 @@ export default function RewardExchange() {
 
       {mode === "scan" && scanning && (
         <div className="mt-2 mb-4">
-          <div id={containerId} className="overflow-hidden rounded-lg" style={{ minHeight: "300px", width: "100%" }} />
+          <div id={containerId} className="overflow-hidden rounded-lg bg-black" style={{ minHeight: "300px", width: "100%" }} />
           {error && <p className="text-xs text-red-400 mt-2">{error}</p>}
           <p className="text-xs text-gray-400 mt-2 text-center">
-            Placez le QR code du client devant la caméra.
+            Placez le QR code bien éclairé dans le cadre.
           </p>
         </div>
       )}
