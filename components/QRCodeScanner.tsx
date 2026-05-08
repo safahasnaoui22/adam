@@ -41,19 +41,24 @@ export default function QRCodeScanner({ restaurantId, restaurantSlug }: QRCodeSc
       if (res.ok) {
         console.log("Account created:", data);
 
+        // Sign in with the temporary password
         if (data.tempPassword && data.email) {
+          console.log("Attempting to sign in with:", data.email, data.tempPassword);
+
           const signInResult = await signIn("credentials", {
             email: data.email,
             password: data.tempPassword,
             redirect: false,
           });
 
+          console.log("Sign in result:", signInResult);
+
           if (signInResult?.ok) {
-            // Use the keys expected by the old dashboard
-            localStorage.setItem("clientId", data.customer.customerId);
-            localStorage.setItem("clientName", data.customer.name);
-            localStorage.setItem("restaurantId", restaurantId);
-            localStorage.setItem("restaurantSlug", restaurantSlug);
+            // Store the public customerId and name in localStorage
+          localStorage.setItem("customerId", data.customer.customerId);   // changed from "clientId"
+localStorage.setItem("customerName", data.customer.name);       // optional
+localStorage.setItem("restaurantId", restaurantId);
+localStorage.setItem("restaurantSlug", restaurantSlug);
 
             console.log("Stored in localStorage:", {
               clientId: data.customer.customerId,
@@ -61,21 +66,26 @@ export default function QRCodeScanner({ restaurantId, restaurantSlug }: QRCodeSc
               restaurantId,
             });
 
+            // Wait a moment for the session to be fully set
             await new Promise(resolve => setTimeout(resolve, 500));
 
+            // ✅ Redirect to the OLD dashboard with restaurantId as query parameter
+            console.log("Sign in successful, redirecting to:", `/client/dashboard?restaurantId=${restaurantId}`);
             router.push(`/client/dashboard?restaurantId=${restaurantId}`);
             router.refresh();
           } else {
-            setError("Compte créé, mais erreur de connexion.");
+            console.error("Sign in failed:", signInResult?.error);
+            setError("Compte créé, mais erreur de connexion. Veuillez vous connecter.");
           }
         } else {
+          console.error("No tempPassword or email received");
           setError("Erreur: données de connexion manquantes");
         }
       } else {
         setError(data.error || "Une erreur est survenue");
       }
     } catch (error) {
-      console.error(error);
+      console.error("Error creating account:", error);
       setError("Impossible de créer le compte");
     } finally {
       setLoading(false);
@@ -98,7 +108,9 @@ export default function QRCodeScanner({ restaurantId, restaurantSlug }: QRCodeSc
   return (
     <form onSubmit={handleCreateAccount} className="space-y-4">
       <div>
-        <label className="block text-sm font-medium text-[#282424] mb-2">Votre nom</label>
+        <label className="block text-sm font-medium text-[#282424] mb-2">
+          Votre nom
+        </label>
         <input
           type="text"
           value={name}
@@ -109,11 +121,13 @@ export default function QRCodeScanner({ restaurantId, restaurantSlug }: QRCodeSc
           disabled={loading}
         />
       </div>
+
       {error && (
         <div className="bg-[#ffd9b9] text-[#e0682e] p-3 rounded-lg text-sm">
           {error}
         </div>
       )}
+
       <button
         type="submit"
         disabled={loading}
