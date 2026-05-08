@@ -94,7 +94,7 @@ export default function ThemeSelector({
       {/* Left: Controls */}
       <div className="space-y-8">
         <div>
-          <h3 className="text-lg font-semibold mb-4">🎨 Thème de couleur</h3>
+        <h3 className="text-lg font-semibold mb-4 text-white">🎨 Thème de couleur</h3>
           <div className="grid grid-cols-2 gap-3">
             {themes.map((t) => (
               <button
@@ -117,7 +117,7 @@ export default function ThemeSelector({
         </div>
 
         <div>
-          <h3 className="text-lg font-semibold mb-4">🖼️ Motif d’arrière‑plan</h3>
+          <h3 className="text-lg font-semibold mb-4 text-white">🖼️ Motif d’arrière‑plan</h3>
           <div className="grid grid-cols-3 gap-3">
             {patternEntries.map((p) => (
               <button
@@ -138,7 +138,7 @@ export default function ThemeSelector({
 
       {/* Right: Live preview of the customer card */}
       <div className="sticky top-8">
-        <h3 className="text-lg font-semibold mb-4">📱 Aperçu (carte client)</h3>
+        <h3 className="text-lg font-semibold mb-4 text-white">📱 Aperçu (carte client)</h3>
         <div className="max-w-sm mx-auto rounded-3xl border-8 border-gray-800 overflow-hidden shadow-2xl">
           <div className="relative" style={backgroundStyle}>
             <div className="p-5 space-y-4 relative z-10">
