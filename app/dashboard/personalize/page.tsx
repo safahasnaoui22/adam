@@ -151,80 +151,41 @@ const handleSubmit = async (e: React.FormEvent) => {
       </p>
 
       {/* Tabs */}
-      <div className="border-b border-[#1e3a5f] mb-8">
-        <nav className="flex -mb-px space-x-8 overflow-x-auto">
-          <button
-            onClick={() => setActiveTab("business")}
-            className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
-              activeTab === "business"
-                ? "border-[#fe5502] text-[#fe5502]"
-                : "border-transparent text-gray-400 hover:text-white hover:border-[#1e3a5f]"
-            }`}
-          >
-            Contact & Business
-          </button>
-          <button
-            onClick={() => setActiveTab("hours")}
-            className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
-              activeTab === "hours"
-                ? "border-[#fe5502] text-[#fe5502]"
-                : "border-transparent text-gray-400 hover:text-white hover:border-[#1e3a5f]"
-            }`}
-          >
-            Horaires
-          </button>
-          <button
-            onClick={() => setActiveTab("social")}
-            className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
-              activeTab === "social"
-                ? "border-[#fe5502] text-[#fe5502]"
-                : "border-transparent text-gray-400 hover:text-white hover:border-[#1e3a5f]"
-            }`}
-          >
-            Réseaux sociaux
-          </button>
-          <button
-            onClick={() => setActiveTab("legal")}
-            className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
-              activeTab === "legal"
-                ? "border-[#fe5502] text-[#fe5502]"
-                : "border-transparent text-gray-400 hover:text-white hover:border-[#1e3a5f]"
-            }`}
-          >
-            Conditions
-          </button>
-          <button
-            onClick={() => setActiveTab("revenue")}
-            className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
-              activeTab === "revenue"
-                ? "border-[#fe5502] text-[#fe5502]"
-                : "border-transparent text-gray-400 hover:text-white hover:border-[#1e3a5f]"
-            }`}
-          >
-            Suivi des revenus
-          </button>
-          <button
-            onClick={() => setActiveTab("brand")}
-            className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
-              activeTab === "brand"
-                ? "border-[#fe5502] text-[#fe5502]"
-                : "border-transparent text-gray-400 hover:text-white hover:border-[#1e3a5f]"
-            }`}
-          >
-            Brand & Identity
-          </button>
-          <button
-            onClick={() => setActiveTab("theme")}
-            className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
-              activeTab === "theme"
-                ? "border-[#fe5502] text-[#fe5502]"
-                : "border-transparent text-gray-400 hover:text-white hover:border-[#1e3a5f]"
-            }`}
-          >
-            Thème
-          </button>
-        </nav>
-      </div>
+     {/* Tabs with 3D effect and responsive wrap */}
+<div className="relative mb-8">
+  <div className="flex flex-wrap gap-2 sm:gap-3">
+    {[
+      { id: "business", label: "Contact & Business", icon: "🏢" },
+      { id: "hours", label: "Horaires", icon: "⏰" },
+      { id: "social", label: "Réseaux sociaux", icon: "📱" },
+      { id: "legal", label: "Conditions", icon: "⚖️" },
+      { id: "revenue", label: "Suivi des revenus", icon: "💰" },
+      { id: "brand", label: "Brand & Identity", icon: "🎨" },
+      { id: "theme", label: "Thème", icon: "🎨" },
+    ].map((tab) => (
+      <button
+        key={tab.id}
+        onClick={() => setActiveTab(tab.id)}
+        className={`
+          relative px-4 py-2.5 rounded-xl font-medium text-sm transition-all duration-200
+          transform hover:-translate-y-0.5 hover:shadow-md
+          flex items-center gap-2
+          ${activeTab === tab.id
+            ? "bg-gradient-to-r from-[#fe5502] to-[#e0682e] text-white shadow-lg shadow-orange-500/30 scale-105"
+            : "bg-[#0a1628] text-gray-400 hover:text-white hover:bg-[#1e3a5f] border border-[#1e3a5f]"
+          }
+        `}
+      >
+        <span className="text-base">{tab.icon}</span>
+        <span>{tab.label}</span>
+        {activeTab === tab.id && (
+          <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-1/2 h-0.5 bg-white/70 rounded-full shadow-sm" />
+        )}
+      </button>
+    ))}
+  </div>
+  <div className="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-[#1e3a5f] to-transparent" />
+</div>
 
       <form onSubmit={handleSubmit} className="space-y-8">
         {/* Business Details Tab */}
