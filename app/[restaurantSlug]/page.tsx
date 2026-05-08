@@ -4,15 +4,18 @@ import { prisma } from "@/app/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/lib/auth";
 import QRCodeScanner from "@/components/QRCodeScanner";
-
+import AutoLogin from "@/components/AutoLogin";
+import AutoRedirect from "@/components/AutoRedirect";
 interface PageProps {
   params: Promise<{ restaurantSlug: string }>;
 }
 
 export default async function RestaurantLandingPage({ params }: PageProps) {
   const { restaurantSlug } = await params;
+
   const restaurant = await prisma.restaurant.findUnique({
     where: { urlSlug: restaurantSlug },
+    include: { loyaltyProgram: true },
   });
 
   if (!restaurant) notFound();
@@ -32,14 +35,15 @@ export default async function RestaurantLandingPage({ params }: PageProps) {
       </div>
     );
   }
-
-  const session = await getServerSession(authOptions);
-  if (session?.user?.customerProfile) {
-    redirect(`/${restaurantSlug}/dashboard`); // will use the old dashboard redirect later
-  }
+const session = await getServerSession(authOptions);
+if (session?.user?.customerProfile) {
+  // Redirect to the existing client dashboard, passing the restaurantId as a query parameter
+  redirect(`/client/dashboard?restaurantId=${restaurant.id}`);
+}
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#fdf9f4] to-white">
+      <AutoRedirect restaurantSlug={restaurantSlug} />
       <div className="max-w-md mx-auto px-4 py-8">
         {/* Restaurant Logo */}
         <div className="text-center mb-8">
@@ -53,6 +57,9 @@ export default async function RestaurantLandingPage({ params }: PageProps) {
           <h1 className="text-2xl font-bold text-[#282424] mt-4">{restaurant.name}</h1>
           <p className="text-[#7f8489] text-sm mt-1">Programme de fidélité</p>
         </div>
+
+        {/* 👇 Client component that attempts auto‑login before showing the form */}
+        <AutoLogin restaurantSlug={restaurantSlug} />
 
         <div className="bg-white rounded-2xl shadow-lg p-6 mb-6 text-center">
           <h2 className="text-lg font-semibold text-[#282424] mb-2">Bienvenue !</h2>
