@@ -34,9 +34,6 @@ export default function RewardExchange() {
         {
           fps: 30, // increased from 10 for faster detection
           qrbox: { width: 250, height: 250 },
-          experimentalFeatures: {
-            useBarCodeDetectorIfSupported: true, // enables faster barcode/QR detection
-          },
         },
         (decodedText) => {
           // on success
