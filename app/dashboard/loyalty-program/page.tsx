@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner"; 
+import { toast } from "sonner";
 
 interface Reward {
   id: string;
@@ -40,6 +40,13 @@ export default function LoyaltyProgramPage() {
     isActive: true,
   });
   const [editingReward, setEditingReward] = useState<Reward | null>(null);
+
+  // Helper: get next required points (current max + 100, or 100 if none)
+  const getNextPointsRequired = (rewardsList: Reward[]): number => {
+    if (rewardsList.length === 0) return 100;
+    const maxPoints = Math.max(...rewardsList.map((r) => r.pointsRequired));
+    return maxPoints + 100;
+  };
 
   useEffect(() => {
     fetchLoyaltyProgram();
@@ -89,6 +96,16 @@ export default function LoyaltyProgramPage() {
 
   const handleCreateReward = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Enforce increment rule on the frontend
+    const nextRequired = getNextPointsRequired(rewards);
+    if (newReward.pointsRequired !== nextRequired) {
+      toast?.error(
+        `Les points requis doivent être exactement ${nextRequired} (incrément de 100 points par palier).`
+      );
+      return;
+    }
+
     setSaving(true);
     try {
       const res = await fetch("/api/rewards", {
@@ -100,7 +117,12 @@ export default function LoyaltyProgramPage() {
       if (res.ok) {
         setRewards([...rewards, data]);
         setShowRewardForm(false);
-        setNewReward({ name: "", pointsRequired: 100, description: "", isActive: true });
+        setNewReward({
+          name: "",
+          pointsRequired: getNextPointsRequired([...rewards, data]),
+          description: "",
+          isActive: true,
+        });
         toast?.success("Récompense ajoutée");
       } else {
         alert(data.error);
@@ -122,7 +144,7 @@ export default function LoyaltyProgramPage() {
       });
       const data = await res.json();
       if (res.ok) {
-        setRewards(rewards.map(r => r.id === reward.id ? data : r));
+        setRewards(rewards.map((r) => (r.id === reward.id ? data : r)));
         setEditingReward(null);
         toast?.success("Récompense mise à jour");
       } else {
@@ -141,7 +163,7 @@ export default function LoyaltyProgramPage() {
     try {
       const res = await fetch(`/api/rewards/${id}`, { method: "DELETE" });
       if (res.ok) {
-        setRewards(rewards.filter(r => r.id !== id));
+        setRewards(rewards.filter((r) => r.id !== id));
         toast?.success("Récompense supprimée");
       } else {
         const data = await res.json();
@@ -152,6 +174,18 @@ export default function LoyaltyProgramPage() {
     } finally {
       setSaving(false);
     }
+  };
+
+  // When opening the "add reward" form, pre‑fill the correct next points
+  const openAddRewardForm = () => {
+    const nextPoints = getNextPointsRequired(rewards);
+    setNewReward({
+      name: "",
+      pointsRequired: nextPoints,
+      description: "",
+      isActive: true,
+    });
+    setShowRewardForm(true);
   };
 
   if (loading) {
@@ -251,7 +285,7 @@ export default function LoyaltyProgramPage() {
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold text-white">Paliers de récompenses</h2>
           <button
-            onClick={() => setShowRewardForm(!showRewardForm)}
+            onClick={openAddRewardForm}
             className="text-sm bg-[#fe5502] text-white px-3 py-1 rounded-md hover:bg-[#e0682e] transition-colors"
           >
             + Ajouter une récompense
@@ -277,10 +311,12 @@ export default function LoyaltyProgramPage() {
                 <input
                   type="number"
                   value={newReward.pointsRequired}
-                  onChange={(e) => setNewReward({ ...newReward, pointsRequired: parseInt(e.target.value) })}
-                  className="w-full px-3 py-2 border border-[#1e3a5f] rounded-md bg-[#0a1628] text-white"
-                  required
+                  disabled
+                  className="w-full px-3 py-2 border border-[#1e3a5f] rounded-md bg-[#1e2a4a] text-gray-300 cursor-not-allowed"
                 />
+                <p className="text-xs text-gray-500 mt-1">
+                  Incrément automatique de 100 points. Prochain palier : {getNextPointsRequired(rewards)} points.
+                </p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-300">Description (optionnel)</label>
@@ -328,7 +364,7 @@ export default function LoyaltyProgramPage() {
             {rewards.map((reward) => (
               <div key={reward.id} className="border border-[#1e3a5f] rounded-lg p-4 bg-[#0a1628]">
                 {editingReward?.id === reward.id ? (
-                  // Edit form
+                  // Edit form (no automatic increment enforcement for edits – keeps flexibility)
                   <div className="space-y-3">
                     <input
                       type="text"
@@ -339,7 +375,9 @@ export default function LoyaltyProgramPage() {
                     <input
                       type="number"
                       value={editingReward.pointsRequired}
-                      onChange={(e) => setEditingReward({ ...editingReward, pointsRequired: parseInt(e.target.value) })}
+                      onChange={(e) =>
+                        setEditingReward({ ...editingReward, pointsRequired: parseInt(e.target.value) })
+                      }
                       className="w-full px-3 py-2 border border-[#1e3a5f] rounded-md bg-[#0a1628] text-white"
                     />
                     <textarea
@@ -356,7 +394,9 @@ export default function LoyaltyProgramPage() {
                         id={`edit-active-${reward.id}`}
                         className="accent-[#fe5502]"
                       />
-                      <label htmlFor={`edit-active-${reward.id}`} className="text-sm text-gray-300">Actif</label>
+                      <label htmlFor={`edit-active-${reward.id}`} className="text-sm text-gray-300">
+                        Actif
+                      </label>
                     </div>
                     <div className="flex justify-end gap-2">
                       <button
@@ -381,7 +421,9 @@ export default function LoyaltyProgramPage() {
                       <div className="flex items-center gap-2">
                         <h3 className="font-semibold text-white">{reward.name}</h3>
                         {!reward.isActive && (
-                          <span className="text-xs bg-[#1e3a5f] text-gray-400 px-2 py-0.5 rounded-full">Inactif</span>
+                          <span className="text-xs bg-[#1e3a5f] text-gray-400 px-2 py-0.5 rounded-full">
+                            Inactif
+                          </span>
                         )}
                       </div>
                       <p className="text-sm text-gray-400">{reward.pointsRequired} points requis</p>
