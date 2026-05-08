@@ -14,42 +14,55 @@ export default function ClientDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const fetchClientData = async (id: string) => {
+    try {
+      const res = await fetch(`/api/client/${id}`);
+      const data = await res.json();
+      if (res.ok) {
+        setClient(data);
+      } else {
+        throw new Error(data.error || "Client non trouvé");
+      }
+    } catch (err: any) {
+      console.error(err);
+      throw err;
+    }
+  };
+
+  const fetchRestaurantData = async (id: string) => {
+    try {
+      const res = await fetch(`/api/restaurant/${id}`);
+      const data = await res.json();
+      if (res.ok) {
+        setRestaurant(data);
+      } else {
+        throw new Error(data.error || "Restaurant non trouvé");
+      }
+    } catch (err: any) {
+      console.error(err);
+      throw err;
+    }
+  };
+
   useEffect(() => {
-    const clientId = localStorage.getItem("clientId");
-    const clientName = localStorage.getItem("clientName");
-    const storedRestaurantId = localStorage.getItem("restaurantId");
+    let clientId = localStorage.getItem("clientId");
+    let clientName = localStorage.getItem("clientName");
+    let storedRestaurantId = localStorage.getItem("restaurantId");
 
-    console.log("localStorage check:", { clientId, clientName, storedRestaurantId });
+    // Fallback to alternative keys
+    if (!clientId) clientId = localStorage.getItem("customerId");
+    if (!clientName) clientName = localStorage.getItem("customerName");
 
-    if (!clientId || !clientName || !storedRestaurantId) {
+    if (clientId && clientName && storedRestaurantId) {
+      Promise.all([fetchClientData(clientId), fetchRestaurantData(storedRestaurantId)])
+        .catch((err) => {
+          setError(err.message);
+        })
+        .finally(() => setLoading(false));
+    } else {
       setError(`Données manquantes. clientId=${clientId}, clientName=${clientName}, restaurantId=${storedRestaurantId}`);
       setLoading(false);
-      return;
     }
-
-    const fetchData = async () => {
-      try {
-        console.log("Fetching client data from /api/client/", clientId);
-        const clientRes = await fetch(`/api/client/${clientId}`);
-        const clientData = await clientRes.json();
-        if (!clientRes.ok) throw new Error(`Client API error: ${clientData.error || clientRes.status}`);
-
-        console.log("Fetching restaurant data from /api/restaurant/", storedRestaurantId);
-        const restaurantRes = await fetch(`/api/restaurant/${storedRestaurantId}`);
-        const restaurantData = await restaurantRes.json();
-        if (!restaurantRes.ok) throw new Error(`Restaurant API error: ${restaurantData.error || restaurantRes.status}`);
-
-        setClient(clientData);
-        setRestaurant(restaurantData);
-      } catch (err: any) {
-        console.error(err);
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
   }, [restaurantId, router]);
 
   if (loading) {
@@ -80,15 +93,8 @@ export default function ClientDashboard() {
     );
   }
 
-  if (!client || !restaurant) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <p className="text-gray-500">Aucune donnée disponible</p>
-      </div>
-    );
-  }
+  if (!client || !restaurant) return null;
 
-  // Simple UI – just to confirm data is loaded
   const getShortId = () => {
     if (client.customerId && client.customerId.includes('-')) {
       const parts = client.customerId.split('-');
