@@ -2,7 +2,7 @@
   "name": "Adam Loyalty",
   "short_name": "Adam",
   "description": "Programme de fidélité pour restaurants",
-  "start_url": "/",
+ "start_url": "/client/dashboard",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#fe5502",
