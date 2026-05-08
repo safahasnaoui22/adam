@@ -22,6 +22,7 @@ export default function ClientDashboard() {
   const [typedGreeting, setTypedGreeting] = useState("");
   const fullGreeting = "comment allez-vous aujourd'hui ?";
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [patternStyle, setPatternStyle] = useState<React.CSSProperties>({});
 
   // Typing animation effect
   useEffect(() => {
@@ -137,6 +138,19 @@ export default function ClientDashboard() {
     }
   };
 
+  // ----- Safely compute pattern style -----
+  useEffect(() => {
+    if (restaurant) {
+      try {
+        const style = getPatternStyle(restaurant.backgroundPattern || "none");
+        setPatternStyle(style);
+      } catch (err) {
+        console.error("Pattern style error:", err);
+        setPatternStyle({});
+      }
+    }
+  }, [restaurant]);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#f9fafb" }}>
@@ -161,7 +175,7 @@ export default function ClientDashboard() {
     );
   }
 
-  // ----- Apply theme from restaurant with neutral fallback -----
+  // ----- Apply theme from restaurant -----
   const theme = restaurant?.theme || {};
   const primaryColor = theme.colors?.primary || "#fe5502";
   const secondaryColor = theme.colors?.secondary || "#e0682e";
@@ -179,22 +193,22 @@ export default function ClientDashboard() {
     accent: accentColor,
   };
 
-  // Apply pattern from restaurant settings
-  const patternStyle = getPatternStyle(restaurant.backgroundPattern || "none");
-
-  // ----- Rewards (no fallback – only real ones) -----
-  const rewards = restaurant.loyaltyProgram?.rewards?.length
-    ? restaurant.loyaltyProgram.rewards.map((r: any) => ({
-        id: r.id,
-        name: r.name,
-        stars: r.pointsRequired,
-        icon: "🎁",
-        description: r.description || "",
-      }))
-    : [];
+  // ----- Rewards (safe) -----
+  let rewards: any[] = [];
+  try {
+    rewards = restaurant.loyaltyProgram?.rewards?.map((r: any) => ({
+      id: r.id,
+      name: r.name,
+      stars: r.pointsRequired,
+      icon: "🎁",
+      description: r.description || "",
+    })) || [];
+  } catch (err) {
+    console.error("Rewards error:", err);
+    rewards = [];
+  }
 
   const coupons = restaurant.coupons || [];
-
   const sortedRewards = [...rewards].sort((a, b) => a.stars - b.stars);
   const nextReward = sortedRewards.find(r => r.stars > (client.points || 0));
   const currentProgress = nextReward ? (client.points / nextReward.stars) * 100 : 100;
