@@ -409,7 +409,7 @@ export default function RewardExchange() {
   return (
     <div
       style={{
-        minHeight: "100vh",
+        minHeight: "50vh",
         background: "#13122a",
         fontFamily: "system-ui, -apple-system, sans-serif",
         display: "flex",
@@ -419,18 +419,7 @@ export default function RewardExchange() {
         padding: "2rem",
       }}
     >
-      {/* Top-right Restaurant Admin */}
-      <div
-        style={{
-          position: "absolute",
-          top: "1.5rem",
-          right: "2rem",
-          color: "#9ca3af",
-          fontSize: "0.88rem",
-        }}
-      >
-        Restaurant Admin
-      </div>
+
 
       {/* Centered content */}
       <div style={{ maxWidth: "900px", width: "100%" }}>
