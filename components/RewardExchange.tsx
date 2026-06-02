@@ -6,7 +6,7 @@ import { Html5Qrcode } from "html5-qrcode";
 // ─── Types ────────────────────────────────────────────────────────────
 type Page = "dashboard" | "systeme" | "programme" | "qr" | "spin" | "clients";
 
-// ─── Add Points Modal ─────────────────────────────────────────────────
+// ─── Add Points Modal (unchanged) ─────────────────────────────────────
 function AddPointsModal({ onClose }: { onClose: () => void }) {
   const [clientId, setClientId] = useState("");
   const [montant, setMontant] = useState("");
@@ -72,7 +72,6 @@ function AddPointsModal({ onClose }: { onClose: () => void }) {
         maxWidth: "520px",
         position: "relative",
       }}>
-        {/* Header */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.75rem" }}>
           <h2 style={{ margin: 0, color: "#fff", fontSize: "1.4rem", fontWeight: 700 }}>
             Ajouter des Points
@@ -88,7 +87,6 @@ function AddPointsModal({ onClose }: { onClose: () => void }) {
           >×</button>
         </div>
 
-        {/* Field 1: Client ID */}
         <label style={{ color: "#e5e7eb", fontSize: "0.95rem", fontWeight: 500, display: "block", marginBottom: "0.6rem" }}>
           1. ID Client (Scanner ou Taper manuellement) *
         </label>
@@ -111,7 +109,6 @@ function AddPointsModal({ onClose }: { onClose: () => void }) {
           }}
         />
 
-        {/* Field 2: Montant */}
         <label style={{ color: "#e5e7eb", fontSize: "0.95rem", fontWeight: 500, display: "block", marginBottom: "0.6rem" }}>
           2. Montant de l'addition (DT) *
         </label>
@@ -136,7 +133,6 @@ function AddPointsModal({ onClose }: { onClose: () => void }) {
           }}
         />
 
-        {/* Feedback */}
         {error && (
           <p style={{ color: "#f87171", fontSize: "0.85rem", marginBottom: "0.75rem" }}>{error}</p>
         )}
@@ -144,7 +140,6 @@ function AddPointsModal({ onClose }: { onClose: () => void }) {
           <p style={{ color: "#34d399", fontSize: "0.85rem", marginBottom: "0.75rem" }}>{success}</p>
         )}
 
-        {/* Submit */}
         <button
           onClick={handleSubmit}
           disabled={loading}
@@ -181,7 +176,7 @@ function AddPointsModal({ onClose }: { onClose: () => void }) {
   );
 }
 
-// ─── Exchange Reward Modal ─────────────────────────────────────────────
+// ─── Exchange Reward Modal (unchanged) ─────────────────────────────────
 function ExchangeModal({ onClose }: { onClose: () => void }) {
   const [customerIdInput, setCustomerIdInput] = useState("");
   const [mode, setMode] = useState<"scan" | "manual">("scan");
@@ -309,7 +304,7 @@ function ExchangeModal({ onClose }: { onClose: () => void }) {
   );
 }
 
-// ─── Sidebar ──────────────────────────────────────────────────────────
+// ─── Sidebar (unchanged) ──────────────────────────────────────────────
 function Sidebar({ activePage, onNavigate }: { activePage: Page; onNavigate: (p: Page) => void }) {
   const navItems: { page: Page; label: string; icon: React.ReactNode; group?: string }[] = [
     {
@@ -350,14 +345,12 @@ function Sidebar({ activePage, onNavigate }: { activePage: Page; onNavigate: (p:
       flexShrink: 0,
       padding: "1.25rem 0",
     }}>
-      {/* Logo */}
       <div style={{ padding: "0.5rem 1.25rem 1.75rem" }}>
         <span style={{ color: "#fff", fontSize: "1.6rem", fontWeight: 800, letterSpacing: "-0.02em" }}>
           BONOO<span style={{ color: "#fe5502" }}>.</span>
         </span>
       </div>
 
-      {/* Nav */}
       <nav style={{ flex: 1, padding: "0 0.75rem", display: "flex", flexDirection: "column", gap: "2px" }}>
         {navItems.map((item) => {
           const showGroup = item.group && item.group !== lastGroup;
@@ -411,7 +404,6 @@ function Sidebar({ activePage, onNavigate }: { activePage: Page; onNavigate: (p:
         })}
       </nav>
 
-      {/* Quit */}
       <div style={{ padding: "0 0.75rem 0.5rem" }}>
         <button
           style={{
@@ -434,26 +426,7 @@ function Sidebar({ activePage, onNavigate }: { activePage: Page; onNavigate: (p:
   );
 }
 
-// ─── Stats Card ───────────────────────────────────────────────────────
-function StatCard({ icon, value, label }: { icon: React.ReactNode; value: string; label: string }) {
-  return (
-    <div style={{
-      background: "#2d2b4e",
-      borderRadius: "0.875rem",
-      padding: "1.5rem 1.25rem",
-      flex: 1,
-      minWidth: 0,
-      position: "relative",
-    }}>
-      <div style={{ color: "#5b5aff", marginBottom: "0.75rem", fontSize: "1.4rem" }}>{icon}</div>
-      <div style={{ color: "#fff", fontSize: "2rem", fontWeight: 700, lineHeight: 1 }}>{value}</div>
-      <div style={{ color: "#6b7280", fontSize: "0.72rem", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", marginTop: "0.4rem" }}>{label}</div>
-      <button style={{ position: "absolute", top: "1rem", right: "1rem", background: "none", border: "none", color: "#4b5563", cursor: "pointer", fontSize: "0.9rem" }} aria-label="Info">ℹ</button>
-    </div>
-  );
-}
-
-// ─── Dashboard Page ────────────────────────────────────────────────────
+// ─── Dashboard Page (simplified) ──────────────────────────────────────
 function DashboardPage({ onAddPoints, onExchange }: { onAddPoints: () => void; onExchange: () => void }) {
   return (
     <main style={{ flex: 1, padding: "2.5rem 3rem", overflowY: "auto" }}>
@@ -473,7 +446,7 @@ function DashboardPage({ onAddPoints, onExchange }: { onAddPoints: () => void; o
       </div>
 
       {/* Two action cards */}
-      <div style={{ display: "flex", gap: "1.25rem", marginBottom: "1.5rem" }}>
+      <div style={{ display: "flex", gap: "1.25rem" }}>
         {/* Ajouter des Points */}
         <button
           onClick={onAddPoints}
@@ -526,71 +499,11 @@ function DashboardPage({ onAddPoints, onExchange }: { onAddPoints: () => void; o
           </div>
         </button>
       </div>
-
-      {/* Stats row */}
-      <div style={{ display: "flex", gap: "1rem", marginBottom: "2rem" }}>
-        <StatCard
-          value="1"
-          label="Clients Inscrits"
-          icon={
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#5b8dee" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
-              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-            </svg>
-          }
-        />
-        <StatCard
-          value="0"
-          label="Points Consommés"
-          icon={
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fe5502" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M6 3h12l4 6-10 13L2 9z"/><path d="M11 3 8 9l4 13 4-13-3-6"/><path d="M2 9h20"/>
-            </svg>
-          }
-        />
-        <StatCard
-          value="0%"
-          label="Taux d'Échange"
-          icon={
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/>
-              <polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>
-            </svg>
-          }
-        />
-        <StatCard
-          value="0%"
-          label="Taux de Retour"
-          icon={
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
-              <path d="M3 3v5h5"/>
-            </svg>
-          }
-        />
-      </div>
-
-      {/* Bottom tabs */}
-      <div style={{ display: "flex", gap: "0.5rem" }}>
-        {["📊 STATISTIQUES", "🎁 RÉCOMPENSES", "📣 MARKETING", "🎮 JEUX"].map((tab, i) => (
-          <button key={tab} style={{
-            padding: "0.55rem 1.1rem",
-            borderRadius: "2rem",
-            border: "none",
-            fontSize: "0.78rem",
-            fontWeight: 700,
-            letterSpacing: "0.05em",
-            cursor: "pointer",
-            background: i === 0 ? "#fff" : "transparent",
-            color: i === 0 ? "#1a1830" : "#6b7280",
-          }}>{tab}</button>
-        ))}
-      </div>
     </main>
   );
 }
 
-// ─── Root ─────────────────────────────────────────────────────────────
+// ─── Root Component ───────────────────────────────────────────────────
 export default function RewardExchange() {
   const [activePage, setActivePage] = useState<Page>("dashboard");
   const [showAddPoints, setShowAddPoints] = useState(false);
