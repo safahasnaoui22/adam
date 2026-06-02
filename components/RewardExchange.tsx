@@ -28,33 +28,26 @@ function AddPointsModal({ onClose }: { onClose: () => void }) {
     setSuccess("");
 
     try {
-      // 1. Validate customer exists and get full ID
       const validateRes = await fetch(`/api/customer/by-id/${encodeURIComponent(rawId)}`);
       const validateData = await validateRes.json();
-      if (!validateRes.ok || !validateData.customer?.customerId) {
+      if (!validateRes.ok || !validateData.customer?.id) {
         setError(validateData.error || "Client non trouvé");
         setLoading(false);
         return;
       }
-      const customerId = validateData.customer.customerId;
-
-      // 2. Convert stars to amount (1 DT = 10 stars)
+      const dbCustomerId = validateData.customer.id; // ✅ database primary key
       const amount = starsNum / 10;
-
-      // 3. Call the correct add-points endpoint
       const addRes = await fetch("/api/customer/add-points", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ customerId, amount }),
+        body: JSON.stringify({ customerId: dbCustomerId, amount }),
       });
-
       const addData = await addRes.json();
       if (!addRes.ok) {
         setError(addData.error || "Erreur lors de l'ajout des points");
         setLoading(false);
         return;
       }
-
       setSuccess(`✅ ${starsNum} étoile(s) ajoutée(s) avec succès pour ${rawId} !`);
       setClientId("");
       setStars("");
@@ -68,74 +61,30 @@ function AddPointsModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
       style={{
-        position: "fixed",
-        inset: 0,
-        zIndex: 100,
+        position: "fixed", inset: 0, zIndex: 100,
         background: "rgba(0,0,0,0.72)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
+        display: "flex", alignItems: "center", justifyContent: "center",
         padding: "1rem",
       }}
     >
-      <div
-        style={{
-          background: "#2d2b4e",
-          borderRadius: "1.25rem",
-          padding: "2rem",
-          width: "100%",
-          maxWidth: "520px",
-          position: "relative",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            marginBottom: "1.75rem",
-          }}
-        >
-          <h2
-            style={{
-              margin: 0,
-              color: "#fff",
-              fontSize: "1.4rem",
-              fontWeight: 700,
-            }}
-          >
+      <div style={{
+        background: "#2d2b4e",
+        borderRadius: "1.25rem",
+        padding: "2rem",
+        width: "100%",
+        maxWidth: "520px",
+        position: "relative",
+      }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.75rem" }}>
+          <h2 style={{ margin: 0, color: "#fff", fontSize: "1.4rem", fontWeight: 700 }}>
             Ajouter des Points
           </h2>
-          <button
-            onClick={onClose}
-            style={{
-              background: "none",
-              border: "none",
-              color: "#9ca3af",
-              cursor: "pointer",
-              fontSize: "1.6rem",
-              lineHeight: 1,
-              padding: "0 0.25rem",
-            }}
-            aria-label="Fermer"
-          >
-            ×
-          </button>
+          <button onClick={onClose} style={{ background: "none", border: "none", color: "#9ca3af", cursor: "pointer", fontSize: "1.6rem", lineHeight: 1, padding: "0 0.25rem" }} aria-label="Fermer">×</button>
         </div>
 
-        <label
-          style={{
-            color: "#e5e7eb",
-            fontSize: "0.95rem",
-            fontWeight: 500,
-            display: "block",
-            marginBottom: "0.6rem",
-          }}
-        >
+        <label style={{ color: "#e5e7eb", fontSize: "0.95rem", fontWeight: 500, display: "block", marginBottom: "0.6rem" }}>
           1. ID Client (Scanner ou Taper manuellement) *
         </label>
         <input
@@ -157,15 +106,7 @@ function AddPointsModal({ onClose }: { onClose: () => void }) {
           }}
         />
 
-        <label
-          style={{
-            color: "#e5e7eb",
-            fontSize: "0.95rem",
-            fontWeight: 500,
-            display: "block",
-            marginBottom: "0.6rem",
-          }}
-        >
+        <label style={{ color: "#e5e7eb", fontSize: "0.95rem", fontWeight: 500, display: "block", marginBottom: "0.6rem" }}>
           2. Nombre d'étoiles / points *
         </label>
         <input
@@ -189,16 +130,8 @@ function AddPointsModal({ onClose }: { onClose: () => void }) {
           }}
         />
 
-        {error && (
-          <p style={{ color: "#f87171", fontSize: "0.85rem", marginBottom: "0.75rem" }}>
-            {error}
-          </p>
-        )}
-        {success && (
-          <p style={{ color: "#34d399", fontSize: "0.85rem", marginBottom: "0.75rem" }}>
-            {success}
-          </p>
-        )}
+        {error && <p style={{ color: "#f87171", fontSize: "0.85rem", marginBottom: "0.75rem" }}>{error}</p>}
+        {success && <p style={{ color: "#34d399", fontSize: "0.85rem", marginBottom: "0.75rem" }}>{success}</p>}
 
         <button
           onClick={handleSubmit}
@@ -220,22 +153,10 @@ function AddPointsModal({ onClose }: { onClose: () => void }) {
             marginTop: "0.25rem",
           }}
         >
-          {loading ? (
-            "Envoi en cours…"
-          ) : (
+          {loading ? "Envoi en cours…" : (
             <>
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="#fff"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
               </svg>
               Valider et Envoyer
             </>
