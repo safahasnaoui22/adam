@@ -157,24 +157,26 @@ export default function LoyaltyProgramPage() {
     }
   };
 
-  const handleDeleteReward = async (id: string) => {
-    if (!confirm("Supprimer cette récompense ?")) return;
-    setSaving(true);
-    try {
-      const res = await fetch(`/api/rewards/${id}`, { method: "DELETE" });
-      if (res.ok) {
-        setRewards(rewards.filter((r) => r.id !== id));
-        toast?.success("Récompense supprimée");
-      } else {
-        const data = await res.json();
-        alert(data.error);
-      }
-    } catch (error) {
-      alert("Erreur");
-    } finally {
-      setSaving(false);
+const handleDeleteReward = async (id: string) => {
+  if (!confirm("Supprimer cette récompense ?")) return;
+  setSaving(true);
+  try {
+    const res = await fetch(`/api/rewards/${id}`, { method: "DELETE" });
+    const data = await res.json();
+
+    if (res.ok) {
+      setRewards(rewards.filter((r) => r.id !== id));
+      toast?.success("Récompense supprimée");
+    } else {
+      toast?.error(data.error || "Échec de la suppression");
     }
-  };
+  } catch (error) {
+    console.error(error);
+    toast?.error("Erreur de connexion au serveur");
+  } finally {
+    setSaving(false);
+  }
+};
 
   // When opening the "add reward" form, pre‑fill the correct next points
   const openAddRewardForm = () => {
