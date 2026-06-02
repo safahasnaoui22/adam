@@ -3,10 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Html5Qrcode } from "html5-qrcode";
 
-// ─── Types ────────────────────────────────────────────────────────────
-type Page = "dashboard" | "systeme" | "programme" | "qr" | "spin" | "clients";
-
-// ─── Add Points Modal (unchanged) ─────────────────────────────────────
+// ─── Add Points Modal ─────────────────────────────────────────────────
 function AddPointsModal({ onClose }: { onClose: () => void }) {
   const [clientId, setClientId] = useState("");
   const [montant, setMontant] = useState("");
@@ -176,7 +173,7 @@ function AddPointsModal({ onClose }: { onClose: () => void }) {
   );
 }
 
-// ─── Exchange Reward Modal (unchanged) ─────────────────────────────────
+// ─── Exchange Reward Modal ─────────────────────────────────────────────
 function ExchangeModal({ onClose }: { onClose: () => void }) {
   const [customerIdInput, setCustomerIdInput] = useState("");
   const [mode, setMode] = useState<"scan" | "manual">("scan");
@@ -304,228 +301,132 @@ function ExchangeModal({ onClose }: { onClose: () => void }) {
   );
 }
 
-// ─── Sidebar (unchanged) ──────────────────────────────────────────────
-function Sidebar({ activePage, onNavigate }: { activePage: Page; onNavigate: (p: Page) => void }) {
-  const navItems: { page: Page; label: string; icon: React.ReactNode; group?: string }[] = [
-    {
-      page: "dashboard", label: "Tableau de bord", group: "PRINCIPAL",
-      icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>,
-    },
-    {
-      page: "systeme", label: "Système de Point",
-      icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,
-    },
-    {
-      page: "programme", label: "Programme & Carte",
-      icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>,
-    },
-    {
-      page: "qr", label: "QR Restaurant", group: "ACQUISITION",
-      icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="3" width="5" height="5"/><rect x="16" y="3" width="5" height="5"/><rect x="3" y="16" width="5" height="5"/><path d="M21 16h-3v3"/><path d="M21 21v-1"/><path d="M16 16v5"/><path d="M12 3v5"/><path d="M12 12v2"/></svg>,
-    },
-    {
-      page: "spin", label: "Spin & Win (Jeu)",
-      icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>,
-    },
-    {
-      page: "clients", label: "Clients & Historique",
-      icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
-    },
-  ];
-
-  let lastGroup: string | undefined;
-
-  return (
-    <aside style={{
-      width: "240px",
-      minHeight: "100vh",
-      background: "#1a1830",
-      display: "flex",
-      flexDirection: "column",
-      flexShrink: 0,
-      padding: "1.25rem 0",
-    }}>
-      <div style={{ padding: "0.5rem 1.25rem 1.75rem" }}>
-        <span style={{ color: "#fff", fontSize: "1.6rem", fontWeight: 800, letterSpacing: "-0.02em" }}>
-          BONOO<span style={{ color: "#fe5502" }}>.</span>
-        </span>
-      </div>
-
-      <nav style={{ flex: 1, padding: "0 0.75rem", display: "flex", flexDirection: "column", gap: "2px" }}>
-        {navItems.map((item) => {
-          const showGroup = item.group && item.group !== lastGroup;
-          if (item.group) lastGroup = item.group;
-
-          return (
-            <div key={item.page}>
-              {showGroup && (
-                <p style={{
-                  color: "#6b7280", fontSize: "0.7rem", fontWeight: 700,
-                  letterSpacing: "0.1em", textTransform: "uppercase",
-                  margin: "1rem 0 0.4rem 0.5rem", padding: 0,
-                }}>
-                  {item.group}
-                </p>
-              )}
-              <button
-                onClick={() => onNavigate(item.page)}
-                style={{
-                  display: "flex", alignItems: "center", gap: "0.65rem",
-                  padding: "0.6rem 0.85rem",
-                  borderRadius: "0.5rem",
-                  border: "none",
-                  width: "100%",
-                  textAlign: "left",
-                  cursor: "pointer",
-                  fontSize: "0.88rem",
-                  fontWeight: activePage === item.page ? 600 : 400,
-                  background: activePage === item.page ? "#fe5502" : "transparent",
-                  color: activePage === item.page ? "#fff" : "#9ca3af",
-                  transition: "all 0.15s",
-                }}
-                onMouseEnter={(e) => {
-                  if (activePage !== item.page) {
-                    (e.currentTarget as HTMLButtonElement).style.background = "#2d2b4e";
-                    (e.currentTarget as HTMLButtonElement).style.color = "#fff";
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (activePage !== item.page) {
-                    (e.currentTarget as HTMLButtonElement).style.background = "transparent";
-                    (e.currentTarget as HTMLButtonElement).style.color = "#9ca3af";
-                  }
-                }}
-              >
-                {item.icon}
-                {item.label}
-              </button>
-            </div>
-          );
-        })}
-      </nav>
-
-      <div style={{ padding: "0 0.75rem 0.5rem" }}>
-        <button
-          style={{
-            display: "flex", alignItems: "center", gap: "0.6rem",
-            padding: "0.6rem 0.85rem", width: "100%",
-            background: "transparent", border: "none",
-            color: "#fe5502", fontSize: "0.88rem", fontWeight: 500,
-            cursor: "pointer", borderRadius: "0.5rem",
-          }}
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-            <polyline points="16 17 21 12 16 7"/>
-            <line x1="21" y1="12" x2="9" y2="12"/>
-          </svg>
-          Quitter
-        </button>
-      </div>
-    </aside>
-  );
-}
-
-// ─── Dashboard Page (simplified) ──────────────────────────────────────
-function DashboardPage({ onAddPoints, onExchange }: { onAddPoints: () => void; onExchange: () => void }) {
-  return (
-    <main style={{ flex: 1, padding: "2.5rem 3rem", overflowY: "auto" }}>
-      {/* Top-right user */}
-      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "1.5rem" }}>
-        <span style={{ color: "#9ca3af", fontSize: "0.88rem" }}>Restaurant Admin</span>
-      </div>
-
-      {/* Title */}
-      <div style={{ textAlign: "center", marginBottom: "2.5rem" }}>
-        <h1 style={{ color: "#fff", fontSize: "2.25rem", fontWeight: 800, margin: "0 0 0.5rem" }}>
-          Tableau de bord
-        </h1>
-        <p style={{ color: "#9ca3af", fontSize: "1rem", margin: 0 }}>
-          Bienvenue sur votre tableau de bord de fidélité
-        </p>
-      </div>
-
-      {/* Two action cards */}
-      <div style={{ display: "flex", gap: "1.25rem" }}>
-        {/* Ajouter des Points */}
-        <button
-          onClick={onAddPoints}
-          style={{
-            flex: 1, padding: "2rem 1.5rem",
-            borderRadius: "1rem",
-            background: "#fe5502",
-            border: "none",
-            cursor: "pointer",
-            display: "flex", flexDirection: "column", alignItems: "center", gap: "0.75rem",
-            transition: "transform 0.15s, filter 0.15s",
-          }}
-          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.filter = "brightness(1.1)"; }}
-          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.filter = "brightness(1)"; }}
-        >
-          <div style={{ width: "52px", height: "52px", background: "rgba(255,255,255,0.25)", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-            </svg>
-          </div>
-          <div>
-            <div style={{ color: "#fff", fontSize: "1.2rem", fontWeight: 800 }}>Ajouter des Points</div>
-            <div style={{ color: "rgba(255,255,255,0.75)", fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", marginTop: "0.2rem" }}>TERMINAL CAISSE</div>
-          </div>
-        </button>
-
-        {/* Échanger Cadeau */}
-        <button
-          onClick={onExchange}
-          style={{
-            flex: 1, padding: "2rem 1.5rem",
-            borderRadius: "1rem",
-            background: "#2d2b4e",
-            border: "none",
-            cursor: "pointer",
-            display: "flex", flexDirection: "column", alignItems: "center", gap: "0.75rem",
-            transition: "transform 0.15s, background 0.15s",
-          }}
-          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#3d3b5e"; }}
-          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#2d2b4e"; }}
-        >
-          <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#fe5502" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/>
-            <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/>
-            <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/>
-          </svg>
-          <div>
-            <div style={{ color: "#fff", fontSize: "1.2rem", fontWeight: 800 }}>Échanger Cadeau</div>
-            <div style={{ color: "#6b7280", fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", marginTop: "0.2rem" }}>CONSOMMER POINTS</div>
-          </div>
-        </button>
-      </div>
-    </main>
-  );
-}
-
-// ─── Root Component ───────────────────────────────────────────────────
+// ─── Main Dashboard Component (no sidebar, centered) ──────────────────
 export default function RewardExchange() {
-  const [activePage, setActivePage] = useState<Page>("dashboard");
   const [showAddPoints, setShowAddPoints] = useState(false);
   const [showExchange, setShowExchange] = useState(false);
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", background: "#13122a", fontFamily: "system-ui, -apple-system, sans-serif" }}>
-      <Sidebar activePage={activePage} onNavigate={setActivePage} />
+    <div style={{
+      minHeight: "100vh",
+      background: "#13122a",
+      fontFamily: "system-ui, -apple-system, sans-serif",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: "2rem",
+    }}>
+      {/* Top-right Restaurant Admin */}
+      <div style={{
+        position: "absolute",
+        top: "1.5rem",
+        right: "2rem",
+        color: "#9ca3af",
+        fontSize: "0.88rem",
+      }}>
+        Restaurant Admin
+      </div>
 
-      {activePage === "dashboard" && (
-        <DashboardPage
-          onAddPoints={() => setShowAddPoints(true)}
-          onExchange={() => setShowExchange(true)}
-        />
-      )}
+      {/* Centered content */}
+      <div style={{ maxWidth: "900px", width: "100%" }}>
+        {/* Title and subtitle */}
+        <div style={{ textAlign: "center", marginBottom: "3rem" }}>
+          <h1 style={{
+            color: "#fff",
+            fontSize: "2.5rem",
+            fontWeight: 800,
+            margin: "0 0 0.5rem",
+          }}>
+            Tableau de bord
+          </h1>
+          <p style={{
+            color: "#9ca3af",
+            fontSize: "1rem",
+            margin: 0,
+          }}>
+            Bienvenue sur votre tableau de bord de fidélité
+          </p>
+        </div>
 
-      {activePage !== "dashboard" && (
-        <main style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <p style={{ color: "#6b7280", fontSize: "1rem" }}>Section : {activePage}</p>
-        </main>
-      )}
+        {/* Two action cards side by side */}
+        <div style={{
+          display: "flex",
+          gap: "1.5rem",
+          flexWrap: "wrap",
+          justifyContent: "center",
+        }}>
+          {/* Ajouter des Points */}
+          <button
+            onClick={() => setShowAddPoints(true)}
+            style={{
+              flex: "1 1 280px",
+              padding: "2rem 1.5rem",
+              borderRadius: "1rem",
+              background: "#fe5502",
+              border: "none",
+              cursor: "pointer",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: "0.75rem",
+              transition: "transform 0.15s, filter 0.15s",
+            }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.filter = "brightness(1.1)"; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.filter = "brightness(1)"; }}
+          >
+            <div style={{
+              width: "52px",
+              height: "52px",
+              background: "rgba(255,255,255,0.25)",
+              borderRadius: "50%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}>
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+            </div>
+            <div>
+              <div style={{ color: "#fff", fontSize: "1.2rem", fontWeight: 800 }}>Ajouter des Points</div>
+              <div style={{ color: "rgba(255,255,255,0.75)", fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", marginTop: "0.2rem" }}>TERMINAL CAISSE</div>
+            </div>
+          </button>
 
+          {/* Échanger Cadeau */}
+          <button
+            onClick={() => setShowExchange(true)}
+            style={{
+              flex: "1 1 280px",
+              padding: "2rem 1.5rem",
+              borderRadius: "1rem",
+              background: "#2d2b4e",
+              border: "none",
+              cursor: "pointer",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: "0.75rem",
+              transition: "transform 0.15s, background 0.15s",
+            }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#3d3b5e"; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#2d2b4e"; }}
+          >
+            <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#fe5502" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/>
+              <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/>
+              <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/>
+            </svg>
+            <div>
+              <div style={{ color: "#fff", fontSize: "1.2rem", fontWeight: 800 }}>Échanger Cadeau</div>
+              <div style={{ color: "#6b7280", fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", marginTop: "0.2rem" }}>CONSOMMER POINTS</div>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      {/* Modals */}
       {showAddPoints && <AddPointsModal onClose={() => setShowAddPoints(false)} />}
       {showExchange && <ExchangeModal onClose={() => setShowExchange(false)} />}
     </div>
