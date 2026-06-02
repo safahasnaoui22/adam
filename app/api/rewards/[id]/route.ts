@@ -31,6 +31,7 @@ export async function PUT(
   }
 }
 
+// app/api/rewards/[id]/route.ts – DELETE only (keep PUT as is)
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -43,7 +44,7 @@ export async function DELETE(
 
     const { id } = await params;
 
-    // Find reward and check if it has been earned by any customer
+    // 1. Find reward with earned rewards count
     const reward = await prisma.reward.findFirst({
       where: {
         id,
@@ -52,7 +53,9 @@ export async function DELETE(
         },
       },
       include: {
-        earnedRewards: true,
+        _count: {
+          select: { earnedRewards: true },
+        },
       },
     });
 
@@ -63,7 +66,11 @@ export async function DELETE(
       );
     }
 
-    if (reward.earnedRewards.length > 0) {
+    // 2. If any customer earned this reward, block deletion
+    if (reward._count.earnedRewards > 0) {
+      console.log(
+        `[DELETE BLOCKED] Reward ${id} has ${reward._count.earnedRewards} earned record(s).`
+      );
       return NextResponse.json(
         {
           error:
@@ -73,16 +80,11 @@ export async function DELETE(
       );
     }
 
+    // 3. Safe to delete
     await prisma.reward.delete({ where: { id } });
     return NextResponse.json({ success: true, message: "Récompense supprimée" });
   } catch (error) {
     console.error("Failed to delete reward:", error);
-    if (error instanceof Error && error.message.includes("Foreign key constraint")) {
-      return NextResponse.json(
-        { error: "Cette récompense ne peut pas être supprimée car elle est liée à des historiques clients." },
-        { status: 409 }
-      );
-    }
     return NextResponse.json(
       { error: "Échec de la suppression de la récompense" },
       { status: 500 }

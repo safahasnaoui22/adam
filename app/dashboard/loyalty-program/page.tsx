@@ -158,16 +158,20 @@ export default function LoyaltyProgramPage() {
   };
 
 const handleDeleteReward = async (id: string) => {
+  // 👇 This is the confirmation dialog
   if (!confirm("Supprimer cette récompense ?")) return;
+
   setSaving(true);
   try {
     const res = await fetch(`/api/rewards/${id}`, { method: "DELETE" });
     const data = await res.json();
 
     if (res.ok) {
+      // Remove from UI only if deletion succeeded on the server
       setRewards(rewards.filter((r) => r.id !== id));
       toast?.success("Récompense supprimée");
     } else {
+      // Show the exact error from the backend
       toast?.error(data.error || "Échec de la suppression");
     }
   } catch (error) {
