@@ -3,10 +3,10 @@
 import { useState, useEffect, useRef } from "react";
 import { Html5Qrcode } from "html5-qrcode";
 
-// ─── Add Points Modal ─────────────────────────────────────────────────
+// ─── Add Points Modal (updated: "add stars") ──────────────────────────
 function AddPointsModal({ onClose }: { onClose: () => void }) {
   const [clientId, setClientId] = useState("");
-  const [montant, setMontant] = useState("");
+  const [stars, setStars] = useState("");        // renamed from montant
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -14,8 +14,8 @@ function AddPointsModal({ onClose }: { onClose: () => void }) {
   const handleSubmit = async () => {
     const rawId = clientId.trim().replace(/^#/, "");
     if (!rawId) { setError("Veuillez entrer un ID client"); return; }
-    if (!montant || isNaN(Number(montant)) || Number(montant) <= 0) {
-      setError("Veuillez entrer un montant valide");
+    if (!stars || isNaN(Number(stars)) || Number(stars) <= 0) {
+      setError("Veuillez entrer un nombre d'étoiles valide");
       return;
     }
     setLoading(true);
@@ -30,10 +30,11 @@ function AddPointsModal({ onClose }: { onClose: () => void }) {
         return;
       }
       const customerId = data.customer.customerId;
+      // Send the number of stars (points) to your API
       const addRes = await fetch(`/api/customer/${customerId}/add-points`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ montant: Number(montant) }),
+        body: JSON.stringify({ montant: Number(stars) }), // or { points: Number(stars) } if your backend expects that
       });
       const addData = await addRes.json();
       if (!addRes.ok) {
@@ -41,9 +42,9 @@ function AddPointsModal({ onClose }: { onClose: () => void }) {
         setLoading(false);
         return;
       }
-      setSuccess(`✅ Points ajoutés avec succès pour ${rawId} !`);
+      setSuccess(`✅ ${stars} étoile(s) ajoutée(s) avec succès pour ${rawId} !`);
       setClientId("");
-      setMontant("");
+      setStars("");
     } catch {
       setError("Erreur de connexion");
     } finally {
@@ -107,14 +108,14 @@ function AddPointsModal({ onClose }: { onClose: () => void }) {
         />
 
         <label style={{ color: "#e5e7eb", fontSize: "0.95rem", fontWeight: 500, display: "block", marginBottom: "0.6rem" }}>
-          2. Montant de l'addition (DT) *
+          2. Nombre d'étoiles / points *
         </label>
         <input
           type="number"
-          placeholder="Ex: 24.50"
-          value={montant}
-          onChange={(e) => setMontant(e.target.value)}
-          step="0.01"
+          placeholder="Ex: 10"
+          value={stars}
+          onChange={(e) => setStars(e.target.value)}
+          step="1"
           min="0"
           style={{
             width: "100%",
@@ -173,7 +174,7 @@ function AddPointsModal({ onClose }: { onClose: () => void }) {
   );
 }
 
-// ─── Exchange Reward Modal ─────────────────────────────────────────────
+// ─── Exchange Reward Modal (unchanged) ────────────────────────────────
 function ExchangeModal({ onClose }: { onClose: () => void }) {
   const [customerIdInput, setCustomerIdInput] = useState("");
   const [mode, setMode] = useState<"scan" | "manual">("scan");
@@ -301,7 +302,7 @@ function ExchangeModal({ onClose }: { onClose: () => void }) {
   );
 }
 
-// ─── Main Dashboard Component (no sidebar, centered) ──────────────────
+// ─── Main Dashboard Component (centered, no sidebar) ──────────────────
 export default function RewardExchange() {
   const [showAddPoints, setShowAddPoints] = useState(false);
   const [showExchange, setShowExchange] = useState(false);
@@ -330,32 +331,16 @@ export default function RewardExchange() {
 
       {/* Centered content */}
       <div style={{ maxWidth: "900px", width: "100%" }}>
-        {/* Title and subtitle */}
         <div style={{ textAlign: "center", marginBottom: "3rem" }}>
-          <h1 style={{
-            color: "#fff",
-            fontSize: "2.5rem",
-            fontWeight: 800,
-            margin: "0 0 0.5rem",
-          }}>
+          <h1 style={{ color: "#fff", fontSize: "2.5rem", fontWeight: 800, margin: "0 0 0.5rem" }}>
             Tableau de bord
           </h1>
-          <p style={{
-            color: "#9ca3af",
-            fontSize: "1rem",
-            margin: 0,
-          }}>
+          <p style={{ color: "#9ca3af", fontSize: "1rem", margin: 0 }}>
             Bienvenue sur votre tableau de bord de fidélité
           </p>
         </div>
 
-        {/* Two action cards side by side */}
-        <div style={{
-          display: "flex",
-          gap: "1.5rem",
-          flexWrap: "wrap",
-          justifyContent: "center",
-        }}>
+        <div style={{ display: "flex", gap: "1.5rem", flexWrap: "wrap", justifyContent: "center" }}>
           {/* Ajouter des Points */}
           <button
             onClick={() => setShowAddPoints(true)}
@@ -375,16 +360,8 @@ export default function RewardExchange() {
             onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.filter = "brightness(1.1)"; }}
             onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.filter = "brightness(1)"; }}
           >
-            <div style={{
-              width: "52px",
-              height: "52px",
-              background: "rgba(255,255,255,0.25)",
-              borderRadius: "50%",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}>
-              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <div style={{ width: "52px", height: "52px", background: "rgba(255,255,255,0.25)", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
               </svg>
             </div>
@@ -413,7 +390,7 @@ export default function RewardExchange() {
             onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#3d3b5e"; }}
             onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#2d2b4e"; }}
           >
-            <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#fe5502" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#fe5502" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/>
               <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/>
               <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/>
@@ -426,7 +403,6 @@ export default function RewardExchange() {
         </div>
       </div>
 
-      {/* Modals */}
       {showAddPoints && <AddPointsModal onClose={() => setShowAddPoints(false)} />}
       {showExchange && <ExchangeModal onClose={() => setShowExchange(false)} />}
     </div>
