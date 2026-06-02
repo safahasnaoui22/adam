@@ -43,7 +43,7 @@ interface Props {
 
 export default function CustomerDetail({
   customer,
-  visits,
+  visits: initialVisits,
   earnedRewards,
   rewards,
   nextReward,
@@ -53,6 +53,19 @@ export default function CustomerDetail({
   const [amount, setAmount] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+
+  // Local visits state for optimistic UI
+  const [visits, setVisits] = useState<Visit[]>(initialVisits);
+
+  // Edit state
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editAmount, setEditAmount] = useState("");
+  const [editLoading, setEditLoading] = useState(false);
+  const [editMessage, setEditMessage] = useState<{ id: string; text: string; ok: boolean } | null>(null);
+
+  // Delete confirm state
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const handleAddPoints = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -86,6 +99,82 @@ export default function CustomerDetail({
     }
   };
 
+  // --- EDIT VISIT ---
+  const startEdit = (visit: Visit) => {
+    setEditingId(visit.id);
+    setEditAmount(visit.amount?.toString() ?? "");
+    setEditMessage(null);
+    setConfirmDeleteId(null);
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditAmount("");
+    setEditMessage(null);
+  };
+
+  const handleEditSave = async (visitId: string) => {
+    const newAmount = parseFloat(editAmount);
+    if (isNaN(newAmount) || newAmount <= 0) {
+      setEditMessage({ id: visitId, text: "Montant invalide", ok: false });
+      return;
+    }
+    setEditLoading(true);
+    try {
+      const res = await fetch(`/api/customer/visits/${visitId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount: newAmount }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        // Optimistic update
+        setVisits((prev) =>
+          prev.map((v) =>
+            v.id === visitId
+              ? { ...v, amount: newAmount, pointsEarned: data.pointsEarned ?? Math.floor(newAmount * 10) }
+              : v
+          )
+        );
+        setEditMessage({ id: visitId, text: "Modifié ✓", ok: true });
+        setTimeout(() => {
+          setEditingId(null);
+          setEditMessage(null);
+          router.refresh();
+        }, 800);
+      } else {
+        setEditMessage({ id: visitId, text: data.error || "Erreur", ok: false });
+      }
+    } catch {
+      setEditMessage({ id: visitId, text: "Erreur de connexion", ok: false });
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  // --- DELETE VISIT ---
+  const handleDelete = async (visitId: string) => {
+    setDeleteLoading(true);
+    try {
+      const res = await fetch(`/api/customer/visits/${visitId}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        // Optimistic remove
+        setVisits((prev) => prev.filter((v) => v.id !== visitId));
+        setConfirmDeleteId(null);
+        router.refresh();
+      } else {
+        const data = await res.json();
+        alert(data.error || "Erreur lors de la suppression");
+      }
+    } catch {
+      alert("Erreur de connexion");
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
   const shortId = customer.customerId.slice(-4);
 
   return (
@@ -94,6 +183,7 @@ export default function CustomerDetail({
         ← Retour
       </button>
 
+      {/* Customer Info */}
       <div className="bg-[#0d1f3c] rounded-lg p-6 border border-[#1e3a5f] mb-6">
         <h1 className="text-2xl font-bold text-white mb-4">Détails de la carte</h1>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -112,19 +202,25 @@ export default function CustomerDetail({
           </div>
           <div>
             <p className="text-gray-400 text-sm">Dernière visite</p>
-            <p className="text-white">{customer.lastVisit ? new Date(customer.lastVisit).toLocaleDateString() : "Jamais"}</p>
+            <p className="text-white">
+              {customer.lastVisit ? new Date(customer.lastVisit).toLocaleDateString() : "Jamais"}
+            </p>
           </div>
         </div>
       </div>
 
-      {/* Portefeuille étoiles */}
+      {/* Points Wallet */}
       <div className="bg-[#0d1f3c] rounded-lg p-6 border border-[#1e3a5f] mb-6">
         <h2 className="text-xl font-semibold text-white mb-3">Portefeuille ⭐</h2>
         <p className="text-3xl font-bold text-[#fe5502]">{customer.points} points</p>
         <div className="mt-4">
           <div className="flex justify-between text-sm text-gray-400 mb-1">
             <span>Prochaine récompense</span>
-            {nextReward && <span>{customer.points} / {nextReward.pointsRequired} pts</span>}
+            {nextReward && (
+              <span>
+                {customer.points} / {nextReward.pointsRequired} pts
+              </span>
+            )}
           </div>
           <div className="w-full bg-gray-700 rounded-full h-2">
             <div className="bg-[#fe5502] h-2 rounded-full" style={{ width: `${progress}%` }} />
@@ -133,7 +229,7 @@ export default function CustomerDetail({
         </div>
       </div>
 
-      {/* Ajouter des points */}
+      {/* Add Points */}
       <div className="bg-[#0d1f3c] rounded-lg p-6 border border-[#1e3a5f] mb-6">
         <h2 className="text-xl font-semibold text-white mb-3">Ajouter des points</h2>
         <form onSubmit={handleAddPoints} className="flex flex-col sm:flex-row gap-3">
@@ -158,7 +254,7 @@ export default function CustomerDetail({
         <p className="text-xs text-gray-500 mt-2">1 DT = 10 ⭐</p>
       </div>
 
-      {/* Historique des points */}
+      {/* Visit History with CRUD */}
       <div className="bg-[#0d1f3c] rounded-lg p-6 border border-[#1e3a5f] mb-6">
         <h2 className="text-xl font-semibold text-white mb-3">Historique des points</h2>
         {visits.length === 0 ? (
@@ -171,14 +267,103 @@ export default function CustomerDetail({
                   <th className="text-left py-2">Date</th>
                   <th className="text-left py-2">Montant (DT)</th>
                   <th className="text-left py-2">Points gagnés</th>
+                  <th className="text-right py-2">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {visits.map((visit) => (
                   <tr key={visit.id} className="border-b border-[#1e3a5f]/50">
-                    <td className="py-2 text-white">{new Date(visit.date).toLocaleDateString()}</td>
-                    <td className="py-2 text-white">{visit.amount?.toFixed(2) ?? "-"}</td>
+                    {/* Date */}
+                    <td className="py-2 text-white">
+                      {new Date(visit.date).toLocaleDateString()}
+                    </td>
+
+                    {/* Amount — editable inline */}
+                    <td className="py-2">
+                      {editingId === visit.id ? (
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={editAmount}
+                          onChange={(e) => setEditAmount(e.target.value)}
+                          className="w-24 px-2 py-1 bg-[#0a1628] border border-[#fe5502] rounded text-white text-sm"
+                          autoFocus
+                        />
+                      ) : (
+                        <span className="text-white">{visit.amount?.toFixed(2) ?? "-"}</span>
+                      )}
+                    </td>
+
+                    {/* Points */}
                     <td className="py-2 text-[#fe5502]">{visit.pointsEarned}⭐</td>
+
+                    {/* Action buttons */}
+                    <td className="py-2 text-right">
+                      {confirmDeleteId === visit.id ? (
+                        /* Delete confirmation */
+                        <span className="inline-flex items-center gap-2">
+                          <span className="text-red-400 text-xs">Supprimer ?</span>
+                          <button
+                            onClick={() => handleDelete(visit.id)}
+                            disabled={deleteLoading}
+                            className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs disabled:opacity-50"
+                          >
+                            {deleteLoading ? "..." : "Oui"}
+                          </button>
+                          <button
+                            onClick={() => setConfirmDeleteId(null)}
+                            className="px-2 py-1 bg-gray-600 hover:bg-gray-700 text-white rounded text-xs"
+                          >
+                            Non
+                          </button>
+                        </span>
+                      ) : editingId === visit.id ? (
+                        /* Save / Cancel edit */
+                        <span className="inline-flex items-center gap-2">
+                          {editMessage?.id === visit.id && (
+                            <span
+                              className={`text-xs ${editMessage.ok ? "text-green-400" : "text-red-400"}`}
+                            >
+                              {editMessage.text}
+                            </span>
+                          )}
+                          <button
+                            onClick={() => handleEditSave(visit.id)}
+                            disabled={editLoading}
+                            className="px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs disabled:opacity-50"
+                          >
+                            {editLoading ? "..." : "Enregistrer"}
+                          </button>
+                          <button
+                            onClick={cancelEdit}
+                            className="px-2 py-1 bg-gray-600 hover:bg-gray-700 text-white rounded text-xs"
+                          >
+                            Annuler
+                          </button>
+                        </span>
+                      ) : (
+                        /* Default edit + delete buttons */
+                        <span className="inline-flex items-center gap-2">
+                          <button
+                            onClick={() => startEdit(visit)}
+                            title="Modifier"
+                            className="px-2 py-1 bg-[#1e3a5f] hover:bg-[#2a4f7c] text-white rounded text-xs transition-colors"
+                          >
+                            ✏️ Modifier
+                          </button>
+                          <button
+                            onClick={() => {
+                              setConfirmDeleteId(visit.id);
+                              setEditingId(null);
+                            }}
+                            title="Supprimer"
+                            className="px-2 py-1 bg-red-900/50 hover:bg-red-800 text-red-300 rounded text-xs transition-colors"
+                          >
+                            🗑️ Supprimer
+                          </button>
+                        </span>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -187,7 +372,7 @@ export default function CustomerDetail({
         )}
       </div>
 
-      {/* Récompenses échangées */}
+      {/* Earned Rewards */}
       {earnedRewards.length > 0 && (
         <div className="bg-[#0d1f3c] rounded-lg p-6 border border-[#1e3a5f]">
           <h2 className="text-xl font-semibold text-white mb-3">Récompenses échangées</h2>
