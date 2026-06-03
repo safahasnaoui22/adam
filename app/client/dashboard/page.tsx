@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Image from "next/image";
-import Link from "next/link";
 import { QRCodeSVG } from "qrcode.react";
 import { getPatternStyle } from "@/lib/patterns";
 
@@ -20,9 +19,15 @@ export default function ClientDashboard() {
   const [showAbout, setShowAbout] = useState(false);
   const [activeTab, setActiveTab] = useState("rewards");
   const [typedGreeting, setTypedGreeting] = useState("");
-  const fullGreeting = "comment allez-vous aujourd'hui ?";
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [patternStyle, setPatternStyle] = useState<React.CSSProperties>({});
+
+  // Swiper state
+  const [swiperOffset, setSwiperOffset] = useState(0);
+  const touchStartX = useRef<number | null>(null);
+  const VISIBLE_CARDS = 3;
+
+  const fullGreeting = "comment allez-vous aujourd'hui ?";
 
   useEffect(() => {
     let i = 0;
@@ -30,21 +35,17 @@ export default function ClientDashboard() {
       if (i <= fullGreeting.length) {
         setTypedGreeting(fullGreeting.slice(0, i));
         i++;
-      } else {
-        clearInterval(interval);
-      }
+      } else clearInterval(interval);
     }, 50);
     return () => clearInterval(interval);
   }, []);
 
   const getShortId = () => {
-    if (client?.customerId && client.customerId.includes('-')) {
-      const parts = client.customerId.split('-');
+    if (client?.customerId?.includes("-")) {
+      const parts = client.customerId.split("-");
       return parts[parts.length - 1].slice(-4);
-    } else if (client?.id) {
-      return client.id.slice(-4);
     }
-    return "****";
+    return client?.id?.slice(-4) ?? "****";
   };
 
   const fetchClientData = async (id: string) => {
@@ -52,10 +53,7 @@ export default function ClientDashboard() {
       const res = await fetch(`/api/client/${id}`);
       const data = await res.json();
       if (res.ok) setClient(data);
-      else console.error("Client API error:", data);
-    } catch (error) {
-      console.error("Failed to fetch client:", error);
-    }
+    } catch (e) { console.error(e); }
   };
 
   const fetchRestaurantData = async (id: string) => {
@@ -63,19 +61,14 @@ export default function ClientDashboard() {
       const res = await fetch(`/api/restaurant/${id}`);
       const data = await res.json();
       if (res.ok) setRestaurant(data);
-      else console.error("Restaurant API error:", data);
-    } catch (error) {
-      console.error("Failed to fetch restaurant:", error);
-    } finally {
-      setLoading(false);
-    }
+    } catch (e) { console.error(e); }
+    finally { setLoading(false); }
   };
 
   useEffect(() => {
     const clientId = localStorage.getItem("clientId");
     const clientName = localStorage.getItem("clientName");
     const storedRestaurantId = localStorage.getItem("restaurantId");
-
     if (clientId && clientName && storedRestaurantId) {
       fetchClientData(clientId);
       fetchRestaurantData(storedRestaurantId);
@@ -84,7 +77,6 @@ export default function ClientDashboard() {
     }
   }, [restaurantId, router]);
 
-  // Re-fetch when tab becomes visible again
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") {
@@ -99,20 +91,15 @@ export default function ClientDashboard() {
   }, []);
 
   useEffect(() => {
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js')
-        .then(reg => console.log('Service Worker registered', reg))
-        .catch(err => console.error('SW registration failed', err));
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js").catch(console.error);
     }
   }, []);
 
   useEffect(() => {
-    const handleBeforeInstallPrompt = (e: Event) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-    };
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    const handler = (e: Event) => { e.preventDefault(); setDeferredPrompt(e); };
+    window.addEventListener("beforeinstallprompt", handler);
+    return () => window.removeEventListener("beforeinstallprompt", handler);
   }, []);
 
   const handleRefresh = async () => {
@@ -127,28 +114,19 @@ export default function ClientDashboard() {
   const handleAddToHomeScreen = () => {
     if (deferredPrompt) {
       deferredPrompt.prompt();
-      deferredPrompt.userChoice.then((choiceResult: any) => {
-        if (choiceResult.outcome === 'accepted') console.log('User accepted the install prompt');
-        setDeferredPrompt(null);
-      });
+      deferredPrompt.userChoice.then(() => setDeferredPrompt(null));
+    } else if (navigator.userAgent.includes("iPhone") || navigator.userAgent.includes("iPad")) {
+      alert("Pour ajouter à l'écran d'accueil :\n1. Appuyez sur le bouton Partager\n2. Appuyez sur 'Sur l'écran d'accueil'");
     } else {
-      if (navigator.userAgent.includes('iPhone') || navigator.userAgent.includes('iPad')) {
-        alert("Pour ajouter à l'écran d'accueil :\n1. Appuyez sur le bouton Partager\n2. Faites défiler vers le bas\n3. Appuyez sur 'Sur l'écran d'accueil'");
-      } else {
-        alert("Utilisez 'Ajouter à l'écran d'accueil' dans le menu du navigateur");
-      }
+      alert("Utilisez 'Ajouter à l'écran d'accueil' dans le menu du navigateur");
     }
   };
 
   useEffect(() => {
     if (restaurant) {
       try {
-        const style = getPatternStyle(restaurant.backgroundPattern || "none");
-        setPatternStyle(style);
-      } catch (err) {
-        console.error("Pattern style error:", err);
-        setPatternStyle({});
-      }
+        setPatternStyle(getPatternStyle(restaurant.backgroundPattern || "none"));
+      } catch { setPatternStyle({}); }
     }
   }, [restaurant]);
 
@@ -156,8 +134,8 @@ export default function ClientDashboard() {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#f9fafb" }}>
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#fe5502] mb-4"></div>
-          <p className="text-gray-500">Chargement de votre carte...</p>
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#fe5502] mb-4" />
+          <p style={{ color: "#6b7280", fontFamily: "'Inter', sans-serif" }}>Chargement de votre carte...</p>
         </div>
       </div>
     );
@@ -168,9 +146,7 @@ export default function ClientDashboard() {
       <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: "#f9fafb" }}>
         <div className="text-center">
           <p className="text-red-500 mb-4">Erreur de chargement des données</p>
-          <button onClick={handleRefresh} className="px-4 py-2 bg-[#fe5502] text-white rounded-lg hover:bg-[#e0682e] transition">
-            Réessayer
-          </button>
+          <button onClick={handleRefresh} className="px-4 py-2 bg-[#fe5502] text-white rounded-lg">Réessayer</button>
         </div>
       </div>
     );
@@ -182,15 +158,13 @@ export default function ClientDashboard() {
   const bgColor = theme.colors?.background || "#ffffff";
   const cardBgColor = theme.colors?.cardBackground || "#ffffff";
   const textColor = theme.colors?.text || "#1f2937";
-  const accentColor = theme.colors?.accent || primaryColor;
 
-  const dynamicStyles = {
+  const D = {
     primary: primaryColor,
     secondary: secondaryColor,
     background: bgColor,
     cardBg: cardBgColor,
     text: textColor,
-    accent: accentColor,
   };
 
   let rewards: any[] = [];
@@ -200,395 +174,395 @@ export default function ClientDashboard() {
       ?.map((r: any) => ({
         id: r.id,
         name: r.name,
-        stars: r.pointsRequired,
-        icon: "🎁",
+        pts: r.pointsRequired,
         description: r.description || "",
-      })) || [];
-  } catch (err) {
-    console.error("Rewards error:", err);
-    rewards = [];
-  }
+      }))
+      ?.sort((a: any, b: any) => a.pts - b.pts) || [];
+  } catch { rewards = []; }
 
   const coupons = restaurant.coupons || [];
-  const sortedRewards = [...rewards].sort((a, b) => a.stars - b.stars);
-  const nextReward = sortedRewards.find(r => r.stars > (client.points || 0));
-  const currentProgress = nextReward ? (client.points / nextReward.stars) * 100 : 100;
-
-  // Alert: points needed for next reward
-  const pointsToNext = nextReward ? nextReward.stars - (client.points || 0) : 0;
+  const clientPts = client.points || 0;
+  const nextReward = rewards.find((r) => r.pts > clientPts);
+  const progress = nextReward ? Math.min((clientPts / nextReward.pts) * 100, 100) : 100;
+  const pointsToNext = nextReward ? nextReward.pts - clientPts : 0;
   const showAlert = nextReward && pointsToNext <= 50;
+  const maxOffset = Math.max(0, rewards.length - VISIBLE_CARDS);
+
+  // Gift emoji mapping by tier
+  const rewardEmoji = (pts: number) => {
+    if (pts <= 100) return "☕";
+    if (pts <= 200) return "🍰";
+    if (pts <= 300) return "🏷️";
+    if (pts <= 500) return "🍽️";
+    if (pts <= 700) return "🎀";
+    return "👑";
+  };
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: dynamicStyles.background }}>
+    <div className="min-h-screen" style={{ backgroundColor: D.background, fontFamily: "'Inter', sans-serif" }}>
+      {/* Load Inter font */}
+      <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+        rel="stylesheet"
+      />
+
       <div
         className="max-w-md mx-auto min-h-screen shadow-lg relative border-x"
-        style={{
-          backgroundColor: dynamicStyles.cardBg,
-          ...patternStyle,
-          borderColor: `${dynamicStyles.primary}20`,
-          color: dynamicStyles.text,
-        }}
+        style={{ backgroundColor: D.cardBg, ...patternStyle, borderColor: `${D.primary}20`, color: D.text }}
       >
-        {/* ── Sticky top bar: alert + refresh ── */}
-        <div
-          className="sticky top-0 z-20"
-          style={{ backgroundColor: dynamicStyles.cardBg }}
-        >
-          {/* Alert banner */}
+        {/* ── Sticky top ── */}
+        <div className="sticky top-0 z-20" style={{ backgroundColor: D.cardBg }}>
           {showAlert && (
             <div
               className="mx-3 mt-3 px-4 py-2 rounded-xl flex items-center gap-2 animate-fadeIn"
-              style={{
-                backgroundColor: `${dynamicStyles.primary}15`,
-                border: `1px solid ${dynamicStyles.primary}40`,
-              }}
+              style={{ backgroundColor: `${D.primary}15`, border: `1px solid ${D.primary}40` }}
             >
               <span className="text-lg">🎯</span>
-              <p className="text-xs font-medium" style={{ color: dynamicStyles.primary }}>
-                Plus que <strong>{pointsToNext} points</strong> pour débloquer "{nextReward.name}" !
+              <p className="text-xs font-medium" style={{ color: D.primary }}>
+                Plus que <strong>{pointsToNext} pts</strong> pour débloquer &ldquo;{nextReward!.name}&rdquo; !
               </p>
             </div>
           )}
-
-          {/* Header row */}
-          <div
-            className="px-4 py-3 flex items-center justify-between border-b"
-            style={{ borderColor: `${dynamicStyles.primary}20` }}
-          >
-            <button
-              onClick={handleRefresh}
-              className="p-2 rounded-full hover:bg-gray-100 transition-colors"
-              style={{ color: dynamicStyles.text }}
-              aria-label="Actualiser"
-            >
-              <svg
-                className={`w-5 h-5 ${refreshing ? "animate-spin" : ""}`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                />
+          <div className="px-4 py-3 flex items-center justify-between border-b" style={{ borderColor: `${D.primary}20` }}>
+            <button onClick={handleRefresh} className="p-2 rounded-full hover:bg-gray-100 transition-colors" aria-label="Actualiser">
+              <svg className={`w-5 h-5 ${refreshing ? "animate-spin" : ""}`} fill="none" stroke={D.text} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
               </svg>
             </button>
             <div className="flex-1 flex justify-center">
               {restaurant.logo ? (
-                <Image
-                  src={restaurant.logo}
-                  alt={restaurant.name}
-                  width={40}
-                  height={40}
-                  className="rounded-full border"
-                  style={{ borderColor: dynamicStyles.primary }}
-                />
+                <Image src={restaurant.logo} alt={restaurant.name} width={40} height={40} className="rounded-full border" style={{ borderColor: D.primary }} />
               ) : (
-                <div
-                  className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold"
-                  style={{ backgroundColor: dynamicStyles.primary }}
-                >
+                <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-lg" style={{ backgroundColor: D.primary }}>
                   {restaurant.name?.charAt(0) || "R"}
                 </div>
               )}
             </div>
-            <button
-              className="p-2 rounded-full hover:bg-gray-100 transition-colors"
-              style={{ color: dynamicStyles.text }}
-              aria-label="Notifications"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <button className="p-2 rounded-full hover:bg-gray-100 transition-colors" aria-label="Notifications">
+              <svg className="w-5 h-5" fill="none" stroke={D.text} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
               </svg>
             </button>
           </div>
         </div>
 
-        {/* Client Info */}
-        <div className="px-4 py-6 text-center border-b" style={{ borderColor: `${dynamicStyles.primary}20` }}>
-          <h2 className="text-2xl font-bold" style={{ color: dynamicStyles.text }}>{client.name}</h2>
-          <p className="text-sm mt-1" style={{ color: `${dynamicStyles.text}99` }}>ID: #{getShortId()}</p>
-          <p className="mt-3 italic" style={{ color: `${dynamicStyles.text}cc` }}>
+        {/* ── Client info ── */}
+        <div className="px-4 py-6 text-center border-b" style={{ borderColor: `${D.primary}20` }}>
+          <h2 className="text-2xl font-bold tracking-tight" style={{ color: D.text }}>{client.name}</h2>
+          <p className="text-xs mt-1 font-medium tracking-wider uppercase" style={{ color: `${D.text}70` }}>ID #{getShortId()}</p>
+          <p className="mt-3 text-sm italic" style={{ color: `${D.text}cc` }}>
             Bonjour {client.name},{" "}
-            <span className="inline-block min-w-[200px]">
-              {typedGreeting}
-              <span className="animate-pulse">|</span>
-            </span>
+            <span className="inline-block min-w-[200px]">{typedGreeting}<span className="animate-pulse">|</span></span>
           </p>
         </div>
 
-        {/* Balance */}
-        <div
-          className="px-4 py-4 border-b"
-          style={{
-            borderColor: `${dynamicStyles.primary}20`,
-            background: `linear-gradient(135deg, ${dynamicStyles.primary}10, ${dynamicStyles.cardBg})`,
-          }}
-        >
-          <p className="text-sm" style={{ color: `${dynamicStyles.text}80` }}>Votre solde est</p>
-          <p className="text-3xl font-bold" style={{ color: dynamicStyles.primary }}>{client.points || 0} ⭐</p>
-          <p className="text-xs mt-1" style={{ color: `${dynamicStyles.text}70` }}>1 DT = 10 ⭐</p>
+        {/* ── Balance ── */}
+        <div className="px-4 py-5 border-b" style={{ borderColor: `${D.primary}20`, backgroundColor: `${D.primary}08` }}>
+          <p className="text-xs font-medium uppercase tracking-widest mb-1" style={{ color: `${D.text}60` }}>Votre solde</p>
+          <div className="flex items-baseline gap-2">
+            <p className="text-4xl font-bold tracking-tight" style={{ color: D.primary }}>{clientPts}</p>
+            <p className="text-lg font-medium" style={{ color: `${D.primary}90` }}>points</p>
+          </div>
+          <p className="text-xs mt-1 font-medium" style={{ color: `${D.text}50` }}>1 DT dépensé = 10 points gagnés</p>
         </div>
 
-        {/* QR Code */}
-        <div className="px-4 py-4 border-b" style={{ borderColor: `${dynamicStyles.primary}20` }}>
+        {/* ── QR ── */}
+        <div className="px-4 py-4 border-b" style={{ borderColor: `${D.primary}20` }}>
           <button
             onClick={() => setShowQR(!showQR)}
-            className="w-full py-4 rounded-xl font-medium flex items-center justify-center space-x-2 transition-all transform hover:scale-[1.02] active:scale-95"
-            style={{ backgroundColor: dynamicStyles.primary, color: "#fff" }}
+            className="w-full py-4 rounded-2xl font-semibold flex items-center justify-center space-x-2 transition-all active:scale-95 text-sm"
+            style={{ backgroundColor: D.primary, color: "#fff", letterSpacing: "0.01em" }}
           >
-            <span>📱</span>
-            <span>Mon Code QR</span>
+            <span>📱</span><span>Mon Code QR</span>
           </button>
           {showQR && (
-            <div
-              className="mt-4 p-4 rounded-xl text-center border animate-fadeIn"
-              style={{ backgroundColor: dynamicStyles.background, borderColor: `${dynamicStyles.primary}20` }}
-            >
+            <div className="mt-4 p-5 rounded-2xl text-center border animate-fadeIn" style={{ backgroundColor: D.background, borderColor: `${D.primary}20` }}>
               <div className="flex justify-center">
-                <QRCodeSVG
-                  value={`${window.location.origin}/scan/${client.customerId}`}
-                  size={180}
-                  bgColor="#ffffff"
-                  fgColor={dynamicStyles.primary}
-                  level="H"
-                />
+                <QRCodeSVG value={`${window.location.origin}/scan/${client.customerId}`} size={180} bgColor="#ffffff" fgColor={D.primary} level="H" />
               </div>
-              <p className="text-xs mt-2" style={{ color: `${dynamicStyles.text}80` }}>Présentez ce code au staff</p>
+              <p className="text-xs mt-3 font-medium" style={{ color: `${D.text}70` }}>Présentez ce code au staff</p>
             </div>
           )}
         </div>
 
-        {/* Stars Progress */}
-        <div className="px-4 py-4 border-b" style={{ borderColor: `${dynamicStyles.primary}20` }}>
-          <h3 className="font-semibold mb-3" style={{ color: dynamicStyles.text }}>Vos étoiles</h3>
-          {nextReward ? (
-            <div className="mb-4">
-              <div className="flex justify-between text-sm mb-1">
-                <span style={{ color: `${dynamicStyles.text}80` }}>Prochaine récompense: {nextReward.name}</span>
-                <span className="font-medium" style={{ color: dynamicStyles.primary }}>{client.points || 0} / {nextReward.stars} ⭐</span>
+        {/* ── Rewards Swiper ── */}
+        <div className="px-4 py-5 border-b" style={{ borderColor: `${D.primary}20` }}>
+          {/* Header */}
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-base font-semibold tracking-tight" style={{ color: D.text }}>Vos récompenses</h3>
+            <span
+              className="text-xs font-semibold px-3 py-1 rounded-full"
+              style={{ backgroundColor: `${D.primary}15`, color: D.primary }}
+            >
+              {clientPts} pts
+            </span>
+          </div>
+
+          {/* Progress bar */}
+          {nextReward && (
+            <div className="mb-5">
+              <div className="flex justify-between items-center mb-2">
+                <p className="text-xs font-medium" style={{ color: `${D.text}70` }}>
+                  Prochain palier : <span style={{ color: D.text, fontWeight: 600 }}>{nextReward.name}</span>
+                </p>
+                <p className="text-xs font-semibold" style={{ color: D.primary }}>{clientPts} / {nextReward.pts}</p>
               </div>
-              <div className="w-full rounded-full h-3" style={{ backgroundColor: `${dynamicStyles.primary}20` }}>
+              <div className="w-full h-2 rounded-full overflow-hidden" style={{ backgroundColor: `${D.primary}20` }}>
                 <div
-                  className="rounded-full h-3 transition-all duration-500"
-                  style={{ width: `${Math.min(currentProgress, 100)}%`, backgroundColor: dynamicStyles.primary }}
+                  className="h-full rounded-full transition-all duration-700"
+                  style={{ width: `${progress}%`, backgroundColor: D.primary }}
                 />
               </div>
             </div>
+          )}
+
+          {rewards.length === 0 ? (
+            <p className="text-sm text-center py-4" style={{ color: `${D.text}60` }}>Aucune récompense configurée.</p>
           ) : (
-            <p className="text-sm" style={{ color: `${dynamicStyles.text}80` }}>Aucune récompense configurée pour le moment.</p>
-          )}
-
-          {rewards.length > 0 && (
-            <div className="grid grid-cols-4 gap-2 mt-4">
-              {rewards.map((reward: any) => (
-                <div key={reward.id} className="text-center group">
-                  <div
-                    className={`w-full aspect-square rounded-xl flex flex-col items-center justify-center p-1 transition-all duration-200 ${
-                      (client.points || 0) >= reward.stars ? "shadow-lg scale-105" : ""
-                    }`}
-                    style={{
-                      backgroundColor: (client.points || 0) >= reward.stars ? dynamicStyles.primary : `${dynamicStyles.primary}10`,
-                      border: `1px solid ${(client.points || 0) >= reward.stars ? dynamicStyles.primary : `${dynamicStyles.primary}20`}`,
-                      color: (client.points || 0) >= reward.stars ? "#fff" : dynamicStyles.text,
-                    }}
-                  >
-                    <span className="text-2xl">{reward.icon}</span>
-                    <span className="text-xs font-medium mt-1">{reward.stars}⭐</span>
-                  </div>
-                  <p className="text-xs mt-1" style={{ color: `${dynamicStyles.text}cc` }}>{reward.name}</p>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Coupons Tab */}
-        {coupons.length > 0 && (
-          <>
-            <div className="px-4 py-2 border-b" style={{ borderColor: `${dynamicStyles.primary}20` }}>
-              <div className="flex space-x-4">
-                <button
-                  onClick={() => setActiveTab("rewards")}
-                  className={`flex-1 py-2 font-medium text-sm border-b-2 transition-all ${
-                    activeTab === "rewards" ? "border-[#fe5502] text-[#fe5502]" : "border-transparent text-gray-500 hover:text-gray-300"
-                  }`}
+            <>
+              {/* Swiper track */}
+              <div
+                className="overflow-hidden"
+                onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX; }}
+                onTouchEnd={(e) => {
+                  if (touchStartX.current === null) return;
+                  const dx = e.changedTouches[0].clientX - touchStartX.current;
+                  if (dx < -40 && swiperOffset < maxOffset) setSwiperOffset(o => o + 1);
+                  if (dx > 40 && swiperOffset > 0) setSwiperOffset(o => o - 1);
+                  touchStartX.current = null;
+                }}
+              >
+                <div
+                  className="flex gap-3 pb-2 pt-1"
+                  style={{ transform: `translateX(-${swiperOffset * (110 + 12)}px)`, transition: "transform 0.4s cubic-bezier(.4,0,.2,1)" }}
                 >
-                  🎁 Récompenses
-                </button>
-                <button
-                  onClick={() => setActiveTab("coupons")}
-                  className={`flex-1 py-2 font-medium text-sm border-b-2 transition-all ${
-                    activeTab === "coupons" ? "border-[#fe5502] text-[#fe5502]" : "border-transparent text-gray-500 hover:text-gray-300"
-                  }`}
-                >
-                  🏷️ Coupons
-                </button>
-              </div>
-            </div>
-            <div className="px-4 py-4 min-h-[200px] animate-fadeIn">
-              {activeTab === "coupons" && (
-                <div className="space-y-3">
-                  {coupons.map((coupon: any) => (
-                    <div
-                      key={coupon.id}
-                      className="border border-dashed p-3 rounded-xl flex items-center justify-between"
-                      style={{ borderColor: dynamicStyles.primary, backgroundColor: `${dynamicStyles.primary}10` }}
-                    >
-                      <div>
-                        <p className="font-bold" style={{ color: dynamicStyles.primary }}>{coupon.name}</p>
-                        <p className="text-xs" style={{ color: `${dynamicStyles.text}99` }}>{coupon.description}</p>
-                        <p className="text-xs mt-1" style={{ color: `${dynamicStyles.text}80` }}>Valable jusqu'au {coupon.validUntil}</p>
+                  {rewards.map((reward, i) => {
+                    const unlocked = clientPts >= reward.pts;
+                    return (
+                      <div
+                        key={reward.id}
+                        className="flex-shrink-0 flex flex-col items-center gap-2 rounded-2xl p-3 transition-all"
+                        style={{
+                          minWidth: "110px",
+                          backgroundColor: unlocked ? `${D.primary}12` : D.cardBg,
+                          border: `1.5px solid ${unlocked ? D.primary : `${D.text}15`}`,
+                          animation: unlocked ? `popIn 0.35s ease ${i * 0.06}s both` : "none",
+                        }}
+                      >
+                        {/* Icon */}
+                        <div
+                          className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl relative"
+                          style={{ backgroundColor: unlocked ? `${D.primary}20` : `${D.text}08` }}
+                        >
+                          <span>{rewardEmoji(reward.pts)}</span>
+                          {/* Open/closed gift badge */}
+                          <div
+                            className="absolute -bottom-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center"
+                            style={{
+                              backgroundColor: unlocked ? D.primary : "#9ca3af",
+                              border: `2px solid ${D.cardBg}`,
+                            }}
+                          >
+                            {unlocked ? (
+                              // Open gift / check
+                              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M20 6L9 17l-5-5" />
+                              </svg>
+                            ) : (
+                              // Lock
+                              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                                <path d="M7 11V7a5 5 0 0110 0v4" />
+                              </svg>
+                            )}
+                          </div>
+                        </div>
+                        {/* Name */}
+                        <p className="text-xs font-semibold text-center leading-tight" style={{ color: unlocked ? D.primary : D.text }}>
+                          {reward.name}
+                        </p>
+                        {/* Points */}
+                        <p className="text-xs font-medium" style={{ color: unlocked ? `${D.primary}90` : `${D.text}50` }}>
+                          {reward.pts} pts
+                        </p>
+                        {/* Unlocked label */}
+                        {unlocked && (
+                          <span
+                            className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                            style={{ backgroundColor: D.primary, color: "#fff" }}
+                          >
+                            Disponible
+                          </span>
+                        )}
                       </div>
-                      <button className="px-3 py-1 text-white text-sm rounded-lg" style={{ backgroundColor: dynamicStyles.primary }}>Activer</button>
-                    </div>
-                  ))}
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Dots + nav */}
+              {maxOffset > 0 && (
+                <div className="flex items-center justify-center gap-3 mt-3">
+                  <button
+                    onClick={() => setSwiperOffset(o => Math.max(0, o - 1))}
+                    disabled={swiperOffset === 0}
+                    className="w-7 h-7 rounded-full flex items-center justify-center transition-all disabled:opacity-30"
+                    style={{ border: `1px solid ${D.text}25`, color: D.text }}
+                    aria-label="Précédent"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M15 18l-6-6 6-6" /></svg>
+                  </button>
+                  <div className="flex gap-1.5">
+                    {Array.from({ length: maxOffset + 1 }).map((_, i) => (
+                      <div
+                        key={i}
+                        onClick={() => setSwiperOffset(i)}
+                        className="h-1.5 rounded-full cursor-pointer transition-all duration-300"
+                        style={{
+                          width: i === swiperOffset ? "16px" : "6px",
+                          backgroundColor: i === swiperOffset ? D.primary : `${D.text}25`,
+                        }}
+                      />
+                    ))}
+                  </div>
+                  <button
+                    onClick={() => setSwiperOffset(o => Math.min(maxOffset, o + 1))}
+                    disabled={swiperOffset >= maxOffset}
+                    className="w-7 h-7 rounded-full flex items-center justify-center transition-all disabled:opacity-30"
+                    style={{ border: `1px solid ${D.text}25`, color: D.text }}
+                    aria-label="Suivant"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M9 18l6-6-6-6" /></svg>
+                  </button>
                 </div>
               )}
+            </>
+          )}
+        </div>
+
+        {/* ── Coupons tab ── */}
+        {coupons.length > 0 && (
+          <>
+            <div className="px-4 py-2 border-b" style={{ borderColor: `${D.primary}20` }}>
+              <div className="flex space-x-4">
+                {["rewards", "coupons"].map((tab) => (
+                  <button
+                    key={tab}
+                    onClick={() => setActiveTab(tab)}
+                    className={`flex-1 py-2 font-semibold text-sm border-b-2 transition-all`}
+                    style={{
+                      borderColor: activeTab === tab ? D.primary : "transparent",
+                      color: activeTab === tab ? D.primary : `${D.text}60`,
+                    }}
+                  >
+                    {tab === "rewards" ? "🎁 Récompenses" : "🏷️ Coupons"}
+                  </button>
+                ))}
+              </div>
             </div>
+            {activeTab === "coupons" && (
+              <div className="px-4 py-4 space-y-3 animate-fadeIn">
+                {coupons.map((coupon: any) => (
+                  <div key={coupon.id} className="border border-dashed p-3 rounded-2xl flex items-center justify-between" style={{ borderColor: D.primary, backgroundColor: `${D.primary}08` }}>
+                    <div>
+                      <p className="font-semibold text-sm" style={{ color: D.primary }}>{coupon.name}</p>
+                      <p className="text-xs mt-0.5" style={{ color: `${D.text}80` }}>{coupon.description}</p>
+                      <p className="text-xs mt-1" style={{ color: `${D.text}60` }}>Valable jusqu'au {coupon.validUntil}</p>
+                    </div>
+                    <button className="px-3 py-1.5 text-white text-xs font-semibold rounded-xl" style={{ backgroundColor: D.primary }}>Activer</button>
+                  </div>
+                ))}
+              </div>
+            )}
           </>
         )}
 
-        {/* About Restaurant */}
-        <div className="px-4 py-2 border-t" style={{ borderColor: `${dynamicStyles.primary}20` }}>
+        {/* ── About ── */}
+        <div className="px-4 py-3 border-t" style={{ borderColor: `${D.primary}20` }}>
           <button
             onClick={() => setShowAbout(!showAbout)}
-            className="w-full py-3 border rounded-xl font-medium flex items-center justify-center space-x-2 transition hover:bg-gray-50"
-            style={{ borderColor: `${dynamicStyles.primary}30`, color: dynamicStyles.text }}
+            className="w-full py-3 border rounded-2xl font-medium text-sm flex items-center justify-center space-x-2 transition hover:opacity-80"
+            style={{ borderColor: `${D.primary}30`, color: D.text }}
           >
-            <span>ℹ️</span>
-            <span>À propos de {restaurant.name}</span>
+            <span>ℹ️</span><span>À propos de {restaurant.name}</span>
           </button>
           {showAbout && (
-            <div
-              className="mt-4 p-4 rounded-xl space-y-3 border animate-fadeIn"
-              style={{ backgroundColor: dynamicStyles.background, borderColor: `${dynamicStyles.primary}20` }}
-            >
-              {restaurant.description && <p className="text-sm" style={{ color: dynamicStyles.text }}>{restaurant.description}</p>}
+            <div className="mt-3 p-4 rounded-2xl space-y-3 border animate-fadeIn" style={{ backgroundColor: D.background, borderColor: `${D.primary}20` }}>
+              {restaurant.description && <p className="text-sm" style={{ color: D.text }}>{restaurant.description}</p>}
               {restaurant.address && (
-                <div className="flex items-start space-x-2">
-                  <span>📍</span>
-                  <p className="text-sm" style={{ color: dynamicStyles.text }}>{restaurant.address}</p>
-                </div>
+                <div className="flex items-start gap-2"><span>📍</span><p className="text-sm" style={{ color: D.text }}>{restaurant.address}</p></div>
               )}
               {restaurant.phoneNumber && (
-                <div className="flex items-center space-x-2">
-                  <span>📞</span>
-                  <a href={`tel:${restaurant.phoneNumber}`} className="text-sm" style={{ color: dynamicStyles.primary }}>{restaurant.phoneNumber}</a>
-                </div>
+                <div className="flex items-center gap-2"><span>📞</span><a href={`tel:${restaurant.phoneNumber}`} className="text-sm font-medium" style={{ color: D.primary }}>{restaurant.phoneNumber}</a></div>
               )}
               {restaurant.email && (
-                <div className="flex items-center space-x-2">
-                  <span>✉️</span>
-                  <a href={`mailto:${restaurant.email}`} className="text-sm" style={{ color: dynamicStyles.primary }}>{restaurant.email}</a>
-                </div>
+                <div className="flex items-center gap-2"><span>✉️</span><a href={`mailto:${restaurant.email}`} className="text-sm font-medium" style={{ color: D.primary }}>{restaurant.email}</a></div>
               )}
               {restaurant.openingHours && (
-                <div className="flex items-start space-x-2">
+                <div className="flex items-start gap-2">
                   <span>🕒</span>
-                  <div className="text-sm">
+                  <div className="text-sm space-y-0.5">
                     {Object.entries(restaurant.openingHours).map(([day, hours]: any) => (
-                      <div key={day} className="flex justify-between gap-4">
-                        <span>{day}:</span>
-                        <span>{hours.closed ? "Fermé" : `${hours.open} - ${hours.close}`}</span>
+                      <div key={day} className="flex justify-between gap-6">
+                        <span style={{ color: `${D.text}70` }}>{day}</span>
+                        <span style={{ color: D.text }}>{hours.closed ? "Fermé" : `${hours.open} – ${hours.close}`}</span>
                       </div>
                     ))}
                   </div>
                 </div>
               )}
-              <button
-                onClick={() => setShowAbout(false)}
-                className="w-full mt-2 py-2 rounded-lg text-sm font-medium transition hover:bg-gray-100"
-                style={{ backgroundColor: `${dynamicStyles.primary}10`, color: dynamicStyles.text }}
-              >
-                Compris !
-              </button>
+              <button onClick={() => setShowAbout(false)} className="w-full mt-1 py-2 rounded-xl text-sm font-medium" style={{ backgroundColor: `${D.primary}12`, color: D.primary }}>Compris !</button>
             </div>
           )}
         </div>
 
-        {/* ── How to earn section ── */}
-        <div className="px-4 pt-4 pb-2 border-t" style={{ borderColor: `${dynamicStyles.primary}20` }}>
-          <p
-            className="text-xs font-semibold uppercase tracking-widest mb-4 text-center"
-            style={{ color: `${dynamicStyles.text}60` }}
-          >
+        {/* ── How to earn ── */}
+        <div className="px-4 pt-4 pb-2 border-t" style={{ borderColor: `${D.primary}20` }}>
+          <p className="text-xs font-semibold uppercase tracking-widest mb-4 text-center" style={{ color: `${D.text}50` }}>
             Kiféch nerba7 ? 🤔
           </p>
-          <div
-            className="rounded-2xl overflow-hidden border"
-            style={{ borderColor: `${dynamicStyles.primary}20` }}
-          >
+          <div className="rounded-2xl overflow-hidden border" style={{ borderColor: `${D.primary}18` }}>
             {[
-              {
-                emoji: "🍔",
-                step: "1. Koul w khalles",
-                desc: "Profite de ton repas. Pour chaque 1 DT payé, on t'offre 10 points direct sur ton téléphone !",
-                bg: `${dynamicStyles.primary}12`,
-              },
-              {
-                emoji: "📱",
-                step: "2. Scanni Codek",
-                desc: 'Wa9t lkhlas, appuie sur "Mon Code QR" et passe ton téléphone à la caisse.',
-                bg: `${dynamicStyles.primary}08`,
-              },
-              {
-                emoji: "🎁",
-                step: "3. Hizz l'gratuit !",
-                desc: "Dès que ta jauge de points touche un cadeau, demande ta récompense gratuite !",
-                bg: `${dynamicStyles.primary}12`,
-              },
+              { emoji: "🍔", step: "1. Koul w khalles", desc: "Pour chaque 1 DT payé, on t'offre 10 points direct sur ton téléphone !", shade: `${D.primary}0a` },
+              { emoji: "📱", step: "2. Scanni Codek", desc: 'Wa9t lkhlas, appuie sur "Mon Code QR" et passe ton téléphone à la caisse.', shade: `${D.primary}06` },
+              { emoji: "🎁", step: "3. Hizz l'gratuit !", desc: "Dès que ta jauge touche un cadeau, demande ta récompense gratuite !", shade: `${D.primary}0a` },
             ].map((item, idx, arr) => (
               <div key={idx}>
-                <div
-                  className="flex items-start gap-4 px-4 py-4"
-                  style={{ backgroundColor: item.bg }}
-                >
-                  <div
-                    className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 text-xl"
-                    style={{ backgroundColor: `${dynamicStyles.primary}25` }}
-                  >
+                <div className="flex items-start gap-4 px-4 py-4" style={{ backgroundColor: item.shade }}>
+                  <div className="w-10 h-10 rounded-2xl flex items-center justify-center text-xl flex-shrink-0" style={{ backgroundColor: `${D.primary}20` }}>
                     {item.emoji}
                   </div>
                   <div>
-                    <p className="text-sm font-semibold" style={{ color: dynamicStyles.text }}>{item.step}</p>
-                    <p className="text-xs mt-1 leading-relaxed" style={{ color: `${dynamicStyles.text}80` }}>{item.desc}</p>
+                    <p className="text-sm font-semibold" style={{ color: D.text }}>{item.step}</p>
+                    <p className="text-xs mt-1 leading-relaxed" style={{ color: `${D.text}70` }}>{item.desc}</p>
                   </div>
                 </div>
-                {idx < arr.length - 1 && (
-                  <div className="h-px" style={{ backgroundColor: `${dynamicStyles.primary}15` }} />
-                )}
+                {idx < arr.length - 1 && <div className="h-px" style={{ backgroundColor: `${D.primary}12` }} />}
               </div>
             ))}
           </div>
         </div>
 
-        {/* Add to Home Screen */}
-        <div
-          className="px-4 py-4 border-t"
-          style={{ borderColor: `${dynamicStyles.primary}20`, backgroundColor: dynamicStyles.background }}
-        >
+        {/* ── Add to home screen ── */}
+        <div className="px-4 py-5 border-t" style={{ borderColor: `${D.primary}20`, backgroundColor: D.background }}>
           <button
             onClick={handleAddToHomeScreen}
-            className="w-full py-4 border-2 rounded-xl font-medium flex items-center justify-center space-x-2 transition-all transform hover:scale-[1.02] active:scale-95"
-            style={{ borderColor: dynamicStyles.primary, color: dynamicStyles.primary, backgroundColor: `${dynamicStyles.primary}10` }}
+            className="w-full py-4 border-2 rounded-2xl font-semibold text-sm flex items-center justify-center gap-2 transition-all active:scale-95"
+            style={{ borderColor: D.primary, color: D.primary, backgroundColor: `${D.primary}0d` }}
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
             </svg>
-            <span>Ajouter à l'écran d'accueil</span>
+            Ajouter à l'écran d'accueil
           </button>
-          <p className="text-xs text-center mt-3" style={{ color: `${dynamicStyles.text}60` }}>Powered by adam · Mentions légales</p>
+          <p className="text-xs text-center mt-3" style={{ color: `${D.text}50` }}>Powered by adam · Mentions légales</p>
         </div>
       </div>
 
       <style jsx>{`
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes popIn { from { opacity: 0; transform: scale(0.85); } to { opacity: 1; transform: scale(1); } }
         .animate-fadeIn { animation: fadeIn 0.3s ease-out; }
       `}</style>
     </div>
