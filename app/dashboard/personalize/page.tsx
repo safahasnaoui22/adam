@@ -470,104 +470,83 @@ export default function PersonalizePage() {
             </div>
 
             {/* ── Bonus clients ── */}
-            <div className="border-t border-[#1e3a5f]/50 pt-6 mt-6">
-              <div className="flex items-center gap-3 mb-5">
-                <div className="w-9 h-9 rounded-lg bg-[#fe5502]/10 flex items-center justify-center text-[#fe5502]">
-                  <IconGift size={18} color="#fe5502"/>
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-base font-semibold text-white">Bonus clients</h3>
-                    <span className="text-[10px] font-semibold tracking-wider uppercase bg-[#fe5502]/15 text-[#fe5502] px-2 py-0.5 rounded-full">Nouveau</span>
-                  </div>
-                  <p className="text-xs text-gray-500 mt-0.5">
-                    Les clients gagnent des points en visitant vos liens — une seule fois par plateforme.
-                  </p>
-                </div>
-              </div>
+            {/* ── Bonus clients ── */}
+<div className="border-t border-[#1e3a5f]/50 pt-6 mt-6">
+  <div className="flex items-center gap-3 mb-5">
+    <div className="w-9 h-9 rounded-lg bg-[#fe5502]/10 flex items-center justify-center text-[#fe5502]">
+      <IconGift size={18} color="#fe5502"/>
+    </div>
+    <div>
+      <div className="flex items-center gap-2">
+        <h3 className="text-base font-semibold text-white">Bonus clients</h3>
+        <span className="text-[10px] font-semibold tracking-wider uppercase bg-[#fe5502]/15 text-[#fe5502] px-2 py-0.5 rounded-full">Nouveau</span>
+      </div>
+      <p className="text-xs text-gray-500 mt-0.5">
+        Les clients gagnent des points en visitant vos liens — une seule fois par plateforme.
+      </p>
+    </div>
+  </div>
 
-              {/* Google Maps row */}
-              <div className="mb-4 p-4 bg-[#0a1628] rounded-xl border border-[#1e3a5f] hover:border-[#1e3a5f]/80 transition">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2.5">
-                    <IconGoogleMaps size={20}/>
-                    <span className="text-sm font-medium text-white">Google Maps</span>
-                    <span className="text-[10px] text-gray-500 bg-[#1e3a5f]/60 px-2 py-0.5 rounded">Avis + suivi</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <IconStar size={13} color="#fe5502"/>
-                    <input
-                      type="number"
-                      value={formData.googleMapsBonusStars}
-                      onChange={(e) => patch({ googleMapsBonusStars: parseInt(e.target.value) || 0 })}
-                      className="w-16 px-2 py-1 bg-[#1e3a5f]/50 border border-[#1e3a5f] rounded-md text-white text-sm text-center focus:outline-none focus:ring-1 focus:ring-[#fe5502]"
-                    />
-                    <span className="text-xs text-gray-500">pts</span>
-                  </div>
-                </div>
-                <input
-                  type="url"
-                  value={formData.googleMapsUrl || ""}
-                  onChange={(e) => patch({ googleMapsUrl: e.target.value })}
-                  placeholder="https://maps.app.goo.gl/..."
-                  className="w-full px-3.5 py-2 bg-[#0a1628] border border-[#1e3a5f] rounded-lg text-white text-sm placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-[#fe5502] focus:border-[#fe5502] transition mb-3"
-                />
-                <div className="flex items-center gap-3">
-                  <div className="flex-1">
-                    <p className="text-xs text-gray-500 mb-1.5">Code unique de vérification</p>
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={formData.googleMapsCode || ""}
-                        readOnly
-                        className="flex-1 px-3 py-1.5 bg-[#1e3a5f]/30 border border-[#1e3a5f] rounded-md text-gray-300 text-sm font-mono tracking-widest"
-                        placeholder="—"
-                      />
-                      <button
-                        type="button"
-                        onClick={generateGoogleCode}
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-[#fe5502] text-white rounded-md text-xs font-semibold hover:bg-[#e0682e] transition"
-                      >
-                        <IconGenerate size={12} color="#fff"/>
-                        Générer
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
+  {/* Google Maps row */}
+  <div className="mb-4 p-4 bg-[#0a1628] rounded-xl border border-[#1e3a5f] hover:border-[#1e3a5f]/80 transition">
+    <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center gap-2.5">
+        <IconGoogleMaps size={20}/>
+        <span className="text-sm font-medium text-white">Google Maps</span>
+        <span className="text-[10px] text-gray-500 bg-[#1e3a5f]/60 px-2 py-0.5 rounded">Avis + suivi</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <IconStar size={13} color="#fe5502"/>
+        <input
+          type="number"
+          value={formData.googleMapsBonusStars}
+          onChange={(e) => patch({ googleMapsBonusStars: parseInt(e.target.value) || 0 })}
+          className="w-16 px-2 py-1 bg-[#1e3a5f]/50 border border-[#1e3a5f] rounded-md text-white text-sm text-center focus:outline-none focus:ring-1 focus:ring-[#fe5502]"
+        />
+        <span className="text-xs text-gray-500">pts</span>
+      </div>
+    </div>
+    <input
+      type="url"
+      value={formData.googleMapsUrl || ""}
+      onChange={(e) => patch({ googleMapsUrl: e.target.value })}
+      placeholder="https://maps.app.goo.gl/..."
+      className="w-full px-3.5 py-2 bg-[#0a1628] border border-[#1e3a5f] rounded-lg text-white text-sm placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-[#fe5502] focus:border-[#fe5502] transition"
+    />
+  </div>
 
-              {/* Facebook / Instagram / X */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                {SOCIAL_PLATFORMS.map((platform) => (
-                  <div key={platform.key} className="p-4 bg-[#0a1628] rounded-xl border border-[#1e3a5f] hover:border-[#1e3a5f]/80 transition">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-2">
-                        {platform.icon}
-                        <span className="text-sm font-medium text-white">{platform.label}</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <IconStar size={12} color="#fe5502"/>
-                        <input
-                          type="number"
-                          value={formData[platform.starsKey]}
-                          onChange={(e) => patch({ [platform.starsKey]: parseInt(e.target.value) || 0 } as any)}
-                          className="w-14 px-2 py-1 bg-[#1e3a5f]/50 border border-[#1e3a5f] rounded-md text-white text-xs text-center focus:outline-none focus:ring-1 focus:ring-[#fe5502]"
-                        />
-                        <span className="text-[10px] text-gray-500">pts</span>
-                      </div>
-                    </div>
-                    <input
-                      type="url"
-                      value={formData[platform.urlKey]}
-                      onChange={(e) => patch({ [platform.urlKey]: e.target.value } as any)}
-                      placeholder={platform.placeholder}
-                      className="w-full px-3 py-2 bg-[#0a1628] border border-[#1e3a5f] rounded-lg text-white text-xs placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-[#fe5502] focus:border-[#fe5502] transition"
-                    />
-                    <p className="text-[10px] text-gray-600 mt-1.5">{platform.hint}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
+  {/* Facebook / Instagram / TikTok */}
+  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+    {SOCIAL_PLATFORMS.map((platform) => (
+      <div key={platform.key} className="p-4 bg-[#0a1628] rounded-xl border border-[#1e3a5f] hover:border-[#1e3a5f]/80 transition">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            {platform.icon}
+            <span className="text-sm font-medium text-white">{platform.label}</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <IconStar size={12} color="#fe5502"/>
+            <input
+              type="number"
+              value={formData[platform.starsKey]}
+              onChange={(e) => patch({ [platform.starsKey]: parseInt(e.target.value) || 0 } as any)}
+              className="w-14 px-2 py-1 bg-[#1e3a5f]/50 border border-[#1e3a5f] rounded-md text-white text-xs text-center focus:outline-none focus:ring-1 focus:ring-[#fe5502]"
+            />
+            <span className="text-[10px] text-gray-500">pts</span>
+          </div>
+        </div>
+        <input
+          type="url"
+          value={formData[platform.urlKey]}
+          onChange={(e) => patch({ [platform.urlKey]: e.target.value } as any)}
+          placeholder={platform.placeholder}
+          className="w-full px-3 py-2 bg-[#0a1628] border border-[#1e3a5f] rounded-lg text-white text-xs placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-[#fe5502] focus:border-[#fe5502] transition"
+        />
+        <p className="text-[10px] text-gray-600 mt-1.5">{platform.hint}</p>
+      </div>
+    ))}
+  </div>
+</div>
           </div>
         )}
 
