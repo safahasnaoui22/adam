@@ -64,7 +64,7 @@ type BonusAction = {
   label: string;
   urlKey: keyof RestaurantBonusUrls;
   starsKey: keyof RestaurantBonusStars;
-  icon: JSX.Element;
+    icon: React.ReactNode; 
   hint: string;
 };
 
