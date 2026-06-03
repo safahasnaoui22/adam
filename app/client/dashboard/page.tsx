@@ -24,7 +24,6 @@ export default function ClientDashboard() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [patternStyle, setPatternStyle] = useState<React.CSSProperties>({});
 
-  // Typing animation effect
   useEffect(() => {
     let i = 0;
     const interval = setInterval(() => {
@@ -41,8 +40,7 @@ export default function ClientDashboard() {
   const getShortId = () => {
     if (client?.customerId && client.customerId.includes('-')) {
       const parts = client.customerId.split('-');
-      const lastPart = parts[parts.length - 1];
-      return lastPart.slice(-4);
+      return parts[parts.length - 1].slice(-4);
     } else if (client?.id) {
       return client.id.slice(-4);
     }
@@ -53,11 +51,8 @@ export default function ClientDashboard() {
     try {
       const res = await fetch(`/api/client/${id}`);
       const data = await res.json();
-      if (res.ok) {
-        setClient(data);
-      } else {
-        console.error("Client API error:", data);
-      }
+      if (res.ok) setClient(data);
+      else console.error("Client API error:", data);
     } catch (error) {
       console.error("Failed to fetch client:", error);
     }
@@ -67,11 +62,8 @@ export default function ClientDashboard() {
     try {
       const res = await fetch(`/api/restaurant/${id}`);
       const data = await res.json();
-      if (res.ok) {
-        setRestaurant(data);
-      } else {
-        console.error("Restaurant API error:", data);
-      }
+      if (res.ok) setRestaurant(data);
+      else console.error("Restaurant API error:", data);
     } catch (error) {
       console.error("Failed to fetch restaurant:", error);
     } finally {
@@ -92,7 +84,20 @@ export default function ClientDashboard() {
     }
   }, [restaurantId, router]);
 
-  // Register service worker
+  // Re-fetch when tab becomes visible again
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        const clientId = localStorage.getItem("clientId");
+        const storedRestaurantId = localStorage.getItem("restaurantId");
+        if (clientId) fetchClientData(clientId);
+        if (storedRestaurantId) fetchRestaurantData(storedRestaurantId);
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, []);
+
   useEffect(() => {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js')
@@ -101,7 +106,6 @@ export default function ClientDashboard() {
     }
   }, []);
 
-  // Capture beforeinstallprompt event
   useEffect(() => {
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
@@ -114,9 +118,9 @@ export default function ClientDashboard() {
   const handleRefresh = async () => {
     setRefreshing(true);
     const clientId = localStorage.getItem("clientId");
-    if (clientId) {
-      await fetchClientData(clientId);
-    }
+    const storedRestaurantId = localStorage.getItem("restaurantId");
+    if (clientId) await fetchClientData(clientId);
+    if (storedRestaurantId) await fetchRestaurantData(storedRestaurantId);
     setTimeout(() => setRefreshing(false), 800);
   };
 
@@ -124,9 +128,7 @@ export default function ClientDashboard() {
     if (deferredPrompt) {
       deferredPrompt.prompt();
       deferredPrompt.userChoice.then((choiceResult: any) => {
-        if (choiceResult.outcome === 'accepted') {
-          console.log('User accepted the install prompt');
-        }
+        if (choiceResult.outcome === 'accepted') console.log('User accepted the install prompt');
         setDeferredPrompt(null);
       });
     } else {
@@ -138,7 +140,6 @@ export default function ClientDashboard() {
     }
   };
 
-  // ----- Safely compute pattern style -----
   useEffect(() => {
     if (restaurant) {
       try {
@@ -175,7 +176,6 @@ export default function ClientDashboard() {
     );
   }
 
-  // ----- Apply theme from restaurant -----
   const theme = restaurant?.theme || {};
   const primaryColor = theme.colors?.primary || "#fe5502";
   const secondaryColor = theme.colors?.secondary || "#e0682e";
@@ -193,16 +193,17 @@ export default function ClientDashboard() {
     accent: accentColor,
   };
 
-  // ----- Rewards (safe) -----
   let rewards: any[] = [];
   try {
-    rewards = restaurant.loyaltyProgram?.rewards?.map((r: any) => ({
-      id: r.id,
-      name: r.name,
-      stars: r.pointsRequired,
-      icon: "🎁",
-      description: r.description || "",
-    })) || [];
+    rewards = restaurant.loyaltyProgram?.rewards
+      ?.filter((r: any) => r.isActive)
+      ?.map((r: any) => ({
+        id: r.id,
+        name: r.name,
+        stars: r.pointsRequired,
+        icon: "🎁",
+        description: r.description || "",
+      })) || [];
   } catch (err) {
     console.error("Rewards error:", err);
     rewards = [];
@@ -212,6 +213,10 @@ export default function ClientDashboard() {
   const sortedRewards = [...rewards].sort((a, b) => a.stars - b.stars);
   const nextReward = sortedRewards.find(r => r.stars > (client.points || 0));
   const currentProgress = nextReward ? (client.points / nextReward.stars) * 100 : 100;
+
+  // Alert: points needed for next reward
+  const pointsToNext = nextReward ? nextReward.stars - (client.points || 0) : 0;
+  const showAlert = nextReward && pointsToNext <= 50;
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: dynamicStyles.background }}>
@@ -224,33 +229,81 @@ export default function ClientDashboard() {
           color: dynamicStyles.text,
         }}
       >
-        {/* Header */}
+        {/* ── Sticky top bar: alert + refresh ── */}
         <div
-          className="px-4 py-3 flex items-center justify-between border-b sticky top-0 z-10 bg-opacity-95 backdrop-blur-sm"
-          style={{
-            borderColor: `${dynamicStyles.primary}20`,
-            backgroundColor: dynamicStyles.cardBg,
-          }}
+          className="sticky top-0 z-20"
+          style={{ backgroundColor: dynamicStyles.cardBg }}
         >
-          <button onClick={handleRefresh} className="p-2 rounded-full hover:bg-gray-100 transition-colors" style={{ color: dynamicStyles.text }}>
-            <svg className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-          </button>
-          <div className="flex-1 flex justify-center">
-            {restaurant.logo ? (
-              <Image src={restaurant.logo} alt={restaurant.name} width={40} height={40} className="rounded-full border" style={{ borderColor: dynamicStyles.primary }} />
-            ) : (
-              <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold" style={{ backgroundColor: dynamicStyles.primary }}>
-                {restaurant.name?.charAt(0) || "R"}
-              </div>
-            )}
+          {/* Alert banner */}
+          {showAlert && (
+            <div
+              className="mx-3 mt-3 px-4 py-2 rounded-xl flex items-center gap-2 animate-fadeIn"
+              style={{
+                backgroundColor: `${dynamicStyles.primary}15`,
+                border: `1px solid ${dynamicStyles.primary}40`,
+              }}
+            >
+              <span className="text-lg">🎯</span>
+              <p className="text-xs font-medium" style={{ color: dynamicStyles.primary }}>
+                Plus que <strong>{pointsToNext} points</strong> pour débloquer "{nextReward.name}" !
+              </p>
+            </div>
+          )}
+
+          {/* Header row */}
+          <div
+            className="px-4 py-3 flex items-center justify-between border-b"
+            style={{ borderColor: `${dynamicStyles.primary}20` }}
+          >
+            <button
+              onClick={handleRefresh}
+              className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+              style={{ color: dynamicStyles.text }}
+              aria-label="Actualiser"
+            >
+              <svg
+                className={`w-5 h-5 ${refreshing ? "animate-spin" : ""}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                />
+              </svg>
+            </button>
+            <div className="flex-1 flex justify-center">
+              {restaurant.logo ? (
+                <Image
+                  src={restaurant.logo}
+                  alt={restaurant.name}
+                  width={40}
+                  height={40}
+                  className="rounded-full border"
+                  style={{ borderColor: dynamicStyles.primary }}
+                />
+              ) : (
+                <div
+                  className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold"
+                  style={{ backgroundColor: dynamicStyles.primary }}
+                >
+                  {restaurant.name?.charAt(0) || "R"}
+                </div>
+              )}
+            </div>
+            <button
+              className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+              style={{ color: dynamicStyles.text }}
+              aria-label="Notifications"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+              </svg>
+            </button>
           </div>
-          <button className="p-2 rounded-full hover:bg-gray-100 transition-colors" style={{ color: dynamicStyles.text }}>
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-            </svg>
-          </button>
         </div>
 
         {/* Client Info */}
@@ -279,7 +332,7 @@ export default function ClientDashboard() {
           <p className="text-xs mt-1" style={{ color: `${dynamicStyles.text}70` }}>1 DT = 10 ⭐</p>
         </div>
 
-        {/* QR Code Button */}
+        {/* QR Code */}
         <div className="px-4 py-4 border-b" style={{ borderColor: `${dynamicStyles.primary}20` }}>
           <button
             onClick={() => setShowQR(!showQR)}
@@ -345,14 +398,14 @@ export default function ClientDashboard() {
                     <span className="text-2xl">{reward.icon}</span>
                     <span className="text-xs font-medium mt-1">{reward.stars}⭐</span>
                   </div>
-                  <p className="text-xs mt-1 group-hover:transition" style={{ color: `${dynamicStyles.text}cc` }}>{reward.name}</p>
+                  <p className="text-xs mt-1" style={{ color: `${dynamicStyles.text}cc` }}>{reward.name}</p>
                 </div>
               ))}
             </div>
           )}
         </div>
 
-        {/* Coupons Tab (if any) */}
+        {/* Coupons Tab */}
         {coupons.length > 0 && (
           <>
             <div className="px-4 py-2 border-b" style={{ borderColor: `${dynamicStyles.primary}20` }}>
@@ -360,9 +413,7 @@ export default function ClientDashboard() {
                 <button
                   onClick={() => setActiveTab("rewards")}
                   className={`flex-1 py-2 font-medium text-sm border-b-2 transition-all ${
-                    activeTab === "rewards"
-                      ? "border-[#fe5502] text-[#fe5502]"
-                      : "border-transparent text-gray-500 hover:text-gray-300"
+                    activeTab === "rewards" ? "border-[#fe5502] text-[#fe5502]" : "border-transparent text-gray-500 hover:text-gray-300"
                   }`}
                 >
                   🎁 Récompenses
@@ -370,9 +421,7 @@ export default function ClientDashboard() {
                 <button
                   onClick={() => setActiveTab("coupons")}
                   className={`flex-1 py-2 font-medium text-sm border-b-2 transition-all ${
-                    activeTab === "coupons"
-                      ? "border-[#fe5502] text-[#fe5502]"
-                      : "border-transparent text-gray-500 hover:text-gray-300"
+                    activeTab === "coupons" ? "border-[#fe5502] text-[#fe5502]" : "border-transparent text-gray-500 hover:text-gray-300"
                   }`}
                 >
                   🏷️ Coupons
@@ -460,8 +509,67 @@ export default function ClientDashboard() {
           )}
         </div>
 
+        {/* ── How to earn section ── */}
+        <div className="px-4 pt-4 pb-2 border-t" style={{ borderColor: `${dynamicStyles.primary}20` }}>
+          <p
+            className="text-xs font-semibold uppercase tracking-widest mb-4 text-center"
+            style={{ color: `${dynamicStyles.text}60` }}
+          >
+            Kiféch nerba7 ? 🤔
+          </p>
+          <div
+            className="rounded-2xl overflow-hidden border"
+            style={{ borderColor: `${dynamicStyles.primary}20` }}
+          >
+            {[
+              {
+                emoji: "🍔",
+                step: "1. Koul w khalles",
+                desc: "Profite de ton repas. Pour chaque 1 DT payé, on t'offre 10 points direct sur ton téléphone !",
+                bg: `${dynamicStyles.primary}12`,
+              },
+              {
+                emoji: "📱",
+                step: "2. Scanni Codek",
+                desc: 'Wa9t lkhlas, appuie sur "Mon Code QR" et passe ton téléphone à la caisse.',
+                bg: `${dynamicStyles.primary}08`,
+              },
+              {
+                emoji: "🎁",
+                step: "3. Hizz l'gratuit !",
+                desc: "Dès que ta jauge de points touche un cadeau, demande ta récompense gratuite !",
+                bg: `${dynamicStyles.primary}12`,
+              },
+            ].map((item, idx, arr) => (
+              <div key={idx}>
+                <div
+                  className="flex items-start gap-4 px-4 py-4"
+                  style={{ backgroundColor: item.bg }}
+                >
+                  <div
+                    className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 text-xl"
+                    style={{ backgroundColor: `${dynamicStyles.primary}25` }}
+                  >
+                    {item.emoji}
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold" style={{ color: dynamicStyles.text }}>{item.step}</p>
+                    <p className="text-xs mt-1 leading-relaxed" style={{ color: `${dynamicStyles.text}80` }}>{item.desc}</p>
+                  </div>
+                </div>
+                {idx < arr.length - 1 && (
+                  <div className="h-px" style={{ backgroundColor: `${dynamicStyles.primary}15` }} />
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
         {/* Add to Home Screen */}
-        <div className="px-4 py-4 border-t" style={{ borderColor: `${dynamicStyles.primary}20`, backgroundColor: dynamicStyles.background }}>
+        <div
+          className="px-4 py-4 border-t"
+          style={{ borderColor: `${dynamicStyles.primary}20`, backgroundColor: dynamicStyles.background }}
+        >
           <button
             onClick={handleAddToHomeScreen}
             className="w-full py-4 border-2 rounded-xl font-medium flex items-center justify-center space-x-2 transition-all transform hover:scale-[1.02] active:scale-95"
@@ -475,14 +583,13 @@ export default function ClientDashboard() {
           <p className="text-xs text-center mt-3" style={{ color: `${dynamicStyles.text}60` }}>Powered by adam · Mentions légales</p>
         </div>
       </div>
+
       <style jsx>{`
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(10px); }
           to { opacity: 1; transform: translateY(0); }
         }
-        .animate-fadeIn {
-          animation: fadeIn 0.3s ease-out;
-        }
+        .animate-fadeIn { animation: fadeIn 0.3s ease-out; }
       `}</style>
     </div>
   );
