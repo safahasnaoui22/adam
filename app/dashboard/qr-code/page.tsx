@@ -5,7 +5,7 @@ import Link from "next/link";
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 
-// Professional icon components (Feather/Lucide style)
+// Professional icons (Feather style)
 const DownloadIcon = () => (
   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -46,6 +46,7 @@ export default function QRCodePage() {
   const [restaurantName, setRestaurantName] = useState("");
   const [restaurantLogo, setRestaurantLogo] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   const flyerRef = useRef<HTMLDivElement>(null);
 
@@ -58,7 +59,6 @@ export default function QRCodePage() {
     try {
       const res = await fetch("/api/restaurant/generate-qr");
       const data = await res.json();
-
       if (res.ok) {
         setQrCode(data.qrCode);
         setRestaurantUrl(data.url);
@@ -91,7 +91,7 @@ export default function QRCodePage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Helper to wait for images to load
+  // Wait for all images to load
   const waitForImages = (element: HTMLElement): Promise<void> => {
     const images = Array.from(element.querySelectorAll("img"));
     const promises = images.map(
@@ -108,9 +108,9 @@ export default function QRCodePage() {
   };
 
   const downloadPosterAsPNG = async () => {
-    if (!flyerRef.current) return;
+    if (!flyerRef.current || exporting) return;
+    setExporting(true);
     try {
-      setLoading(true);
       await waitForImages(flyerRef.current);
       const canvas = await html2canvas(flyerRef.current, {
         scale: 3,
@@ -127,14 +127,14 @@ export default function QRCodePage() {
       console.error("Error generating PNG:", err);
       setError("Impossible de générer l'image. Réessayez.");
     } finally {
-      setLoading(false);
+      setExporting(false);
     }
   };
 
   const downloadPosterAsPDF = async () => {
-    if (!flyerRef.current) return;
+    if (!flyerRef.current || exporting) return;
+    setExporting(true);
     try {
-      setLoading(true);
       await waitForImages(flyerRef.current);
       const canvas = await html2canvas(flyerRef.current, {
         scale: 3,
@@ -169,7 +169,7 @@ export default function QRCodePage() {
       console.error("Error generating PDF:", err);
       setError("Impossible de générer le PDF. Réessayez.");
     } finally {
-      setLoading(false);
+      setExporting(false);
     }
   };
 
@@ -272,84 +272,147 @@ export default function QRCodePage() {
 
         {qrCode && (
           <div className="grid md:grid-cols-2 gap-8">
-            {/* Left column: Flyer + download buttons */}
+            {/* Left side: Flyer + download buttons */}
             <div className="space-y-6">
-              {/* Modern Flyer */}
+              {/* Flyer with inline styles to avoid unsupported color functions */}
               <div
                 ref={flyerRef}
-                className="flyer-card w-full max-w-md mx-auto bg-white rounded-2xl shadow-2xl overflow-hidden transition-all duration-300"
+                className="flyer-card w-full max-w-md mx-auto bg-white rounded-2xl shadow-2xl overflow-hidden"
+                style={{
+                  fontFamily: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
+                }}
               >
                 {/* Top accent bar */}
-                <div className="h-2 bg-gradient-to-r from-[#fe5502] to-[#ff8c42]"></div>
+                <div
+                  style={{
+                    height: "8px",
+                    background: "linear-gradient(90deg, #fe5502 0%, #ff8c42 100%)",
+                  }}
+                ></div>
 
-                <div className="p-6 text-center">
+                <div style={{ padding: "1.5rem", textAlign: "center" }}>
                   {/* Logo */}
-                  <div className="flex justify-center mb-4">
+                  <div style={{ display: "flex", justifyContent: "center", marginBottom: "1rem" }}>
                     {restaurantLogo ? (
-                      <div className="w-24 h-24 rounded-full bg-gray-50 p-1 shadow-md overflow-hidden">
+                      <div
+                        style={{
+                          width: "96px",
+                          height: "96px",
+                          borderRadius: "50%",
+                          backgroundColor: "#f9fafb",
+                          padding: "4px",
+                          boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1)",
+                          overflow: "hidden",
+                        }}
+                      >
                         <img
                           src={restaurantLogo}
                           alt={restaurantName}
-                          className="rounded-full object-cover w-full h-full"
+                          style={{
+                            width: "100%",
+                            height: "100%",
+                            borderRadius: "50%",
+                            objectFit: "cover",
+                          }}
                           crossOrigin="anonymous"
                         />
                       </div>
                     ) : (
-                      <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#fe5502]/10 to-[#fe5502]/20 flex items-center justify-center shadow-md">
+                      <div
+                        style={{
+                          width: "96px",
+                          height: "96px",
+                          borderRadius: "50%",
+                          background: "linear-gradient(135deg, rgba(254,85,2,0.1) 0%, rgba(254,85,2,0.2) 100%)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1)",
+                        }}
+                      >
                         <StoreIcon />
                       </div>
                     )}
                   </div>
 
                   {/* Restaurant name */}
-                  <h2 className="text-2xl font-bold text-gray-800 mb-2">{restaurantName}</h2>
+                  <h2 style={{ fontSize: "1.5rem", fontWeight: "bold", color: "#1f2937", marginBottom: "0.5rem" }}>
+                    {restaurantName}
+                  </h2>
 
                   {/* Divider */}
-                  <div className="flex justify-center mb-4">
-                    <div className="w-16 h-0.5 bg-gradient-to-r from-[#fe5502] to-[#ff8c42] rounded-full"></div>
+                  <div style={{ display: "flex", justifyContent: "center", marginBottom: "1rem" }}>
+                    <div
+                      style={{
+                        width: "64px",
+                        height: "2px",
+                        background: "linear-gradient(90deg, #fe5502, #ff8c42)",
+                        borderRadius: "9999px",
+                      }}
+                    ></div>
                   </div>
 
                   {/* Catchphrase */}
-                  <div className="mb-6">
-                    <p className="text-gray-700 font-medium text-lg">
+                  <div style={{ marginBottom: "1.5rem" }}>
+                    <p style={{ color: "#374151", fontWeight: "500", fontSize: "1.125rem", margin: 0 }}>
                       Scannez, collectez, gagnez des points.
                     </p>
-                    <p className="text-gray-500 text-sm mt-1">
+                    <p style={{ color: "#6b7280", fontSize: "0.875rem", marginTop: "0.25rem" }}>
                       Votre carte de fidélité digitale
                     </p>
                   </div>
 
-                  {/* QR Code - using regular img for reliable export */}
-                  <div className="flex justify-center mb-4">
-                    <div className="bg-white p-4 rounded-xl shadow-lg border border-gray-100">
+                  {/* QR Code */}
+                  <div style={{ display: "flex", justifyContent: "center", marginBottom: "1rem" }}>
+                    <div
+                      style={{
+                        backgroundColor: "#ffffff",
+                        padding: "1rem",
+                        borderRadius: "0.75rem",
+                        boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05)",
+                        border: "1px solid #f3f4f6",
+                      }}
+                    >
                       <img
                         src={qrCode}
                         alt="QR Code"
                         width={200}
                         height={200}
-                        className="mx-auto"
+                        style={{ margin: "0 auto" }}
                       />
                     </div>
                   </div>
 
                   {/* Call to action */}
-                  <div className="mt-2 mb-4">
-                    <span className="inline-block bg-[#fe5502]/10 text-[#fe5502] font-bold px-4 py-2 rounded-full text-sm tracking-wide">
+                  <div style={{ marginTop: "0.5rem", marginBottom: "1rem" }}>
+                    <span
+                      style={{
+                        display: "inline-block",
+                        backgroundColor: "rgba(254,85,2,0.1)",
+                        color: "#fe5502",
+                        fontWeight: "bold",
+                        padding: "0.5rem 1rem",
+                        borderRadius: "9999px",
+                        fontSize: "0.875rem",
+                        letterSpacing: "0.05em",
+                      }}
+                    >
                       SCANNEZ & CUMULEZ DES POINTS
                     </span>
                   </div>
 
-                  <div className="text-xs text-gray-400 mt-4">
+                  {/* Footer */}
+                  <div style={{ fontSize: "0.75rem", color: "#9ca3af", marginTop: "1rem" }}>
                     Programme de fidélité {restaurantName}
                   </div>
                 </div>
               </div>
 
-              {/* Download buttons - directly under flyer */}
+              {/* Download buttons */}
               <div className="flex flex-wrap gap-3 justify-center">
                 <button
                   onClick={downloadPosterAsPNG}
-                  disabled={loading}
+                  disabled={exporting}
                   className="flex-1 min-w-[100px] px-4 py-2.5 bg-[#fe5502] text-white rounded-lg hover:bg-[#e0682e] flex items-center justify-center transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50"
                 >
                   <DownloadIcon />
@@ -357,7 +420,7 @@ export default function QRCodePage() {
                 </button>
                 <button
                   onClick={downloadPosterAsPDF}
-                  disabled={loading}
+                  disabled={exporting}
                   className="flex-1 min-w-[100px] px-4 py-2.5 bg-[#1e3a5f] text-white rounded-lg hover:bg-[#2a4a75] flex items-center justify-center transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50"
                 >
                   <PdfIcon />
@@ -375,11 +438,8 @@ export default function QRCodePage() {
 
             {/* Right column: Instructions, URL, Stats */}
             <div className="space-y-6">
-              {/* Instructions */}
               <div className="bg-[#1a1a2e] p-6 rounded-xl shadow-lg border border-[#2d2d44]">
-                <h2 className="text-xl font-semibold mb-4 text-white">
-                  Comment utiliser ce QR code ?
-                </h2>
+                <h2 className="text-xl font-semibold mb-4 text-white">Comment utiliser ce QR code ?</h2>
                 <div className="space-y-4">
                   {[
                     "Imprimez l'affiche ou le QR code – Placez-le sur vos tables, comptoir, ou vitrine",
@@ -397,7 +457,6 @@ export default function QRCodePage() {
                 </div>
               </div>
 
-              {/* Direct URL */}
               <div className="bg-[#1a1a2e] p-6 rounded-xl shadow-lg border border-[#2d2d44]">
                 <h2 className="text-lg font-semibold mb-3 text-white">Lien direct</h2>
                 <div className="flex items-center space-x-2 mb-6">
