@@ -158,7 +158,6 @@ export default function LoyaltyProgramPage() {
   };
 
 const handleDeleteReward = async (id: string) => {
-  // 👇 This is the confirmation dialog
   if (!confirm("Supprimer cette récompense ?")) return;
 
   setSaving(true);
@@ -167,11 +166,35 @@ const handleDeleteReward = async (id: string) => {
     const data = await res.json();
 
     if (res.ok) {
-      // Remove from UI only if deletion succeeded on the server
       setRewards(rewards.filter((r) => r.id !== id));
       toast?.success("Récompense supprimée");
+
+    } else if (res.status === 409) {
+      // Reward has been redeemed — offer to deactivate instead
+      const deactivate = confirm(
+        "Cette récompense a déjà été utilisée par des clients et ne peut pas être supprimée.\n\n" +
+        "Voulez-vous la désactiver à la place ? Elle n'apparaîtra plus pour les nouveaux clients."
+      );
+      if (deactivate) {
+        const reward = rewards.find((r) => r.id === id);
+        if (!reward) return;
+
+        const patchRes = await fetch(`/api/rewards/${id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...reward, isActive: false }),
+        });
+
+        if (patchRes.ok) {
+          const updated = await patchRes.json();
+          setRewards(rewards.map((r) => (r.id === id ? updated : r)));
+          toast?.success("Récompense désactivée");
+        } else {
+          toast?.error("Échec de la désactivation");
+        }
+      }
+
     } else {
-      // Show the exact error from the backend
       toast?.error(data.error || "Échec de la suppression");
     }
   } catch (error) {
