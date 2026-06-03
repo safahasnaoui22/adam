@@ -11,39 +11,15 @@ export default function QRCodePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [restaurantUrl, setRestaurantUrl] = useState("");
-  const [copied, setCopied] = useState(false);
-
-  // Restaurant information for the flyer
   const [restaurantName, setRestaurantName] = useState("");
-  const [restaurantLogo, setRestaurantLogo] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   // Reference to the flyer element for exporting
   const flyerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     generateQRCode();
-    fetchRestaurantInfo();
   }, []);
-
-  // Fetch restaurant details (name and logo)
-  const fetchRestaurantInfo = async () => {
-    try {
-      const res = await fetch("/api/restaurant/info");
-      const data = await res.json();
-      if (res.ok) {
-        setRestaurantName(data.name || "Mon Restaurant");
-        setRestaurantLogo(data.logo || null);
-      } else {
-        // Fallback values if endpoint fails
-        setRestaurantName("Mon Restaurant");
-        setRestaurantLogo(null);
-      }
-    } catch (error) {
-      console.error("Failed to fetch restaurant info:", error);
-      setRestaurantName("Mon Restaurant");
-      setRestaurantLogo(null);
-    }
-  };
 
   const generateQRCode = async () => {
     try {
@@ -53,6 +29,7 @@ export default function QRCodePage() {
       if (res.ok) {
         setQrCode(data.qrCode);
         setRestaurantUrl(data.url);
+        setRestaurantName(data.restaurantName || "Mon Restaurant");
       } else {
         setError(data.error);
       }
@@ -242,41 +219,29 @@ export default function QRCodePage() {
                 <div className="h-2 bg-gradient-to-r from-[#fe5502] to-[#ff8c42]"></div>
 
                 <div className="p-6 text-center">
-                  {/* Restaurant Logo */}
+                  {/* Restaurant Logo Placeholder */}
                   <div className="flex justify-center mb-4">
-                    {restaurantLogo ? (
-                      <div className="w-24 h-24 rounded-full bg-gray-100 p-1 shadow-md overflow-hidden">
-                        <Image
-                          src={restaurantLogo}
-                          alt={restaurantName}
-                          width={96}
-                          height={96}
-                          className="rounded-full object-cover w-full h-full"
+                    <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#fe5502]/10 to-[#fe5502]/20 flex items-center justify-center shadow-md">
+                      <svg
+                        className="w-12 h-12 text-[#fe5502]"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={1.5}
+                          d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
                         />
-                      </div>
-                    ) : (
-                      <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#fe5502]/10 to-[#fe5502]/20 flex items-center justify-center shadow-md">
-                        <svg
-                          className="w-12 h-12 text-[#fe5502]"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={1.5}
-                            d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
-                          />
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={1.5}
-                            d="M9 22V12h6v10"
-                          />
-                        </svg>
-                      </div>
-                    )}
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={1.5}
+                          d="M9 22V12h6v10"
+                        />
+                      </svg>
+                    </div>
                   </div>
 
                   {/* Restaurant Name */}
