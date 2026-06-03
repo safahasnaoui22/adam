@@ -1,10 +1,42 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
+
+// Professional icon components (Feather/Lucide style)
+const DownloadIcon = () => (
+  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+  </svg>
+);
+
+const PdfIcon = () => (
+  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v6h6" />
+  </svg>
+);
+
+const PrintIcon = () => (
+  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+  </svg>
+);
+
+const CopyIcon = () => (
+  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+  </svg>
+);
+
+const StoreIcon = () => (
+  <svg className="w-12 h-12 text-[#fe5502]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 22V12h6v10" />
+  </svg>
+);
 
 export default function QRCodePage() {
   const [qrCode, setQrCode] = useState<string | null>(null);
@@ -12,13 +44,14 @@ export default function QRCodePage() {
   const [error, setError] = useState("");
   const [restaurantUrl, setRestaurantUrl] = useState("");
   const [restaurantName, setRestaurantName] = useState("");
+  const [restaurantLogo, setRestaurantLogo] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
-  // Reference to the flyer element for exporting
   const flyerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     generateQRCode();
+    fetchRestaurantInfo();
   }, []);
 
   const generateQRCode = async () => {
@@ -40,21 +73,51 @@ export default function QRCodePage() {
     }
   };
 
+  const fetchRestaurantInfo = async () => {
+    try {
+      const res = await fetch("/api/restaurant/info");
+      const data = await res.json();
+      if (res.ok && data.logo) {
+        setRestaurantLogo(data.logo);
+      }
+    } catch (error) {
+      console.error("Failed to fetch restaurant info:", error);
+    }
+  };
+
   const handleCopyUrl = () => {
     navigator.clipboard.writeText(restaurantUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Export flyer as PNG
+  // Helper to wait for images to load
+  const waitForImages = (element: HTMLElement): Promise<void> => {
+    const images = Array.from(element.querySelectorAll("img"));
+    const promises = images.map(
+      (img) =>
+        new Promise<void>((resolve) => {
+          if (img.complete) resolve();
+          else {
+            img.onload = () => resolve();
+            img.onerror = () => resolve();
+          }
+        })
+    );
+    return Promise.all(promises).then(() => {});
+  };
+
   const downloadPosterAsPNG = async () => {
     if (!flyerRef.current) return;
     try {
+      setLoading(true);
+      await waitForImages(flyerRef.current);
       const canvas = await html2canvas(flyerRef.current, {
         scale: 3,
         backgroundColor: "#ffffff",
         logging: false,
         useCORS: true,
+        allowTaint: false,
       });
       const link = document.createElement("a");
       link.download = `affiche-${restaurantName.replace(/\s/g, "-")}.png`;
@@ -62,19 +125,23 @@ export default function QRCodePage() {
       link.click();
     } catch (err) {
       console.error("Error generating PNG:", err);
-      setError("Impossible de générer l'image");
+      setError("Impossible de générer l'image. Réessayez.");
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Export flyer as PDF
   const downloadPosterAsPDF = async () => {
     if (!flyerRef.current) return;
     try {
+      setLoading(true);
+      await waitForImages(flyerRef.current);
       const canvas = await html2canvas(flyerRef.current, {
         scale: 3,
         backgroundColor: "#ffffff",
         logging: false,
         useCORS: true,
+        allowTaint: false,
       });
       const imgData = canvas.toDataURL("image/png");
       const pdf = new jsPDF({
@@ -82,7 +149,7 @@ export default function QRCodePage() {
         unit: "mm",
         format: "a4",
       });
-      const imgWidth = 190; // A4 width in mm with margins
+      const imgWidth = 190;
       const pageHeight = 277;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
       let heightLeft = imgHeight;
@@ -100,11 +167,12 @@ export default function QRCodePage() {
       pdf.save(`affiche-${restaurantName.replace(/\s/g, "-")}.pdf`);
     } catch (err) {
       console.error("Error generating PDF:", err);
-      setError("Impossible de générer le PDF");
+      setError("Impossible de générer le PDF. Réessayez.");
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Print the flyer (opens print dialog with optimized styling)
   const printPoster = () => {
     if (!flyerRef.current) return;
     const printWindow = window.open("", "_blank");
@@ -114,12 +182,9 @@ export default function QRCodePage() {
     }
 
     const flyerHtml = flyerRef.current.cloneNode(true) as HTMLElement;
-    // Ensure all images are absolute URLs for print
     const images = flyerHtml.querySelectorAll("img");
     images.forEach((img) => {
-      if (img.src) {
-        img.setAttribute("src", img.src);
-      }
+      if (img.src) img.setAttribute("src", img.src);
     });
 
     const styles = document.querySelectorAll("link[rel='stylesheet'], style");
@@ -158,7 +223,7 @@ export default function QRCodePage() {
               display: none;
             }
             .flyer-card {
-              box-shadow: none;
+              box-shadow: none !important;
               margin: 0;
               border: 1px solid #e2e8f0;
             }
@@ -180,7 +245,7 @@ export default function QRCodePage() {
     printWindow.document.close();
   };
 
-  if (loading) {
+  if (loading && !qrCode) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
@@ -194,9 +259,7 @@ export default function QRCodePage() {
   return (
     <div className="min-h-screen py-8 px-4" style={{ background: "#2e283d" }}>
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl font-bold text-white mb-2">
-          QR Code de votre restaurant
-        </h1>
+        <h1 className="text-3xl font-bold text-white mb-2">QR Code de votre restaurant</h1>
         <p className="text-gray-300 mb-8">
           Vos clients scannent ce code pour accéder à leur carte de fidélité
         </p>
@@ -209,47 +272,39 @@ export default function QRCodePage() {
 
         {qrCode && (
           <div className="grid md:grid-cols-2 gap-8">
-            {/* Left side - Modern Flyer / Affiche */}
-            <div className="flex justify-center">
+            {/* Left column: Flyer + download buttons */}
+            <div className="space-y-6">
+              {/* Modern Flyer */}
               <div
                 ref={flyerRef}
-                className="flyer-card w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden transition-all duration-300 hover:shadow-xl"
+                className="flyer-card w-full max-w-md mx-auto bg-white rounded-2xl shadow-2xl overflow-hidden transition-all duration-300"
               >
-                {/* Top colored accent bar */}
+                {/* Top accent bar */}
                 <div className="h-2 bg-gradient-to-r from-[#fe5502] to-[#ff8c42]"></div>
 
                 <div className="p-6 text-center">
-                  {/* Restaurant Logo Placeholder */}
+                  {/* Logo */}
                   <div className="flex justify-center mb-4">
-                    <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#fe5502]/10 to-[#fe5502]/20 flex items-center justify-center shadow-md">
-                      <svg
-                        className="w-12 h-12 text-[#fe5502]"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={1.5}
-                          d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
+                    {restaurantLogo ? (
+                      <div className="w-24 h-24 rounded-full bg-gray-50 p-1 shadow-md overflow-hidden">
+                        <img
+                          src={restaurantLogo}
+                          alt={restaurantName}
+                          className="rounded-full object-cover w-full h-full"
+                          crossOrigin="anonymous"
                         />
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={1.5}
-                          d="M9 22V12h6v10"
-                        />
-                      </svg>
-                    </div>
+                      </div>
+                    ) : (
+                      <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#fe5502]/10 to-[#fe5502]/20 flex items-center justify-center shadow-md">
+                        <StoreIcon />
+                      </div>
+                    )}
                   </div>
 
-                  {/* Restaurant Name */}
-                  <h2 className="text-2xl font-bold text-gray-800 mb-2">
-                    {restaurantName}
-                  </h2>
+                  {/* Restaurant name */}
+                  <h2 className="text-2xl font-bold text-gray-800 mb-2">{restaurantName}</h2>
 
-                  {/* Elegant divider line */}
+                  {/* Divider */}
                   <div className="flex justify-center mb-4">
                     <div className="w-16 h-0.5 bg-gradient-to-r from-[#fe5502] to-[#ff8c42] rounded-full"></div>
                   </div>
@@ -264,10 +319,10 @@ export default function QRCodePage() {
                     </p>
                   </div>
 
-                  {/* QR Code Image */}
+                  {/* QR Code - using regular img for reliable export */}
                   <div className="flex justify-center mb-4">
                     <div className="bg-white p-4 rounded-xl shadow-lg border border-gray-100">
-                      <Image
+                      <img
                         src={qrCode}
                         alt="QR Code"
                         width={200}
@@ -277,198 +332,74 @@ export default function QRCodePage() {
                     </div>
                   </div>
 
-                  {/* Call to action below QR */}
+                  {/* Call to action */}
                   <div className="mt-2 mb-4">
                     <span className="inline-block bg-[#fe5502]/10 text-[#fe5502] font-bold px-4 py-2 rounded-full text-sm tracking-wide">
                       SCANNEZ & CUMULEZ DES POINTS
                     </span>
                   </div>
 
-                  {/* Small decorative footer */}
                   <div className="text-xs text-gray-400 mt-4">
                     Programme de fidélité {restaurantName}
                   </div>
                 </div>
               </div>
+
+              {/* Download buttons - directly under flyer */}
+              <div className="flex flex-wrap gap-3 justify-center">
+                <button
+                  onClick={downloadPosterAsPNG}
+                  disabled={loading}
+                  className="flex-1 min-w-[100px] px-4 py-2.5 bg-[#fe5502] text-white rounded-lg hover:bg-[#e0682e] flex items-center justify-center transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50"
+                >
+                  <DownloadIcon />
+                  <span className="ml-2">PNG</span>
+                </button>
+                <button
+                  onClick={downloadPosterAsPDF}
+                  disabled={loading}
+                  className="flex-1 min-w-[100px] px-4 py-2.5 bg-[#1e3a5f] text-white rounded-lg hover:bg-[#2a4a75] flex items-center justify-center transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50"
+                >
+                  <PdfIcon />
+                  <span className="ml-2">PDF</span>
+                </button>
+                <button
+                  onClick={printPoster}
+                  className="flex-1 min-w-[100px] px-4 py-2.5 bg-[#2d2d44] text-gray-200 rounded-lg hover:bg-[#3d3d5c] flex items-center justify-center transition-all duration-200 shadow-md hover:shadow-lg"
+                >
+                  <PrintIcon />
+                  <span className="ml-2">Imprimer</span>
+                </button>
+              </div>
             </div>
 
-            {/* Right side - Actions & Instructions */}
+            {/* Right column: Instructions, URL, Stats */}
             <div className="space-y-6">
-              {/* Download & Print Actions */}
-              <div className="bg-[#1a1a2e] p-6 rounded-xl shadow-lg border border-[#2d2d44]">
-                <h2 className="text-xl font-semibold mb-4 text-white">
-                  Télécharger l'affiche
-                </h2>
-                <div className="flex flex-wrap gap-3">
-                  <button
-                    onClick={downloadPosterAsPNG}
-                    className="flex-1 px-4 py-2.5 bg-[#fe5502] text-white rounded-lg hover:bg-[#e0682e] flex items-center justify-center transition-all duration-200 transform hover:scale-105"
-                  >
-                    <svg
-                      className="w-5 h-5 mr-2"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                      />
-                    </svg>
-                    PNG
-                  </button>
-                  <button
-                    onClick={downloadPosterAsPDF}
-                    className="flex-1 px-4 py-2.5 bg-[#1e3a5f] text-white rounded-lg hover:bg-[#2a4a75] flex items-center justify-center transition-all duration-200 transform hover:scale-105"
-                  >
-                    <svg
-                      className="w-5 h-5 mr-2"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
-                      />
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 3v6h6"
-                      />
-                    </svg>
-                    PDF
-                  </button>
-                  <button
-                    onClick={printPoster}
-                    className="flex-1 px-4 py-2.5 bg-[#2d2d44] text-gray-200 rounded-lg hover:bg-[#3d3d5c] flex items-center justify-center transition-all duration-200 transform hover:scale-105"
-                  >
-                    <svg
-                      className="w-5 h-5 mr-2"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"
-                      />
-                    </svg>
-                    Imprimer
-                  </button>
-                </div>
-              </div>
-
-              {/* Regenerate QR Code Button */}
-              <div className="bg-[#1a1a2e] p-6 rounded-xl shadow-lg border border-[#2d2d44]">
-                <div className="flex items-center justify-between flex-wrap gap-3">
-                  <div>
-                    <h2 className="text-lg font-semibold text-white">
-                      Régénérer le QR code
-                    </h2>
-                    <p className="text-sm text-gray-400">
-                      Créez un nouveau code si nécessaire
-                    </p>
-                  </div>
-                  <button
-                    onClick={generateQRCode}
-                    className="px-5 py-2 border border-[#fe5502] text-[#fe5502] rounded-lg hover:bg-[#fe5502] hover:text-white flex items-center transition-all duration-200"
-                  >
-                    <svg
-                      className="w-5 h-5 mr-2"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                      />
-                    </svg>
-                    Régénérer
-                  </button>
-                </div>
-              </div>
-
               {/* Instructions */}
               <div className="bg-[#1a1a2e] p-6 rounded-xl shadow-lg border border-[#2d2d44]">
                 <h2 className="text-xl font-semibold mb-4 text-white">
                   Comment utiliser ce QR code ?
                 </h2>
-
                 <div className="space-y-4">
-                  <div className="flex items-start space-x-3">
-                    <div className="flex-shrink-0 w-8 h-8 bg-[#ffd9b9] text-[#fe5502] rounded-full flex items-center justify-center font-bold">
-                      1
+                  {[
+                    "Imprimez l'affiche ou le QR code – Placez-le sur vos tables, comptoir, ou vitrine",
+                    "Client scanne le code – Avec l'appareil photo de son téléphone",
+                    "Client entre son nom – Son compte est créé automatiquement",
+                    "Carte de fidélité digitale – Le client accumule des tampons à chaque visite",
+                  ].map((text, idx) => (
+                    <div key={idx} className="flex items-start space-x-3">
+                      <div className="flex-shrink-0 w-6 h-6 bg-[#fe5502]/20 text-[#fe5502] rounded-full flex items-center justify-center text-sm font-bold">
+                        {idx + 1}
+                      </div>
+                      <p className="text-gray-300 text-sm">{text}</p>
                     </div>
-                    <div>
-                      <p className="font-medium text-white">
-                        Imprimez l'affiche ou le QR code
-                      </p>
-                      <p className="text-sm text-gray-400">
-                        Placez-le sur vos tables, comptoir, ou vitrine
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start space-x-3">
-                    <div className="flex-shrink-0 w-8 h-8 bg-[#ffd9b9] text-[#fe5502] rounded-full flex items-center justify-center font-bold">
-                      2
-                    </div>
-                    <div>
-                      <p className="font-medium text-white">
-                        Client scanne le code
-                      </p>
-                      <p className="text-sm text-gray-400">
-                        Avec l'appareil photo de son téléphone
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start space-x-3">
-                    <div className="flex-shrink-0 w-8 h-8 bg-[#ffd9b9] text-[#fe5502] rounded-full flex items-center justify-center font-bold">
-                      3
-                    </div>
-                    <div>
-                      <p className="font-medium text-white">
-                        Client entre son nom
-                      </p>
-                      <p className="text-sm text-gray-400">
-                        Son compte est créé automatiquement
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start space-x-3">
-                    <div className="flex-shrink-0 w-8 h-8 bg-[#ffd9b9] text-[#fe5502] rounded-full flex items-center justify-center font-bold">
-                      4
-                    </div>
-                    <div>
-                      <p className="font-medium text-white">
-                        Carte de fidélité digitale
-                      </p>
-                      <p className="text-sm text-gray-400">
-                        Le client accumule des tampons à chaque visite
-                      </p>
-                    </div>
-                  </div>
+                  ))}
                 </div>
               </div>
 
-              {/* Direct URL & Stats */}
+              {/* Direct URL */}
               <div className="bg-[#1a1a2e] p-6 rounded-xl shadow-lg border border-[#2d2d44]">
-                <h2 className="text-lg font-semibold mb-3 text-white">
-                  Lien direct
-                </h2>
+                <h2 className="text-lg font-semibold mb-3 text-white">Lien direct</h2>
                 <div className="flex items-center space-x-2 mb-6">
                   <input
                     type="text"
@@ -481,35 +412,22 @@ export default function QRCodePage() {
                     className="px-4 py-2 bg-[#2d2d44] text-gray-300 rounded-lg hover:bg-[#fe5502] hover:text-white flex items-center transition-colors"
                   >
                     {copied ? (
-                      <>✓ Copié</>
+                      <span>✓ Copié</span>
                     ) : (
                       <>
-                        <svg
-                          className="w-5 h-5 mr-1"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"
-                          />
-                        </svg>
-                        Copier
+                        <CopyIcon />
+                        <span className="ml-1">Copier</span>
                       </>
                     )}
                   </button>
                 </div>
 
                 <div className="bg-[#ffd9b9] p-5 rounded-xl">
-                  <h3 className="font-semibold text-[#e0682e] mb-2">
-                    📊 Statistiques
+                  <h3 className="font-semibold text-[#e0682e] mb-2 flex items-center gap-2">
+                    <span>📊</span> Statistiques
                   </h3>
                   <p className="text-sm text-[#7f8489] mb-4">
-                    Suivez le nombre de clients qui scannent votre QR code et
-                    rejoignent votre programme.
+                    Suivez le nombre de clients qui scannent votre QR code et rejoignent votre programme.
                   </p>
                   <Link
                     href="/dashboard/clients"
