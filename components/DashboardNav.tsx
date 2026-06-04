@@ -30,15 +30,17 @@ export default function DashboardNav() {
   ];
 
   return (
-    <aside className="w-64 bg-[var(--bg-sidebar)] border-r border-[var(--border)] flex flex-col h-screen sticky top-0">
+    <aside className="sidebar">
       {/* Logo Section */}
-      <div className="p-6 border-b border-[var(--border)]">
-        <span className="text-xl font-bold text-[var(--primary)]">BONOO.</span>
-        <p className="text-xs text-[var(--text-muted)] mt-1">Restaurant Dashboard</p>
+      <div className="sidebar-logo">
+        <span style={{ color: "var(--primary)" }}>BONOO.</span>
+        <p style={{ fontSize: "0.7rem", marginTop: "4px", opacity: 0.7 }}>
+          Restaurant Dashboard
+        </p>
       </div>
 
       {/* Navigation Links */}
-      <nav className="flex-1 p-4 space-y-1">
+      <nav style={{ flex: 1 }}>
         {navigation.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href;
@@ -47,27 +49,24 @@ export default function DashboardNav() {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 ${
-                isActive
-                  ? "bg-[var(--primary)] text-white shadow-md"
-                  : "text-[var(--text-muted)] hover:bg-[var(--bg-card-hover)] hover:text-white"
-              }`}
+              className={`menu-item ${isActive ? "active" : ""}`}
             >
-              <Icon className="w-5 h-5" />
-              <span className="text-sm font-medium">{item.name}</span>
+              <Icon size={20} style={{ marginRight: "12px" }} />
+              <span>{item.name}</span>
             </Link>
           );
         })}
       </nav>
 
       {/* Sign Out Button */}
-      <div className="p-4 border-t border-[var(--border)]">
+      <div style={{ marginTop: "auto" }}>
         <button
           onClick={() => signOut({ callbackUrl: "/" })}
-          className="flex items-center space-x-3 w-full px-4 py-3 rounded-xl text-[var(--text-muted)] hover:bg-[var(--bg-card-hover)] hover:text-white transition-all duration-200"
+          className="menu-item"
+          style={{ width: "100%", textAlign: "left", background: "none" }}
         >
-          <LogOut className="w-5 h-5" />
-          <span className="text-sm font-medium">Sign out</span>
+          <LogOut size={20} style={{ marginRight: "12px" }} />
+          <span>Sign out</span>
         </button>
       </div>
     </aside>
