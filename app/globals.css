@@ -3,6 +3,16 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  
+}
+:root {
+  --bg-app: #2e283d;
+  --bg-card: #3d344d;
+  --bg-card-hover: #483d5a;
+  --border: #4a3d5e;
+  --border-light: rgba(255, 255, 255, 0.1);
+  --radius-lg: 24px;
+  --radius-md: 14px;
 }
 
 @theme inline {

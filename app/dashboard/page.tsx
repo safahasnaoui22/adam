@@ -94,7 +94,7 @@ export default async function DashboardPage() {
     if (accountStatus === "PENDING") {
         return (
             <div className="max-w-2xl mx-auto py-12 px-4">
-                <div className="bg-[#0d1f3c] shadow rounded-lg p-8 text-center border border-[#1e3a5f]">
+                <div className="bg-[var(--bg-card)] shadow rounded-[var(--radius-lg)] p-8 text-center border border-[var(--border)]">
                     <div className="w-20 h-20 bg-[#ffd9b9] rounded-full flex items-center justify-center mx-auto mb-4">
                         <svg className="w-10 h-10 text-[#fe5502]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -114,7 +114,7 @@ export default async function DashboardPage() {
     if (accountStatus === "SUSPENDED") {
         return (
             <div className="max-w-2xl mx-auto py-12 px-4">
-                <div className="bg-[#0d1f3c] shadow rounded-lg p-8 text-center border border-[#1e3a5f]">
+                <div className="bg-[var(--bg-card)] shadow rounded-[var(--radius-lg)] p-8 text-center border border-[var(--border)]">
                     <div className="w-20 h-20 bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
                         <svg className="w-10 h-10 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -165,7 +165,7 @@ export default async function DashboardPage() {
     };
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 bg-[var(--bg-app)] min-h-screen p-6 rounded-tl-[var(--radius-lg)]">
        
             {/* Reward Exchange component - centered */}
             <div className="flex justify-center">
@@ -174,122 +174,122 @@ export default async function DashboardPage() {
                 </div>
             </div>
 
-     
-          {/* Four stat cards with animated border and 3D effect */}
-<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-  {/* Clients Inscrits */}
-  <div className="group relative bg-[#0d1f3c] rounded-xl border border-[#1e3a5f] overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-orange-500/20 hover:border-orange-500/50">
-    <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
-    <div className="relative p-5 z-10">
-      <div className="flex items-center justify-between">
-        <span className="text-3xl">👥</span>
-        <span className="text-xs text-gray-500 bg-gray-800 px-2 py-1 rounded-full">Stats</span>
-      </div>
-      <p className="text-gray-400 text-sm mt-3">Clients Inscrits</p>
-      <p className="text-3xl font-bold text-white mt-1">{stats.totalCustomers}</p>
-    </div>
-  </div>
+            {/* Four stat cards with animated border and 3D effect */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {/* Clients Inscrits */}
+                <div className="group relative bg-[var(--bg-card)] rounded-[var(--radius-md)] border border-[var(--border)] overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-orange-500/20 hover:border-orange-500/50">
+                    <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+                    <div className="relative p-5 z-10">
+                        <div className="flex items-center justify-between">
+                            <span className="text-3xl">👥</span>
+                            <span className="text-xs text-gray-500 bg-gray-800 px-2 py-1 rounded-full">Stats</span>
+                        </div>
+                        <p className="text-gray-400 text-sm mt-3">Clients Inscrits</p>
+                        <p className="text-3xl font-bold text-white mt-1">{stats.totalCustomers}</p>
+                    </div>
+                </div>
 
-  {/* Stars distribués */}
-  <div className="group relative bg-[#0d1f3c] rounded-xl border border-[#1e3a5f] overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-yellow-500/20 hover:border-yellow-500/50">
-    <div className="absolute inset-0 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none">
-    </div>
-    <div className="relative p-5 z-10">
-      <div className="flex items-center justify-between">
-        <span className="text-3xl">🌟</span>
-        <span className="text-xs text-gray-500 bg-gray-800 px-2 py-1 rounded-full">Stars</span>
-      </div>
-      <p className="text-gray-400 text-sm mt-3">Stars distribués</p>
-      <p className="text-3xl font-bold text-white mt-1">{stats.totalPointsEarned}⭐</p>
-    </div>
-  </div>
+                {/* Stars distribués */}
+                <div className="group relative bg-[var(--bg-card)] rounded-[var(--radius-md)] border border-[var(--border)] overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-yellow-500/20 hover:border-yellow-500/50">
+                    <div className="absolute inset-0 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none">
+                    </div>
+                    <div className="relative p-5 z-10">
+                        <div className="flex items-center justify-between">
+                            <span className="text-3xl">🌟</span>
+                            <span className="text-xs text-gray-500 bg-gray-800 px-2 py-1 rounded-full">Stars</span>
+                        </div>
+                        <p className="text-gray-400 text-sm mt-3">Stars distribués</p>
+                        <p className="text-3xl font-bold text-white mt-1">{stats.totalPointsEarned}⭐</p>
+                    </div>
+                </div>
 
-  {/* Points Consommés */}
-  <div className="group relative bg-[#0d1f3c] rounded-xl border border-[#1e3a5f] overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-red-500/20 hover:border-red-500/50">
-    <div className="absolute inset-0 bg-gradient-to-r from-red-500/20 to-pink-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
-    <div className="relative p-5 z-10">
-      <div className="flex items-center justify-between">
-        <span className="text-3xl">🔥</span>
-        <span className="text-xs text-gray-500 bg-gray-800 px-2 py-1 rounded-full">Dépenses</span>
-      </div>
-      <p className="text-gray-400 text-sm mt-3">Points Consommés</p>
-      <p className="text-3xl font-bold text-white mt-1">{stats.totalPointsConsumed}⭐</p>
-    </div>
-  </div>
+                {/* Points Consommés */}
+                <div className="group relative bg-[var(--bg-card)] rounded-[var(--radius-md)] border border-[var(--border)] overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-red-500/20 hover:border-red-500/50">
+                    <div className="absolute inset-0 bg-gradient-to-r from-red-500/20 to-pink-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+                    <div className="relative p-5 z-10">
+                        <div className="flex items-center justify-between">
+                            <span className="text-3xl">🔥</span>
+                            <span className="text-xs text-gray-500 bg-gray-800 px-2 py-1 rounded-full">Dépenses</span>
+                        </div>
+                        <p className="text-gray-400 text-sm mt-3">Points Consommés</p>
+                        <p className="text-3xl font-bold text-white mt-1">{stats.totalPointsConsumed}⭐</p>
+                    </div>
+                </div>
 
-  {/* Taux d'Échange */}
-  <div className="group relative bg-[#0d1f3c] rounded-xl border border-[#1e3a5f] overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-green-500/20 hover:border-green-500/50">
-    <div className="absolute inset-0 bg-gradient-to-r from-green-500/20 to-emerald-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
-    <div className="relative p-5 z-10">
-      <div className="flex items-center justify-between">
-        <span className="text-3xl">🔄</span>
-        <span className="text-xs text-gray-500 bg-gray-800 px-2 py-1 rounded-full">Taux</span>
-      </div>
-      <p className="text-gray-400 text-sm mt-3">Taux d'Échange</p>
-      <p className="text-3xl font-bold text-white mt-1">{stats.exchangeRate}%</p>
-    </div>
-  </div>
-</div>
-            {/* Performance de fidélité block (static) */}
-          {/* Performance de fidélité block (animated) */}
-<div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-green-900/40 to-emerald-900/20 border border-green-500/30 shadow-lg hover:shadow-green-500/20 transition-all duration-300">
-  {/* Animated gradient overlay (shimmer) */}
-  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-green-500/10 to-transparent animate-shimmer"></div>
-  
-  <div className="relative p-6 z-10">
-    <div className="flex justify-between items-start flex-wrap gap-4">
-      <div className="flex items-center gap-2">
-        <div className="p-2 bg-green-500/20 rounded-lg animate-pulse">
-          <svg className="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-          </svg>
-        </div>
-        <div>
-          <h3 className="text-lg font-semibold text-white">Performance de fidélité cette période</h3>
-          <p className="text-sm text-gray-400">30 derniers jours</p>
-        </div>
-      </div>
-      <div className="text-right">
-        <p className="text-2xl font-bold text-green-400 animate-pulse">+0 DT</p>
-        <p className="text-xs text-gray-400">Faible échantillon</p>
-      </div>
-    </div>
+                {/* Taux d'Échange */}
+                <div className="group relative bg-[var(--bg-card)] rounded-[var(--radius-md)] border border-[var(--border)] overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-green-500/20 hover:border-green-500/50">
+                    <div className="absolute inset-0 bg-gradient-to-r from-green-500/20 to-emerald-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+                    <div className="relative p-5 z-10">
+                        <div className="flex items-center justify-between">
+                            <span className="text-3xl">🔄</span>
+                            <span className="text-xs text-gray-500 bg-gray-800 px-2 py-1 rounded-full">Taux</span>
+                        </div>
+                        <p className="text-gray-400 text-sm mt-3">Taux d'Échange</p>
+                        <p className="text-3xl font-bold text-white mt-1">{stats.exchangeRate}%</p>
+                    </div>
+                </div>
+            </div>
 
-    <p className="text-sm text-gray-300 mt-2 flex items-center gap-1">
-      <span>💰</span> Revenus supplémentaires grâce à la fidélité
-    </p>
+            {/* Performance de fidélité block (animated) */}
+            <div className="relative overflow-hidden rounded-[var(--radius-lg)] bg-gradient-to-br from-green-900/40 to-emerald-900/20 border border-green-500/30 shadow-lg hover:shadow-green-500/20 transition-all duration-300">
+                {/* Animated gradient overlay (shimmer) */}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-green-500/10 to-transparent animate-shimmer"></div>
+                
+                <div className="relative p-6 z-10">
+                    <div className="flex justify-between items-start flex-wrap gap-4">
+                        <div className="flex items-center gap-2">
+                            <div className="p-2 bg-green-500/20 rounded-lg animate-pulse">
+                                <svg className="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-semibold text-white">Performance de fidélité cette période</h3>
+                                <p className="text-sm text-gray-400">30 derniers jours</p>
+                            </div>
+                        </div>
+                        <div className="text-right">
+                            <p className="text-2xl font-bold text-green-400 animate-pulse">+0 DT</p>
+                            <p className="text-xs text-gray-400">Faible échantillon</p>
+                        </div>
+                    </div>
 
-    <div className="mt-4 grid grid-cols-2 gap-4">
-      <div className="bg-white/5 rounded-lg p-3 backdrop-blur-sm transition-transform hover:scale-105">
-        <p className="text-xs text-gray-400">Basé sur 10.00 DT/visite</p>
-        <p className="text-2xl font-bold text-white mt-1">0</p>
-        <p className="text-xs text-gray-400">Clients récurrents</p>
-      </div>
-      <div className="bg-white/5 rounded-lg p-3 backdrop-blur-sm transition-transform hover:scale-105">
-        <p className="text-xs text-gray-400">Visites supplémentaires</p>
-        <p className="text-2xl font-bold text-green-400 mt-1">0</p>
-        <p className="text-xs text-gray-400">+0% vs période précédente</p>
-      </div>
-    </div>
+                    <p className="text-sm text-gray-300 mt-2 flex items-center gap-1">
+                        <span>💰</span> Revenus supplémentaires grâce à la fidélité
+                    </p>
 
-    <div className="mt-5 pt-3 border-t border-green-500/20">
-      <div className="flex justify-between items-center">
-        <p className="text-sm text-gray-400 flex items-center gap-1">
-          <span>📊</span> Activité tampons vs. 30 jours précédents
-        </p>
-        <span className="text-xs text-gray-500 bg-gray-800 px-2 py-1 rounded-full">Statique</span>
-      </div>
-      <div className="flex items-center gap-2 mt-2">
-        <div className="flex-1 h-2 bg-gray-700 rounded-full overflow-hidden">
-          <div className="w-1/3 h-full bg-gradient-to-r from-green-500 to-emerald-400 rounded-full animate-pulse"></div>
-        </div>
-        <span className="text-xs text-gray-400">+0%</span>
-      </div>
-    </div>
-  </div>
-</div>
-     {/* Status Banner */}
-            <div className="bg-[#0d1f3c] shadow sm:rounded-lg border border-[#1e3a5f]">
+                    <div className="mt-4 grid grid-cols-2 gap-4">
+                        <div className="bg-white/5 rounded-lg p-3 backdrop-blur-sm transition-transform hover:scale-105">
+                            <p className="text-xs text-gray-400">Basé sur 10.00 DT/visite</p>
+                            <p className="text-2xl font-bold text-white mt-1">0</p>
+                            <p className="text-xs text-gray-400">Clients récurrents</p>
+                        </div>
+                        <div className="bg-white/5 rounded-lg p-3 backdrop-blur-sm transition-transform hover:scale-105">
+                            <p className="text-xs text-gray-400">Visites supplémentaires</p>
+                            <p className="text-2xl font-bold text-green-400 mt-1">0</p>
+                            <p className="text-xs text-gray-400">+0% vs période précédente</p>
+                        </div>
+                    </div>
+
+                    <div className="mt-5 pt-3 border-t border-green-500/20">
+                        <div className="flex justify-between items-center">
+                            <p className="text-sm text-gray-400 flex items-center gap-1">
+                                <span>📊</span> Activité tampons vs. 30 jours précédents
+                            </p>
+                            <span className="text-xs text-gray-500 bg-gray-800 px-2 py-1 rounded-full">Statique</span>
+                        </div>
+                        <div className="flex items-center gap-2 mt-2">
+                            <div className="flex-1 h-2 bg-gray-700 rounded-full overflow-hidden">
+                                <div className="w-1/3 h-full bg-gradient-to-r from-green-500 to-emerald-400 rounded-full animate-pulse"></div>
+                            </div>
+                            <span className="text-xs text-gray-400">+0%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Status Banner */}
+            <div className="bg-[var(--bg-card)] shadow rounded-[var(--radius-md)] border border-[var(--border)]">
                 <div className="px-4 py-5 sm:p-6">
                     <div className="flex items-center justify-between flex-wrap gap-4">
                         <div>
@@ -309,7 +309,7 @@ export default async function DashboardPage() {
             </div>
 
             {/* Welcome Header with Progress */}
-            <div className="bg-[#0d1f3c] shadow sm:rounded-lg border border-[#1e3a5f]">
+            <div className="bg-[var(--bg-card)] shadow rounded-[var(--radius-md)] border border-[var(--border)]">
                 <div className="px-4 py-5 sm:p-6">
                     <h1 className="text-2xl font-bold text-white">Bienvenue sur votre tableau de bord de fidélité</h1>
                     <p className="mt-1 text-sm text-gray-400">Démarrer avec Adam</p>
@@ -328,7 +328,7 @@ export default async function DashboardPage() {
             {/* Setup Steps Grid */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 {/* Step 1 */}
-                <div className={`bg-[#0d1f3c] shadow sm:rounded-lg border border-[#1e3a5f] ${steps[0] ? 'border-l-4 border-l-[#fe5502]' : ''}`}>
+                <div className={`bg-[var(--bg-card)] shadow rounded-[var(--radius-md)] border border-[var(--border)] ${steps[0] ? 'border-l-4 border-l-[#fe5502]' : ''}`}>
                     <div className="px-4 py-5 sm:p-6">
                         <div className="flex items-center justify-between">
                             <h3 className="text-lg font-medium text-white">1. Personnalisez votre carte</h3>
@@ -344,7 +344,7 @@ export default async function DashboardPage() {
                     </div>
                 </div>
                 {/* Step 2 */}
-                <div className={`bg-[#0d1f3c] shadow sm:rounded-lg border border-[#1e3a5f] ${steps[3] ? 'border-l-4 border-l-[#fe5502]' : ''}`}>
+                <div className={`bg-[var(--bg-card)] shadow rounded-[var(--radius-md)] border border-[var(--border)] ${steps[3] ? 'border-l-4 border-l-[#fe5502]' : ''}`}>
                     <div className="px-4 py-5 sm:p-6">
                         <div className="flex items-center justify-between">
                             <h3 className="text-lg font-medium text-white">2. Configurez le programme</h3>
@@ -360,7 +360,7 @@ export default async function DashboardPage() {
                     </div>
                 </div>
                 {/* Step 3 */}
-                <div className="bg-[#0d1f3c] shadow sm:rounded-lg border-2 border-[#ffd9b9] hover:border-[#fe5502] transition">
+                <div className="bg-[var(--bg-card)] shadow rounded-[var(--radius-md)] border-2 border-[#ffd9b9] hover:border-[#fe5502] transition">
                     <div className="px-4 py-5 sm:p-6">
                         <div className="flex items-center justify-between mb-4">
                             <h3 className="text-lg font-medium text-white">3. Partagez votre QR code</h3>
@@ -385,7 +385,7 @@ export default async function DashboardPage() {
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                                 </svg>
                             </Link>
-                            <Link href={`/${restaurant.urlSlug}`} target="_blank" className="flex-inline items-center px-4 py-2 border border-[#1e3a5f] text-sm font-medium rounded-md text-white bg-[#0d1f3c] hover:bg-[#1e3a5f] transition-colors">
+                            <Link href={`/${restaurant.urlSlug}`} target="_blank" className="flex-inline items-center px-4 py-2 border border-[var(--border)] text-sm font-medium rounded-md text-white bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] transition-colors">
                                 Aperçu
                             </Link>
                         </div>
@@ -395,11 +395,11 @@ export default async function DashboardPage() {
                     </div>
                 </div>
                 {/* Step 4 */}
-                <div className="bg-[#0d1f3c] shadow sm:rounded-lg border border-[#1e3a5f]">
+                <div className="bg-[var(--bg-card)] shadow rounded-[var(--radius-md)] border border-[var(--border)]">
                     <div className="px-4 py-5 sm:p-6">
                         <h3 className="text-lg font-medium text-white">Clients récents</h3>
                         {restaurant.customers.length > 0 ? (
-                            <ul className="mt-3 divide-y divide-[#1e3a5f]">
+                            <ul className="mt-3 divide-y divide-[var(--border)]">
                                 {restaurant.customers.map((customer) => (
                                     <li key={customer.id} className="py-2">
                                         <p className="text-sm font-medium text-white">{customer.name}</p>
@@ -413,7 +413,6 @@ export default async function DashboardPage() {
                     </div>
                 </div>
             </div>
-
         </div>
     );
 }
