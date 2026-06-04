@@ -391,8 +391,8 @@ export default function QRCodePage() {
                   <Image
                     src="/images/box.png"
                     alt="Gift Box"
-                    width={360}
-                    height={360}
+                    width={340}
+                    height={340}
                     style={{
                       position: "relative",
                       width: "100%",
@@ -433,11 +433,11 @@ export default function QRCodePage() {
                       display: "inline-block",
                       backgroundColor: "rgba(255,255,255,0.2)",
                       color: "#ffffff",
-                      fontWeight: "800",
+                      fontWeight: "600",
                       padding: "0.3rem 1rem",
                       borderRadius: "9999px",
-                      fontSize: "0.7rem",
-                      letterSpacing: "0.08em",
+                      fontSize: "0.6rem",
+                     
                       border: "1.5px solid rgba(255,255,255,0.4)",
                       textShadow: "0 1px 4px rgba(0,0,0,0.15)",
                     }}
