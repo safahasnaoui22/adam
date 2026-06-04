@@ -5,7 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import { QRCodeSVG } from "qrcode.react";
 import { getPatternStyle } from "@/lib/patterns";
-
+import SpinWheel from "@/components/SpinWheel";
 // ── Icon components ───────────────────────────────────────────────────
 const IconGoogleMaps = ({ size = 18 }: { size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
@@ -968,6 +968,24 @@ export default function ClientDashboard() {
           </div>
         </div>
 
+
+{/* ── Spin & Win ── */}
+<div className="px-4 py-5 border-b" style={{ borderColor: `${D.primary}20` }}>
+  <div className="flex items-center gap-2 mb-4">
+    <span style={{ fontSize: 16 }}>🎰</span>
+    <h3 className="text-base font-semibold" style={{ color: D.text }}>Spin & Win</h3>
+  </div>
+  <SpinWheel
+    primaryColor={D.primary}
+    textColor={D.text}
+    cardBg={D.cardBg}
+    clientId={client.customerId}
+    restaurantId={restaurant.id}
+    onPointsEarned={(pts, newTotal) => {
+      setClient((prev: any) => ({ ...prev, points: newTotal }));
+    }}
+  />
+</div>
         {/* ── Add to home screen ── */}
         <div className="px-4 py-5 border-t" style={{ borderColor: `${D.primary}20`, backgroundColor: D.background }}>
           <button
