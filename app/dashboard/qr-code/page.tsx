@@ -284,20 +284,20 @@ export default function QRCodePage() {
                   background: "linear-gradient(160deg, #ff9a00 0%, #ff7200 60%, #ff5500 100%)",
                 }}
               >
-                {/* Top section: logo + name */}
+                {/* Top section: logo + name (slightly smaller) */}
                 <div
                   style={{
-                    padding: "1.5rem 1.5rem 1rem",
+                    padding: "1.2rem 1.5rem 0.8rem",
                     textAlign: "center",
                   }}
                 >
-                  {/* Logo */}
-                  <div style={{ display: "flex", justifyContent: "center", marginBottom: "0.75rem" }}>
+                  {/* Logo container smaller: 70px instead of 88px */}
+                  <div style={{ display: "flex", justifyContent: "center", marginBottom: "0.5rem" }}>
                     {restaurantLogo ? (
                       <div
                         style={{
-                          width: "88px",
-                          height: "88px",
+                          width: "70px",
+                          height: "70px",
                           borderRadius: "50%",
                           backgroundColor: "rgba(255,255,255,0.9)",
                           padding: "4px",
@@ -320,8 +320,8 @@ export default function QRCodePage() {
                     ) : (
                       <div
                         style={{
-                          width: "88px",
-                          height: "88px",
+                          width: "70px",
+                          height: "70px",
                           borderRadius: "50%",
                           background: "rgba(255,255,255,0.25)",
                           display: "flex",
@@ -336,13 +336,13 @@ export default function QRCodePage() {
                     )}
                   </div>
 
-                  {/* Restaurant name */}
+                  {/* Restaurant name smaller: 1.3rem instead of 1.6rem */}
                   <h2
                     style={{
-                      fontSize: "1.6rem",
+                      fontSize: "1.3rem",
                       fontWeight: "800",
                       color: "#ffffff",
-                      marginBottom: "0.25rem",
+                      marginBottom: "0.2rem",
                       textShadow: "0 2px 8px rgba(0,0,0,0.2)",
                     }}
                   >
@@ -353,7 +353,7 @@ export default function QRCodePage() {
                   <div style={{ display: "flex", justifyContent: "center", marginBottom: "0.5rem" }}>
                     <div
                       style={{
-                        width: "50px",
+                        width: "40px",
                         height: "3px",
                         background: "rgba(255,255,255,0.6)",
                         borderRadius: "9999px",
@@ -362,12 +362,12 @@ export default function QRCodePage() {
                   </div>
                 </div>
 
-                {/* SCAN TO WIN headline */}
-                <div style={{ textAlign: "center", padding: "0 1rem 0.5rem" }}>
+                {/* SCAN TO WIN headline (bigger) */}
+                <div style={{ textAlign: "center", padding: "0 1rem 0.2rem" }}>
                   <span
                     style={{
                       display: "inline-block",
-                      fontSize: "2rem",
+                      fontSize: "2.8rem",
                       fontWeight: "900",
                       color: "#ffffff",
                       letterSpacing: "0.04em",
@@ -378,12 +378,12 @@ export default function QRCodePage() {
                   </span>
                 </div>
 
-                {/* FIXED CONTAINER FOR BOX + QR CODE */}
+                {/* Box container – smaller (360x360) */}
                 <div
                   style={{
                     position: "relative",
-                    width: "420px",
-                    height: "420px",
+                    width: "360px",
+                    height: "360px",
                     margin: "0 auto",
                   }}
                 >
@@ -391,8 +391,8 @@ export default function QRCodePage() {
                   <Image
                     src="/images/box.png"
                     alt="Gift Box"
-                    width={420}
-                    height={420}
+                    width={360}
+                    height={360}
                     style={{
                       position: "relative",
                       width: "100%",
@@ -400,33 +400,33 @@ export default function QRCodePage() {
                       objectFit: "contain",
                       zIndex: 1,
                     }}
-                    unoptimized // helps html2canvas
+                    unoptimized
                   />
 
-                  {/* QR Code – perfectly centered without transform */}
+                  {/* QR Code – now 150x150, centered with negative margins */}
                   <div
                     style={{
                       position: "absolute",
                       top: "50%",
                       left: "50%",
-                      marginLeft: "-90px",   // half of 180px
-                      marginTop: "-90px",    // half of 180px
-                      width: "180px",
-                      height: "180px",
+                      marginLeft: "-75px",
+                      marginTop: "-75px",
+                      width: "150px",
+                      height: "150px",
                       zIndex: 2,
                     }}
                   >
                     <img
                       src={qrCode}
                       alt="QR Code"
-                      width={180}
-                      height={180}
+                      width={150}
+                      height={150}
                       style={{ width: "100%", height: "100%" }}
                     />
                   </div>
                 </div>
 
-                {/* CTA badge */}
+                {/* CTA badge – smaller */}
                 <div style={{ textAlign: "center", padding: "0.25rem 1rem 1rem" }}>
                   <span
                     style={{
@@ -434,9 +434,9 @@ export default function QRCodePage() {
                       backgroundColor: "rgba(255,255,255,0.2)",
                       color: "#ffffff",
                       fontWeight: "800",
-                      padding: "0.4rem 1.2rem",
+                      padding: "0.3rem 1rem",
                       borderRadius: "9999px",
-                      fontSize: "0.8rem",
+                      fontSize: "0.7rem",
                       letterSpacing: "0.08em",
                       border: "1.5px solid rgba(255,255,255,0.4)",
                       textShadow: "0 1px 4px rgba(0,0,0,0.15)",
@@ -446,17 +446,7 @@ export default function QRCodePage() {
                   </span>
                 </div>
 
-                {/* Footer */}
-                <div
-                  style={{
-                    textAlign: "center",
-                    fontSize: "0.72rem",
-                    color: "rgba(255,255,255,0.6)",
-                    padding: "0 1rem 1rem",
-                  }}
-                >
-                  Programme de fidélité {restaurantName}
-                </div>
+                {/* Footer removed entirely */}
               </div>
 
               {/* Download buttons */}
