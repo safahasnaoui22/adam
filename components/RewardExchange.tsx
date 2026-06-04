@@ -618,7 +618,7 @@ export default function RewardExchange() {
     <div
       style={{
         minHeight: "50vh",
-        background: "#13122a",
+        background: "#2e283d",
         fontFamily: "system-ui, -apple-system, sans-serif",
         display: "flex",
         flexDirection: "column",
@@ -657,10 +657,10 @@ export default function RewardExchange() {
           <button
             onClick={() => setShowAddPoints(true)}
             style={{
-              flex: "1 1 280px",
+              flex: "1 1 300px",
               padding: "2rem 1.5rem",
               borderRadius: "1rem",
-              background: "#fe5502",
+              background: "#F97316",
               border: "none",
               cursor: "pointer",
               display: "flex",
