@@ -411,16 +411,16 @@ export default function QRCodePage() {
                       left: "50%",
                       marginLeft: "-75px",
                       marginTop: "-75px",
-                      width: "150px",
-                      height: "150px",
+                      width: "170px",
+                      height: "170px",
                       zIndex: 2,
                     }}
                   >
                     <img
                       src={qrCode}
                       alt="QR Code"
-                      width={150}
-                      height={150}
+                      width={170}
+                      height={170}
                       style={{ width: "100%", height: "100%" }}
                     />
                   </div>
@@ -440,7 +440,7 @@ export default function QRCodePage() {
                      
                     }}
                   >
-                     scannez &amp; cumulez des points 
+                     SCANNEZ , GAGNEZ DES POINTS  &amp; RECEVEZ DES CADEAUX !
                   </span>
                 </div>
 
