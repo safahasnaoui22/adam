@@ -367,26 +367,7 @@ export default function QRCodePage() {
                     />
                   </div>
 
-                  {/* Catchphrase */}
-                  <p
-                    style={{
-                      color: "rgba(255,255,255,0.92)",
-                      fontWeight: "600",
-                      fontSize: "1rem",
-                      margin: "0 0 0.25rem",
-                    }}
-                  >
-                    Scannez, collectez, gagnez des points.
-                  </p>
-                  <p
-                    style={{
-                      color: "rgba(255,255,255,0.75)",
-                      fontSize: "0.82rem",
-                      margin: 0,
-                    }}
-                  >
-                    Votre carte de fidélité digitale
-                  </p>
+             
                 </div>
 
                 {/* ── SCAN TO WIN headline ── */}
