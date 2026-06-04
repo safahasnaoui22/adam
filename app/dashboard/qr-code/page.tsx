@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
+import Image from "next/image";
 
 // Professional icons (Feather style)
 const DownloadIcon = () => (
@@ -123,49 +124,7 @@ const OpenBoxSVG = () => (
 );
 
 // SVG of the gift box lid (closed lid with bow) — shown above the QR code
-const GiftLidSVG = () => (
-  <svg
-    viewBox="0 0 400 200"
-    xmlns="http://www.w3.org/2000/svg"
-    style={{ width: "100%", display: "block" }}
-  >
-    {/* Lid body */}
-    <rect x="60" y="80" width="280" height="90" rx="8" ry="8" fill="#3d3068" stroke="#2a2050" strokeWidth="1.5" />
-    {/* Lid top face (3D perspective) */}
-    <polygon
-      points="60,80 340,80 310,40 90,40"
-      fill="#4a3a80"
-      stroke="#2a2050"
-      strokeWidth="1.5"
-    />
-    {/* Lid right side */}
-    <polygon
-      points="340,80 310,40 310,130 340,170"
-      fill="#2a2050"
-      stroke="#2a2050"
-      strokeWidth="1"
-    />
-    {/* Ribbon vertical on lid */}
-    <rect x="185" y="40" width="30" height="130" fill="#9896b8" opacity="0.7" />
-    {/* Ribbon horizontal on lid */}
-    <rect x="60" y="98" width="280" height="22" fill="#9896b8" opacity="0.7" />
-    {/* Ribbon on top face */}
-    <polygon points="185,40 215,40 200,80 185,80" fill="#9896b8" opacity="0.8" />
 
-    {/* Bow left loop */}
-    <ellipse cx="160" cy="38" rx="48" ry="22" fill="#7a6ab0" stroke="#2a2050" strokeWidth="1.5" transform="rotate(-20,160,38)" />
-    <ellipse cx="160" cy="38" rx="35" ry="14" fill="#4a3a80" transform="rotate(-20,160,38)" />
-    {/* Bow right loop */}
-    <ellipse cx="240" cy="38" rx="48" ry="22" fill="#7a6ab0" stroke="#2a2050" strokeWidth="1.5" transform="rotate(20,240,38)" />
-    <ellipse cx="240" cy="38" rx="35" ry="14" fill="#4a3a80" transform="rotate(20,240,38)" />
-    {/* Bow center knot */}
-    <ellipse cx="200" cy="38" rx="20" ry="14" fill="#9896b8" stroke="#2a2050" strokeWidth="1" />
-
-    {/* Metallic ribbon sheen */}
-    <rect x="188" y="42" width="8" height="120" fill="white" opacity="0.15" />
-    <rect x="65" y="100" width="270" height="8" fill="white" opacity="0.15" />
-  </svg>
-);
 
 export default function QRCodePage() {
   const [qrCode, setQrCode] = useState<string | null>(null);
@@ -528,10 +487,30 @@ export default function QRCodePage() {
                   </span>
                 </div>
 
-                {/* ── Gift box lid (above QR) ── */}
-                <div style={{ padding: "0 2.5rem", marginBottom: "-8px", position: "relative", zIndex: 2 }}>
-                  <GiftLidSVG />
-                </div>
+               {/* ── Gift box lid (above QR) ── */}
+<div
+  style={{
+    padding: "0 2.5rem",
+    marginBottom: "-8px",
+    position: "relative",
+    zIndex: 2,
+    display: "flex",
+    justifyContent: "center",
+  }}
+>
+  <Image
+    src="/images/box.png"
+    alt="Gift Box Lid"
+    width={320}
+    height={180}
+    priority
+    style={{
+      width: "100%",
+      height: "auto",
+      display: "block",
+    }}
+  />
+</div>
 
                 {/* ── QR code sitting "inside" the open box ── */}
                 <div
