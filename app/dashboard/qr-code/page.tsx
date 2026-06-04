@@ -39,89 +39,7 @@ const StoreIcon = () => (
   </svg>
 );
 
-// SVG of the open gift box (bottom half) — purple/navy matching the PDF
-const OpenBoxSVG = () => (
-  <svg
-    viewBox="0 0 400 220"
-    xmlns="http://www.w3.org/2000/svg"
-    style={{ width: "100%", display: "block" }}
-  >
-    {/* Shadow under the box */}
-    <ellipse cx="200" cy="210" rx="155" ry="12" fill="rgba(0,0,0,0.18)" />
 
-    {/* Left flap (open, pointing down-left) */}
-    <polygon
-      points="50,80 160,120 130,210 20,160"
-      fill="#3d3068"
-      stroke="#2a2050"
-      strokeWidth="1.5"
-    />
-    {/* Left flap inner shadow */}
-    <polygon
-      points="50,80 160,120 150,130 45,88"
-      fill="#2a2050"
-      opacity="0.5"
-    />
-
-    {/* Right flap (open, pointing down-right) */}
-    <polygon
-      points="350,80 240,120 270,210 380,160"
-      fill="#3d3068"
-      stroke="#2a2050"
-      strokeWidth="1.5"
-    />
-    {/* Right flap inner shadow */}
-    <polygon
-      points="350,80 240,120 250,130 355,88"
-      fill="#2a2050"
-      opacity="0.5"
-    />
-
-    {/* Back-left flap (open upward-left) */}
-    <polygon
-      points="50,80 160,120 120,20 10,40"
-      fill="#4a3a80"
-      stroke="#2a2050"
-      strokeWidth="1.5"
-    />
-
-    {/* Back-right flap (open upward-right) */}
-    <polygon
-      points="350,80 240,120 280,20 390,40"
-      fill="#4a3a80"
-      stroke="#2a2050"
-      strokeWidth="1.5"
-    />
-
-    {/* Box bottom / base */}
-    <polygon
-      points="50,80 200,140 350,80 200,20"
-      fill="#4a3a80"
-      stroke="#2a2050"
-      strokeWidth="1.5"
-    />
-
-    {/* Ribbon horizontal strip across base */}
-    <polygon
-      points="50,80 200,140 350,80 200,20"
-      fill="none"
-      stroke="#b0aac8"
-      strokeWidth="3"
-    />
-
-    {/* Ribbon vertical on left flap */}
-    <line x1="105" y1="100" x2="90" y2="195" stroke="#c0bcd8" strokeWidth="5" opacity="0.7" />
-    {/* Ribbon vertical on right flap */}
-    <line x1="295" y1="100" x2="310" y2="195" stroke="#c0bcd8" strokeWidth="5" opacity="0.7" />
-
-    {/* Metallic sheen on base center */}
-    <polygon
-      points="140,80 200,110 260,80 200,50"
-      fill="#5a4a90"
-      opacity="0.6"
-    />
-  </svg>
-);
 
 // SVG of the gift box lid (closed lid with bow) — shown above the QR code
 
@@ -487,76 +405,56 @@ export default function QRCodePage() {
                   </span>
                 </div>
 
-               {/* ── Gift box lid (above QR) ── */}
 <div
   style={{
-    padding: "0 2.5rem",
-    marginBottom: "-8px",
     position: "relative",
-    zIndex: 2,
+    width: "100%",
+    maxWidth: "420px",
+    margin: "0 auto",
     display: "flex",
     justifyContent: "center",
+    alignItems: "center",
   }}
 >
+  {/* QR CODE */}
+  <div
+    style={{
+      position: "absolute",
+      top: "42%",
+      left: "50%",
+      transform: "translate(-50%, -50%)",
+      zIndex: 1,
+    
+    }}
+  >
+    <img
+      src={qrCode}
+      alt="QR Code"
+      width={180}
+      height={180}
+      style={{
+        display: "block",
+        background: "transparent",
+      }}
+    />
+  </div>
+
+  {/* GIFT BOX IMAGE */}
   <Image
     src="/images/box.png"
-    alt="Gift Box Lid"
-    width={320}
-    height={180}
+    alt="Gift Box"
+    width={420}
+    height={420}
     priority
     style={{
       width: "100%",
       height: "auto",
-      display: "block",
+      position: "relative",
+      zIndex: 2,
     }}
   />
 </div>
-
-                {/* ── QR code sitting "inside" the open box ── */}
-                <div
-                  style={{
-                    position: "relative",
-                    margin: "0 auto",
-                    width: "80%",
-                    zIndex: 1,
-                  }}
-                >
-                  {/* Purple box interior background (the inside of the open gift box) */}
-                  <div
-                    style={{
-                      background: "linear-gradient(180deg, #3d3068 0%, #2a2050 100%)",
-                      borderRadius: "12px",
-                      padding: "1rem",
-                      boxShadow: "0 8px 32px rgba(0,0,0,0.35), inset 0 2px 8px rgba(0,0,0,0.2)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    {/* White QR frame */}
-                    <div
-                      style={{
-                        backgroundColor: "#ffffff",
-                        borderRadius: "8px",
-                        padding: "10px",
-                        boxShadow: "0 2px 12px rgba(0,0,0,0.2)",
-                      }}
-                    >
-                      <img
-                        src={qrCode}
-                        alt="QR Code"
-                        width={180}
-                        height={180}
-                        style={{ display: "block" }}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* ── Open box bottom flaps ── */}
-                <div style={{ padding: "0 1.5rem", marginTop: "-6px", position: "relative", zIndex: 0 }}>
-                  <OpenBoxSVG />
-                </div>
+             
 
                 {/* ── CTA badge ── */}
                 <div style={{ textAlign: "center", padding: "0.25rem 1rem 1rem" }}>
