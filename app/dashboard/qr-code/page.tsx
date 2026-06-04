@@ -391,8 +391,8 @@ export default function QRCodePage() {
                   <Image
                     src="/images/box.png"
                     alt="Gift Box"
-                    width={340}
-                    height={340}
+                    width={370}
+                    height={370}
                     style={{
                       position: "relative",
                       width: "100%",
@@ -407,8 +407,8 @@ export default function QRCodePage() {
                   <div
                     style={{
                       position: "absolute",
-                      top: "50%",
-                      left: "50%",
+                      top: "60%",
+                      left: "40%",
                       marginLeft: "-75px",
                       marginTop: "-75px",
                       width: "150px",
@@ -431,18 +431,16 @@ export default function QRCodePage() {
                   <span
                     style={{
                       display: "inline-block",
-                      backgroundColor: "rgba(255,255,255,0.2)",
+                    
                       color: "#ffffff",
-                      fontWeight: "600",
+                   
                       padding: "0.3rem 1rem",
                       borderRadius: "9999px",
-                      fontSize: "0.6rem",
+                      fontSize: "0.7rem",
                      
-                      border: "1.5px solid rgba(255,255,255,0.4)",
-                      textShadow: "0 1px 4px rgba(0,0,0,0.15)",
                     }}
                   >
-                    SCANNEZ &amp; CUMULEZ DES POINTS
+                     scannez &amp; cumulez des points 
                   </span>
                 </div>
 
