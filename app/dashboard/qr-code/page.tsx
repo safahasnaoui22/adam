@@ -407,8 +407,8 @@ export default function QRCodePage() {
                   <div
                     style={{
                       position: "absolute",
-                      top: "60%",
-                      left: "40%",
+                      top: "50%",
+                      left: "50%",
                       marginLeft: "-75px",
                       marginTop: "-75px",
                       width: "150px",
