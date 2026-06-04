@@ -404,16 +404,12 @@ export default function QRCodePage() {
                     SCAN TO WIN
                   </span>
                 </div>
-
 <div
   style={{
     position: "relative",
     width: "100%",
     maxWidth: "420px",
     margin: "0 auto",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
   }}
 >
   {/* QR CODE */}
@@ -423,8 +419,7 @@ export default function QRCodePage() {
       top: "50%",
       left: "50%",
       transform: "translate(-50%, -50%)",
-      zIndex: 1,
-    
+      zIndex: 999,
     }}
   >
     <img
@@ -432,25 +427,18 @@ export default function QRCodePage() {
       alt="QR Code"
       width={180}
       height={180}
-      style={{
-        display: "block",
-        background: "transparent",
-      }}
     />
   </div>
 
-  {/* GIFT BOX IMAGE */}
+  {/* BOX IMAGE */}
   <Image
     src="/images/box.png"
     alt="Gift Box"
     width={420}
     height={420}
-    priority
     style={{
-      width: "100%",
-      height: "auto",
       position: "relative",
-      zIndex: 2,
+      zIndex: 1,
     }}
   />
 </div>
