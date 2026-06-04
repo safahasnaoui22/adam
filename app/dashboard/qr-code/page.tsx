@@ -39,11 +39,6 @@ const StoreIcon = () => (
   </svg>
 );
 
-
-
-// SVG of the gift box lid (closed lid with bow) — shown above the QR code
-
-
 export default function QRCodePage() {
   const [qrCode, setQrCode] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -286,11 +281,10 @@ export default function QRCodePage() {
                 className="flyer-card w-full max-w-md mx-auto rounded-2xl shadow-2xl overflow-hidden"
                 style={{
                   fontFamily: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
-                  /* Orange background matching the PDF */
                   background: "linear-gradient(160deg, #ff9a00 0%, #ff7200 60%, #ff5500 100%)",
                 }}
               >
-                {/* ── Top section: logo + name (white card feel) ── */}
+                {/* Top section: logo + name */}
                 <div
                   style={{
                     padding: "1.5rem 1.5rem 1rem",
@@ -366,11 +360,9 @@ export default function QRCodePage() {
                       }}
                     />
                   </div>
-
-             
                 </div>
 
-                {/* ── SCAN TO WIN headline ── */}
+                {/* SCAN TO WIN headline */}
                 <div style={{ textAlign: "center", padding: "0 1rem 0.5rem" }}>
                   <span
                     style={{
@@ -385,47 +377,56 @@ export default function QRCodePage() {
                     SCAN TO WIN
                   </span>
                 </div>
-<div
-  style={{
-    position: "relative",
-    width: "100%",
-    maxWidth: "420px",
-    margin: "0 auto",
-  }}
->
-  {/* QR CODE */}
-  <div
-    style={{
-      position: "absolute",
-      top: "50%",
-      left: "50%",
-      transform: "translate(-50%, -50%)",
-      zIndex: 999,
-    }}
-  >
-    <img
-      src={qrCode}
-      alt="QR Code"
-      width={180}
-      height={180}
-    />
-  </div>
 
-  {/* BOX IMAGE */}
-  <Image
-    src="/images/box.png"
-    alt="Gift Box"
-    width={420}
-    height={420}
-    style={{
-      position: "relative",
-      zIndex: 1,
-    }}
-  />
-</div>
-             
+                {/* FIXED CONTAINER FOR BOX + QR CODE */}
+                <div
+                  style={{
+                    position: "relative",
+                    width: "420px",
+                    height: "420px",
+                    margin: "0 auto",
+                  }}
+                >
+                  {/* Gift Box Image */}
+                  <Image
+                    src="/images/box.png"
+                    alt="Gift Box"
+                    width={420}
+                    height={420}
+                    style={{
+                      position: "relative",
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "contain",
+                      zIndex: 1,
+                    }}
+                    unoptimized // helps html2canvas
+                  />
 
-                {/* ── CTA badge ── */}
+                  {/* QR Code – perfectly centered without transform */}
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: "50%",
+                      left: "50%",
+                      marginLeft: "-90px",   // half of 180px
+                      marginTop: "-90px",    // half of 180px
+                      width: "180px",
+                      height: "180px",
+                      zIndex: 2,
+                    }}
+                  >
+                    <img
+                      src={qrCode}
+                      alt="QR Code"
+                      width={180}
+                      height={180}
+                      style={{ width: "100%", height: "100%" }}
+                    />
+                  </div>
+                </div>
+
+                {/* CTA badge */}
                 <div style={{ textAlign: "center", padding: "0.25rem 1rem 1rem" }}>
                   <span
                     style={{
@@ -445,7 +446,7 @@ export default function QRCodePage() {
                   </span>
                 </div>
 
-                {/* ── Footer ── */}
+                {/* Footer */}
                 <div
                   style={{
                     textAlign: "center",
@@ -457,7 +458,6 @@ export default function QRCodePage() {
                   Programme de fidélité {restaurantName}
                 </div>
               </div>
-              {/* ─── End Flyer ─── */}
 
               {/* Download buttons */}
               <div className="flex flex-wrap gap-3 justify-center">
