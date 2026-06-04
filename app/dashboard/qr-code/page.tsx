@@ -31,13 +31,6 @@ const CopyIcon = () => (
   </svg>
 );
 
-const StoreIcon = () => (
-  <svg className="w-12 h-12 text-[#fe5502]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 22V12h6v10" />
-  </svg>
-);
-
 export default function QRCodePage() {
   const [qrCode, setQrCode] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -91,7 +84,6 @@ export default function QRCodePage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Wait for all images to load
   const waitForImages = (element: HTMLElement): Promise<void> => {
     const images = Array.from(element.querySelectorAll("img"));
     const promises = images.map(
@@ -114,7 +106,7 @@ export default function QRCodePage() {
       await waitForImages(flyerRef.current);
       const canvas = await html2canvas(flyerRef.current, {
         scale: 3,
-        backgroundColor: "#ffffff",
+        backgroundColor: "#FF8C00",
         logging: false,
         useCORS: true,
         allowTaint: false,
@@ -138,26 +130,20 @@ export default function QRCodePage() {
       await waitForImages(flyerRef.current);
       const canvas = await html2canvas(flyerRef.current, {
         scale: 3,
-        backgroundColor: "#ffffff",
+        backgroundColor: "#FF8C00",
         logging: false,
         useCORS: true,
         allowTaint: false,
       });
       const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF({
-        orientation: "portrait",
-        unit: "mm",
-        format: "a4",
-      });
+      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
       const imgWidth = 190;
       const pageHeight = 277;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
       let heightLeft = imgHeight;
       let position = 10;
-
       pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
       heightLeft -= pageHeight;
-
       while (heightLeft >= 0) {
         position = heightLeft - imgHeight;
         pdf.addPage();
@@ -180,13 +166,7 @@ export default function QRCodePage() {
       setError("Veuillez autoriser les popups pour l'impression");
       return;
     }
-
     const flyerHtml = flyerRef.current.cloneNode(true) as HTMLElement;
-    const images = flyerHtml.querySelectorAll("img");
-    images.forEach((img) => {
-      if (img.src) img.setAttribute("src", img.src);
-    });
-
     const styles = document.querySelectorAll("link[rel='stylesheet'], style");
     let styleHtml = "";
     styles.forEach((style) => {
@@ -197,7 +177,6 @@ export default function QRCodePage() {
         styleHtml += style.outerHTML;
       }
     });
-
     printWindow.document.write(`
       <!DOCTYPE html>
       <html>
@@ -205,40 +184,14 @@ export default function QRCodePage() {
           <title>Affiche - ${restaurantName}</title>
           ${styleHtml}
           <style>
-            body {
-              margin: 0;
-              padding: 20px;
-              display: flex;
-              justify-content: center;
-              align-items: center;
-              min-height: 100vh;
-              background: white;
-              font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-            }
-            .print-container {
-              max-width: 600px;
-              margin: 0 auto;
-            }
-            button, .no-print {
-              display: none;
-            }
-            .flyer-card {
-              box-shadow: none !important;
-              margin: 0;
-              border: 1px solid #e2e8f0;
-            }
+            body { margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: white; }
+            .print-container { max-width: 600px; margin: 0 auto; }
+            button, .no-print { display: none; }
           </style>
         </head>
         <body>
-          <div class="print-container">
-            ${flyerHtml.outerHTML}
-          </div>
-          <script>
-            window.onload = () => {
-              window.print();
-              window.onafterprint = () => window.close();
-            };
-          </script>
+          <div class="print-container">${flyerHtml.outerHTML}</div>
+          <script>window.onload = () => { window.print(); window.onafterprint = () => window.close(); };<\/script>
         </body>
       </html>
     `);
@@ -265,147 +218,115 @@ export default function QRCodePage() {
         </p>
 
         {error && (
-          <div className="bg-[#ffd9b9] text-[#e0682e] p-4 rounded-md mb-6">
-            {error}
-          </div>
+          <div className="bg-[#ffd9b9] text-[#e0682e] p-4 rounded-md mb-6">{error}</div>
         )}
 
         {qrCode && (
           <div className="grid md:grid-cols-2 gap-8">
             {/* Left side: Flyer + download buttons */}
             <div className="space-y-6">
-              {/* Flyer with inline styles to avoid unsupported color functions */}
+              {/* ── NEW FLYER ── */}
               <div
                 ref={flyerRef}
-                className="flyer-card w-full max-w-md mx-auto bg-white rounded-2xl shadow-2xl overflow-hidden"
+                className="flyer-card w-full max-w-md mx-auto rounded-2xl overflow-hidden"
                 style={{
+                  backgroundColor: "#FF8C00",
                   fontFamily: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
+                  padding: "2rem 1.5rem",
+                  textAlign: "center",
                 }}
               >
-                {/* Top accent bar */}
-                <div
+                {/* Title */}
+                <h2
                   style={{
-                    height: "8px",
-                    background: "linear-gradient(90deg, #fe5502 0%, #ff8c42 100%)",
+                    color: "white",
+                    fontSize: "2.4rem",
+                    fontWeight: 900,
+                    letterSpacing: "3px",
+                    textShadow: "2px 2px 0 rgba(0,0,0,0.18)",
+                    margin: "0 0 1.5rem",
                   }}
-                ></div>
+                >
+                  SCAN TO WIN
+                </h2>
 
-                <div style={{ padding: "1.5rem", textAlign: "center" }}>
-                  {/* Logo */}
-                  <div style={{ display: "flex", justifyContent: "center", marginBottom: "1rem" }}>
-                    {restaurantLogo ? (
-                      <div
-                        style={{
-                          width: "96px",
-                          height: "96px",
-                          borderRadius: "50%",
-                          backgroundColor: "#f9fafb",
-                          padding: "4px",
-                          boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1)",
-                          overflow: "hidden",
-                        }}
-                      >
-                        <img
-                          src={restaurantLogo}
-                          alt={restaurantName}
-                          style={{
-                            width: "100%",
-                            height: "100%",
-                            borderRadius: "50%",
-                            objectFit: "cover",
-                          }}
-                          crossOrigin="anonymous"
-                        />
-                      </div>
-                    ) : (
-                      <div
-                        style={{
-                          width: "96px",
-                          height: "96px",
-                          borderRadius: "50%",
-                          background: "linear-gradient(135deg, rgba(254,85,2,0.1) 0%, rgba(254,85,2,0.2) 100%)",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1)",
-                        }}
-                      >
-                        <StoreIcon />
-                      </div>
-                    )}
-                  </div>
+                {/* Open gift box SVG with QR inside */}
+                <div style={{ position: "relative", width: "100%" }}>
+                  <svg
+                    viewBox="0 0 320 360"
+                    xmlns="http://www.w3.org/2000/svg"
+                    style={{ width: "100%", maxWidth: "320px", margin: "0 auto", display: "block" }}
+                  >
+                    {/* === BOX LID (open / flipped back) === */}
+                    {/* Left lid flap */}
+                    <polygon points="50,165 160,125 160,95 50,135" fill="#4B3F8A" />
+                    {/* Right lid flap */}
+                    <polygon points="270,165 160,125 160,95 270,135" fill="#3D337A" />
+                    {/* Lid front face */}
+                    <rect x="50" y="135" width="220" height="30" rx="4" fill="#5A4CA0" />
+                    {/* Lid ribbon vertical */}
+                    <rect x="149" y="95" width="22" height="70" fill="#C0C0D8" rx="3" opacity="0.9" />
+                    {/* Bow left loop */}
+                    <ellipse cx="147" cy="106" rx="21" ry="13" fill="#D4D4EC" transform="rotate(-28 147 106)" opacity="0.92" />
+                    {/* Bow right loop */}
+                    <ellipse cx="173" cy="106" rx="21" ry="13" fill="#B8B8D0" transform="rotate(28 173 106)" opacity="0.92" />
+                    {/* Bow center knot */}
+                    <circle cx="160" cy="108" r="9" fill="#E0E0F0" />
 
-                  {/* Restaurant name */}
-                  <h2 style={{ fontSize: "1.5rem", fontWeight: "bold", color: "#1f2937", marginBottom: "0.5rem" }}>
-                    {restaurantName}
-                  </h2>
+                    {/* === BOX BODY === */}
+                    {/* Body shadow / depth */}
+                    <rect x="53" y="168" width="214" height="158" rx="6" fill="#2E2560" />
+                    {/* Body main face */}
+                    <rect x="50" y="165" width="220" height="158" rx="6" fill="#4B3F8A" />
+                    {/* Body left shading */}
+                    <rect x="50" y="165" width="30" height="158" rx="6" fill="#3D337A" />
 
-                  {/* Divider */}
-                  <div style={{ display: "flex", justifyContent: "center", marginBottom: "1rem" }}>
-                    <div
-                      style={{
-                        width: "64px",
-                        height: "2px",
-                        background: "linear-gradient(90deg, #fe5502, #ff8c42)",
-                        borderRadius: "9999px",
-                      }}
-                    ></div>
-                  </div>
-
-                  {/* Catchphrase */}
-                  <div style={{ marginBottom: "1.5rem" }}>
-                    <p style={{ color: "#374151", fontWeight: "500", fontSize: "1.125rem", margin: 0 }}>
-                      Scannez, collectez, gagnez des points.
-                    </p>
-                    <p style={{ color: "#6b7280", fontSize: "0.875rem", marginTop: "0.25rem" }}>
-                      Votre carte de fidélité digitale
-                    </p>
-                  </div>
-
-                  {/* QR Code */}
-                  <div style={{ display: "flex", justifyContent: "center", marginBottom: "1rem" }}>
-                    <div
-                      style={{
-                        backgroundColor: "#ffffff",
-                        padding: "1rem",
-                        borderRadius: "0.75rem",
-                        boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05)",
-                        border: "1px solid #f3f4f6",
-                      }}
-                    >
+                    {/* === QR CODE inside box === */}
+                    {/* White card */}
+                    <rect x="78" y="178" width="164" height="132" rx="8" fill="white" />
+                    {/* Real QR image rendered via foreignObject */}
+                    <foreignObject x="84" y="184" width="152" height="120">
                       <img
                         src={qrCode}
                         alt="QR Code"
-                        width={200}
-                        height={200}
-                        style={{ margin: "0 auto" }}
+                        style={{ width: "152px", height: "120px", objectFit: "contain" }}
+                        crossOrigin="anonymous"
                       />
-                    </div>
-                  </div>
+                    </foreignObject>
 
-                  {/* Call to action */}
-                  <div style={{ marginTop: "0.5rem", marginBottom: "1rem" }}>
-                    <span
-                      style={{
-                        display: "inline-block",
-                        backgroundColor: "rgba(254,85,2,0.1)",
-                        color: "#fe5502",
-                        fontWeight: "bold",
-                        padding: "0.5rem 1rem",
-                        borderRadius: "9999px",
-                        fontSize: "0.875rem",
-                        letterSpacing: "0.05em",
-                      }}
-                    >
-                      SCANNEZ & CUMULEZ DES POINTS
-                    </span>
-                  </div>
-
-                  {/* Footer */}
-                  <div style={{ fontSize: "0.75rem", color: "#9ca3af", marginTop: "1rem" }}>
-                    Programme de fidélité {restaurantName}
-                  </div>
+                    {/* Body ribbon vertical */}
+                    <rect x="149" y="165" width="22" height="158" fill="#C0C0D8" rx="2" opacity="0.65" />
+                  </svg>
                 </div>
+
+                {/* Restaurant name */}
+                <p
+                  style={{
+                    color: "white",
+                    fontWeight: 800,
+                    fontSize: "1rem",
+                    marginTop: "1rem",
+                    marginBottom: "0.25rem",
+                    letterSpacing: "0.5px",
+                    textShadow: "1px 1px 0 rgba(0,0,0,0.15)",
+                  }}
+                >
+                  {restaurantName}
+                </p>
+
+                {/* Tagline */}
+                <p
+                  style={{
+                    color: "white",
+                    fontWeight: 800,
+                    fontSize: "0.78rem",
+                    letterSpacing: "1.5px",
+                    margin: "0",
+                    textShadow: "1px 1px 0 rgba(0,0,0,0.2)",
+                  }}
+                >
+                  SCANNEZ, GAGNEZ DES POINTS ET RECEVEZ DES CADEAUX !
+                </p>
               </div>
 
               {/* Download buttons */}
