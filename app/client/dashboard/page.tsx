@@ -6,11 +6,11 @@ import Image from "next/image";
 import { QRCodeSVG } from "qrcode.react";
 import { getPatternStyle } from "@/lib/patterns";
 
-// ── Professional icon components (copied from PersonalizePage) ────────────
+// ── Icon components ───────────────────────────────────────────────────
 const IconGoogleMaps = ({ size = 18 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="#EA4335" stroke="none"/>
-    <circle cx="12" cy="9" r="2.5" fill="white" stroke="none"/>
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="#EA4335"/>
+    <circle cx="12" cy="9" r="2.5" fill="white"/>
   </svg>
 );
 
@@ -24,7 +24,7 @@ const IconFacebook = ({ size = 18 }: { size?: number }) => (
 const IconInstagram = ({ size = 18 }: { size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <defs>
-      <linearGradient id="ig-grad" x1="0%" y1="100%" x2="100%" y2="0%">
+      <linearGradient id="ig-grad-db" x1="0%" y1="100%" x2="100%" y2="0%">
         <stop offset="0%" stopColor="#FFDC80"/>
         <stop offset="25%" stopColor="#FCAF45"/>
         <stop offset="50%" stopColor="#F77737"/>
@@ -32,7 +32,7 @@ const IconInstagram = ({ size = 18 }: { size?: number }) => (
         <stop offset="100%" stopColor="#833AB4"/>
       </linearGradient>
     </defs>
-    <rect width="24" height="24" rx="6" fill="url(#ig-grad)"/>
+    <rect width="24" height="24" rx="6" fill="url(#ig-grad-db)"/>
     <rect x="7" y="7" width="10" height="10" rx="3" stroke="white" strokeWidth="1.5" fill="none"/>
     <circle cx="12" cy="12" r="2.5" stroke="white" strokeWidth="1.5" fill="none"/>
     <circle cx="16.5" cy="7.5" r="0.8" fill="white"/>
@@ -58,14 +58,23 @@ const IconStar = ({ size = 14, color = "currentColor" }: { size?: number; color?
   </svg>
 );
 
-// ── Bonus item definition ─────────────────────────────────────────────
+const IconExternalLink = ({ size = 14, color = "currentColor" }: { size?: number; color?: string }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/>
+    <polyline points="15 3 21 3 21 9"/>
+    <line x1="10" y1="14" x2="21" y2="3"/>
+  </svg>
+);
+
+// ── Types ─────────────────────────────────────────────────────────────
 type BonusAction = {
   id: string;
   label: string;
   urlKey: keyof RestaurantBonusUrls;
   starsKey: keyof RestaurantBonusStars;
-    icon: React.ReactNode; 
+  icon: React.ReactNode;
   hint: string;
+  actionLabel: string; // what the user should do (for the modal)
 };
 
 interface RestaurantBonusUrls {
@@ -90,6 +99,7 @@ const BONUS_ACTIONS: BonusAction[] = [
     starsKey: "googleMapsBonusStars",
     icon: <IconGoogleMaps size={20} />,
     hint: "Laissez un avis 5⭐ sur Google Maps",
+    actionLabel: "Laisser un avis 5 étoiles",
   },
   {
     id: "facebook",
@@ -98,6 +108,7 @@ const BONUS_ACTIONS: BonusAction[] = [
     starsKey: "facebookBonusStars",
     icon: <IconFacebook size={20} />,
     hint: "Likez & suivez notre page",
+    actionLabel: "Liker et suivre la page",
   },
   {
     id: "instagram",
@@ -106,6 +117,7 @@ const BONUS_ACTIONS: BonusAction[] = [
     starsKey: "instagramBonusStars",
     icon: <IconInstagram size={20} />,
     hint: "Suivez-nous sur Instagram",
+    actionLabel: "Suivre le compte",
   },
   {
     id: "twitter",
@@ -114,9 +126,208 @@ const BONUS_ACTIONS: BonusAction[] = [
     starsKey: "twitterBonusStars",
     icon: <IconX size={20} />,
     hint: "Suivez notre compte X",
+    actionLabel: "Suivre le compte X",
   },
 ];
 
+// ── Bonus Modal Component ─────────────────────────────────────────────
+type BonusModalProps = {
+  action: BonusAction;
+  pointsValue: number;
+  primaryColor: string;
+  textColor: string;
+  cardBg: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+  loading: boolean;
+};
+
+function BonusModal({
+  action,
+  pointsValue,
+  primaryColor,
+  textColor,
+  cardBg,
+  onConfirm,
+  onCancel,
+  loading,
+}: BonusModalProps) {
+  const [step, setStep] = useState<"intro" | "waiting" | "confirm">("intro");
+  const [countdown, setCountdown] = useState(5);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const handleOpenLink = () => {
+    setStep("waiting");
+    setCountdown(5);
+    timerRef.current = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(timerRef.current!);
+          setStep("confirm");
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  useEffect(() => {
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, []);
+
+  return (
+    // Overlay — uses normal-flow wrapper to avoid fixed positioning
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 100,
+        backgroundColor: "rgba(0,0,0,0.55)",
+        display: "flex",
+        alignItems: "flex-end",
+        justifyContent: "center",
+      }}
+      onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}
+    >
+      <div
+        style={{
+          backgroundColor: cardBg,
+          borderRadius: "20px 20px 0 0",
+          padding: "24px 20px 32px",
+          width: "100%",
+          maxWidth: "448px",
+          animation: "slideUp 0.3s ease",
+        }}
+      >
+        {/* Handle bar */}
+        <div style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: `${textColor}20`, margin: "0 auto 20px" }} />
+
+        {/* Step: intro */}
+        {step === "intro" && (
+          <div style={{ textAlign: "center" }}>
+            <div style={{ width: 60, height: 60, borderRadius: 16, backgroundColor: `${primaryColor}15`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+              {action.icon}
+            </div>
+            <h3 style={{ fontSize: 18, fontWeight: 700, color: textColor, margin: "0 0 8px" }}>
+              Gagnez des points sur {action.label}
+            </h3>
+            <p style={{ fontSize: 13, color: `${textColor}80`, margin: "0 0 6px", lineHeight: 1.5 }}>
+              {action.actionLabel} pour gagner
+            </p>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 6, backgroundColor: `${primaryColor}15`, borderRadius: 20, padding: "6px 16px", marginBottom: 24 }}>
+              <IconStar size={14} color={primaryColor} />
+              <span style={{ fontSize: 15, fontWeight: 700, color: primaryColor }}>+{pointsValue} points</span>
+            </div>
+
+            <div style={{ backgroundColor: `${textColor}06`, borderRadius: 12, padding: "12px 16px", marginBottom: 20, textAlign: "left" }}>
+              <p style={{ fontSize: 12, color: `${textColor}60`, margin: 0, lineHeight: 1.6 }}>
+                1. Appuyez sur <strong style={{ color: textColor }}>Ouvrir {action.label}</strong><br/>
+                2. {action.actionLabel}<br/>
+                3. Revenez ici et confirmez
+              </p>
+            </div>
+
+            <a
+              href="#"
+              onClick={(e) => {
+                e.preventDefault();
+                window.open((window as any).__bonusUrl, "_blank");
+                handleOpenLink();
+              }}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 8,
+                width: "100%",
+                padding: "14px",
+                backgroundColor: primaryColor,
+                color: "#fff",
+                borderRadius: 14,
+                fontWeight: 700,
+                fontSize: 15,
+                textDecoration: "none",
+                marginBottom: 12,
+              }}
+            >
+              <IconExternalLink size={16} color="#fff" />
+              Ouvrir {action.label}
+            </a>
+            <button
+              onClick={onCancel}
+              style={{ width: "100%", padding: "12px", backgroundColor: "transparent", border: "none", color: `${textColor}60`, fontSize: 14, cursor: "pointer" }}
+            >
+              Annuler
+            </button>
+          </div>
+        )}
+
+        {/* Step: waiting (countdown) */}
+        {step === "waiting" && (
+          <div style={{ textAlign: "center" }}>
+            <div style={{ width: 72, height: 72, borderRadius: "50%", border: `3px solid ${primaryColor}30`, borderTopColor: primaryColor, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px", animation: "spin 1s linear infinite" }}>
+              <span style={{ fontSize: 24, fontWeight: 700, color: primaryColor }}>{countdown}</span>
+            </div>
+            <h3 style={{ fontSize: 16, fontWeight: 700, color: textColor, margin: "0 0 8px" }}>
+              En cours…
+            </h3>
+            <p style={{ fontSize: 13, color: `${textColor}70`, margin: "0 0 20px" }}>
+              Effectuez l'action sur {action.label},<br/>puis revenez ici.
+            </p>
+            <button
+              onClick={() => setStep("confirm")}
+              style={{
+                width: "100%", padding: "13px",
+                backgroundColor: `${primaryColor}15`,
+                border: `1.5px solid ${primaryColor}30`,
+                borderRadius: 14, color: primaryColor,
+                fontWeight: 600, fontSize: 14, cursor: "pointer",
+              }}
+            >
+              J'ai déjà terminé →
+            </button>
+          </div>
+        )}
+
+        {/* Step: confirm */}
+        {step === "confirm" && (
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontSize: 52, marginBottom: 12 }}>🎯</div>
+            <h3 style={{ fontSize: 18, fontWeight: 700, color: textColor, margin: "0 0 8px" }}>
+              Avez-vous bien effectué l'action ?
+            </h3>
+            <p style={{ fontSize: 13, color: `${textColor}70`, margin: "0 0 24px", lineHeight: 1.5 }}>
+              Confirmez que vous avez <strong>{action.actionLabel.toLowerCase()}</strong> sur {action.label}.
+            </p>
+            <button
+              onClick={onConfirm}
+              disabled={loading}
+              style={{
+                width: "100%", padding: "14px",
+                backgroundColor: primaryColor,
+                border: "none", borderRadius: 14,
+                color: "#fff", fontWeight: 700,
+                fontSize: 15, cursor: loading ? "not-allowed" : "pointer",
+                opacity: loading ? 0.7 : 1,
+                marginBottom: 10,
+              }}
+            >
+              {loading ? "Enregistrement…" : `✅ Oui, j'ai ${action.actionLabel.toLowerCase()} !`}
+            </button>
+            <button
+              onClick={onCancel}
+              style={{ width: "100%", padding: "12px", backgroundColor: "transparent", border: "none", color: `${textColor}60`, fontSize: 14, cursor: "pointer" }}
+            >
+              Non, annuler
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Main Component ────────────────────────────────────────────────────
 export default function ClientDashboard() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -132,9 +343,10 @@ export default function ClientDashboard() {
   const [typedGreeting, setTypedGreeting] = useState("");
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [patternStyle, setPatternStyle] = useState<React.CSSProperties>({});
-  // Local state for completed bonuses (falls back if client.completedBonuses not provided)
   const [completedBonuses, setCompletedBonuses] = useState<string[]>([]);
   const [claimingBonus, setClaimingBonus] = useState<string | null>(null);
+  // Modal state
+  const [activeBonusModal, setActiveBonusModal] = useState<BonusAction | null>(null);
 
   // Swiper state
   const [swiperOffset, setSwiperOffset] = useState(0);
@@ -168,7 +380,6 @@ export default function ClientDashboard() {
       const data = await res.json();
       if (res.ok) {
         setClient(data);
-        // Initialize completedBonuses from backend if exists
         if (data.completedBonuses && Array.isArray(data.completedBonuses)) {
           setCompletedBonuses(data.completedBonuses);
         }
@@ -242,43 +453,48 @@ export default function ClientDashboard() {
     }
   };
 
-  // ── Claim bonus points ──────────────────────────────────────────────
-  const handleClaimBonus = async (action: BonusAction) => {
-    if (completedBonuses.includes(action.id)) {
-      alert("Vous avez déjà gagné les points pour cette action !");
-      return;
-    }
-
+  // ── Open bonus modal ──────────────────────────────────────────────
+  const handleOpenBonusModal = (action: BonusAction) => {
+    if (completedBonuses.includes(action.id)) return;
     if (!restaurant?.[action.urlKey]) {
       alert("Ce lien n'est pas encore configuré par le restaurant.");
       return;
     }
+    // Store the URL on window so the modal can access it without prop drilling issues
+    (window as any).__bonusUrl = restaurant[action.urlKey];
+    setActiveBonusModal(action);
+  };
 
-    // Open the link in a new tab (optional, good UX)
-    window.open(restaurant[action.urlKey], "_blank");
-
-    setClaimingBonus(action.id);
+  // ── Confirm bonus (called after user says "yes I did it") ─────────
+  const handleConfirmBonus = async () => {
+    if (!activeBonusModal) return;
+    setClaimingBonus(activeBonusModal.id);
     try {
       const res = await fetch("/api/client/claim-bonus", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          action: action.id,
+          action: activeBonusModal.id,
           restaurantId: restaurant.id,
         }),
       });
       const data = await res.json();
       if (res.ok) {
-        // Update local client points and completedBonuses
         setClient((prev: any) => ({ ...prev, points: data.newPoints }));
-        setCompletedBonuses((prev) => [...prev, action.id]);
-        alert(`Félicitations ! Vous avez gagné ${data.pointsEarned} points.`);
+        setCompletedBonuses((prev) => [...prev, activeBonusModal.id]);
+        setActiveBonusModal(null);
+        // Small delay for the modal to close before showing success
+        setTimeout(() => {
+          alert(`🎉 Félicitations ! Vous avez gagné ${data.pointsEarned} points.`);
+        }, 300);
       } else {
         alert(data.error || "Une erreur est survenue. Réessayez plus tard.");
+        setActiveBonusModal(null);
       }
     } catch (err) {
       console.error(err);
       alert("Erreur réseau. Vérifiez votre connexion.");
+      setActiveBonusModal(null);
     } finally {
       setClaimingBonus(null);
     }
@@ -359,15 +575,30 @@ export default function ClientDashboard() {
     return "👑";
   };
 
-  // Filter bonus actions that have a URL configured in restaurant
   const availableBonuses = BONUS_ACTIONS.filter((action) => restaurant[action.urlKey]);
+  const completedCount = availableBonuses.filter((a) => completedBonuses.includes(a.id)).length;
+  const totalBonusPoints = availableBonuses.reduce((sum, a) => sum + (restaurant[a.starsKey] || 0), 0);
+  const earnedBonusPoints = availableBonuses
+    .filter((a) => completedBonuses.includes(a.id))
+    .reduce((sum, a) => sum + (restaurant[a.starsKey] || 0), 0);
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: D.background, fontFamily: "'Inter', sans-serif" }}>
-      <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
-        rel="stylesheet"
-      />
+      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+      {/* ── Bonus Modal ── */}
+      {activeBonusModal && (
+        <BonusModal
+          action={activeBonusModal}
+          pointsValue={restaurant[activeBonusModal.starsKey] || 0}
+          primaryColor={D.primary}
+          textColor={D.text}
+          cardBg={D.cardBg}
+          onConfirm={handleConfirmBonus}
+          onCancel={() => setActiveBonusModal(null)}
+          loading={claimingBonus === activeBonusModal.id}
+        />
+      )}
 
       <div
         className="max-w-md mx-auto min-h-screen shadow-lg relative border-x"
@@ -475,29 +706,40 @@ export default function ClientDashboard() {
             <p className="text-sm text-center py-4" style={{ color: `${D.text}60` }}>Aucune récompense configurée.</p>
           ) : (
             <>
-              <div className="overflow-hidden" onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX; }} onTouchEnd={(e) => {
-                if (touchStartX.current === null) return;
-                const dx = e.changedTouches[0].clientX - touchStartX.current;
-                if (dx < -40 && swiperOffset < maxOffset) setSwiperOffset(o => o + 1);
-                if (dx > 40 && swiperOffset > 0) setSwiperOffset(o => o - 1);
-                touchStartX.current = null;
-              }}>
-                <div className="flex gap-3 pb-2 pt-1" style={{ transform: `translateX(-${swiperOffset * (110 + 12)}px)`, transition: "transform 0.4s cubic-bezier(.4,0,.2,1)" }}>
+              <div
+                className="overflow-hidden"
+                onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX; }}
+                onTouchEnd={(e) => {
+                  if (touchStartX.current === null) return;
+                  const dx = e.changedTouches[0].clientX - touchStartX.current;
+                  if (dx < -40 && swiperOffset < maxOffset) setSwiperOffset(o => o + 1);
+                  if (dx > 40 && swiperOffset > 0) setSwiperOffset(o => o - 1);
+                  touchStartX.current = null;
+                }}
+              >
+                <div
+                  className="flex gap-3 pb-2 pt-1"
+                  style={{ transform: `translateX(-${swiperOffset * (110 + 12)}px)`, transition: "transform 0.4s cubic-bezier(.4,0,.2,1)" }}
+                >
                   {rewards.map((reward, i) => {
                     const unlocked = clientPts >= reward.pts;
                     return (
-                      <div key={reward.id} className="flex-shrink-0 flex flex-col items-center gap-2 rounded-2xl p-3 transition-all" style={{
-                        minWidth: "110px",
-                        backgroundColor: unlocked ? `${D.primary}12` : D.cardBg,
-                        border: `1.5px solid ${unlocked ? D.primary : `${D.text}15`}`,
-                        animation: unlocked ? `popIn 0.35s ease ${i * 0.06}s both` : "none",
-                      }}>
+                      <div
+                        key={reward.id}
+                        className="flex-shrink-0 flex flex-col items-center gap-2 rounded-2xl p-3 transition-all"
+                        style={{
+                          minWidth: "110px",
+                          backgroundColor: unlocked ? `${D.primary}12` : D.cardBg,
+                          border: `1.5px solid ${unlocked ? D.primary : `${D.text}15`}`,
+                          animation: unlocked ? `popIn 0.35s ease ${i * 0.06}s both` : "none",
+                        }}
+                      >
                         <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl relative" style={{ backgroundColor: unlocked ? `${D.primary}20` : `${D.text}08` }}>
                           <span>{rewardEmoji(reward.pts)}</span>
-                          <div className="absolute -bottom-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center" style={{
-                            backgroundColor: unlocked ? D.primary : "#9ca3af",
-                            border: `2px solid ${D.cardBg}`,
-                          }}>
+                          <div
+                            className="absolute -bottom-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center"
+                            style={{ backgroundColor: unlocked ? D.primary : "#9ca3af", border: `2px solid ${D.cardBg}` }}
+                          >
                             {unlocked ? (
                               <IconCheck size={10} color="#fff" />
                             ) : (
@@ -533,13 +775,39 @@ export default function ClientDashboard() {
           )}
         </div>
 
-        {/* ── NEW SECTION: Points à gagner ── */}
+        {/* ── Points à gagner ── */}
         {availableBonuses.length > 0 && (
           <div className="px-4 py-5 border-b" style={{ borderColor: `${D.primary}20` }}>
-            <div className="flex items-center gap-2 mb-4">
-              <IconStar size={16} color={D.primary} />
-              <h3 className="text-base font-semibold tracking-tight" style={{ color: D.text }}>Points à gagner</h3>
+            {/* Section header */}
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <IconStar size={16} color={D.primary} />
+                <h3 className="text-base font-semibold tracking-tight" style={{ color: D.text }}>Points à gagner</h3>
+              </div>
+              {/* Progress pill */}
+              {completedCount > 0 && (
+                <span className="text-xs font-semibold px-3 py-1 rounded-full" style={{ backgroundColor: `${D.primary}15`, color: D.primary }}>
+                  +{earnedBonusPoints} / {totalBonusPoints} pts
+                </span>
+              )}
             </div>
+
+            {/* Mini progress bar if some completed */}
+            {availableBonuses.length > 1 && (
+              <div className="mb-4">
+                <div className="flex justify-between text-xs mb-1.5" style={{ color: `${D.text}60` }}>
+                  <span>{completedCount} / {availableBonuses.length} actions complétées</span>
+                  {completedCount === availableBonuses.length && <span style={{ color: D.primary }}>🎉 Tout complété !</span>}
+                </div>
+                <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: `${D.primary}20` }}>
+                  <div
+                    className="h-full rounded-full transition-all duration-700"
+                    style={{ width: `${(completedCount / availableBonuses.length) * 100}%`, backgroundColor: D.primary }}
+                  />
+                </div>
+              </div>
+            )}
+
             <div className="space-y-3">
               {availableBonuses.map((bonus) => {
                 const isCompleted = completedBonuses.includes(bonus.id);
@@ -551,47 +819,57 @@ export default function ClientDashboard() {
                     style={{
                       borderColor: isCompleted ? `${D.primary}30` : `${D.text}15`,
                       backgroundColor: isCompleted ? `${D.primary}05` : D.cardBg,
-                      opacity: isCompleted ? 0.8 : 1,
                     }}
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${D.primary}12` }}>
+                      <div
+                        className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                        style={{ backgroundColor: isCompleted ? `${D.primary}15` : `${D.primary}10` }}
+                      >
                         {bonus.icon}
                       </div>
                       <div>
-                        <p className="text-sm font-medium" style={{ color: D.text }}>{bonus.label}</p>
-                        <p className="text-xs" style={{ color: `${D.text}60` }}>{bonus.hint}</p>
+                        <p className="text-sm font-medium" style={{ color: isCompleted ? `${D.text}80` : D.text }}>
+                          {bonus.label}
+                        </p>
+                        <p className="text-xs" style={{ color: `${D.text}55` }}>{bonus.hint}</p>
                         {!isCompleted && (
-                          <p className="text-[11px] font-semibold mt-1" style={{ color: D.primary }}>+{pointsValue} points</p>
+                          <p className="text-[11px] font-semibold mt-0.5" style={{ color: D.primary }}>+{pointsValue} points</p>
+                        )}
+                        {isCompleted && (
+                          <p className="text-[11px] font-semibold mt-0.5" style={{ color: `${D.primary}80` }}>+{pointsValue} pts gagnés ✓</p>
                         )}
                       </div>
                     </div>
+
                     {isCompleted ? (
-                      <div className="flex items-center gap-1 text-xs font-medium" style={{ color: `${D.text}50` }}>
+                      <div
+                        className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+                        style={{ backgroundColor: `${D.primary}15` }}
+                      >
                         <IconCheck size={14} color={D.primary} />
-                        <span>Obtenu</span>
                       </div>
                     ) : (
                       <button
-                        onClick={() => handleClaimBonus(bonus)}
-                        disabled={claimingBonus === bonus.id}
-                        className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all active:scale-95 disabled:opacity-50"
+                        onClick={() => handleOpenBonusModal(bonus)}
+                        className="flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all active:scale-95"
                         style={{ backgroundColor: D.primary, color: "#fff" }}
                       >
-                        {claimingBonus === bonus.id ? "..." : "Gagner"}
+                        Gagner
                       </button>
                     )}
                   </div>
                 );
               })}
             </div>
-            <p className="text-[10px] text-center mt-3" style={{ color: `${D.text}50` }}>
+
+            <p className="text-[10px] text-center mt-3" style={{ color: `${D.text}40` }}>
               ✨ Chaque action n'est récompensée qu'une seule fois.
             </p>
           </div>
         )}
 
-        {/* ── Coupons tab (if any) ── */}
+        {/* ── Coupons tab ── */}
         {coupons.length > 0 && (
           <>
             <div className="px-4 py-2 border-b" style={{ borderColor: `${D.primary}20` }}>
@@ -600,7 +878,7 @@ export default function ClientDashboard() {
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
-                    className={`flex-1 py-2 font-semibold text-sm border-b-2 transition-all`}
+                    className="flex-1 py-2 font-semibold text-sm border-b-2 transition-all"
                     style={{
                       borderColor: activeTab === tab ? D.primary : "transparent",
                       color: activeTab === tab ? D.primary : `${D.text}60`,
@@ -630,7 +908,11 @@ export default function ClientDashboard() {
 
         {/* ── About ── */}
         <div className="px-4 py-3 border-t" style={{ borderColor: `${D.primary}20` }}>
-          <button onClick={() => setShowAbout(!showAbout)} className="w-full py-3 border rounded-2xl font-medium text-sm flex items-center justify-center space-x-2 transition hover:opacity-80" style={{ borderColor: `${D.primary}30`, color: D.text }}>
+          <button
+            onClick={() => setShowAbout(!showAbout)}
+            className="w-full py-3 border rounded-2xl font-medium text-sm flex items-center justify-center space-x-2 transition hover:opacity-80"
+            style={{ borderColor: `${D.primary}30`, color: D.text }}
+          >
             <span>ℹ️</span><span>À propos de {restaurant.name}</span>
           </button>
           {showAbout && (
@@ -688,7 +970,11 @@ export default function ClientDashboard() {
 
         {/* ── Add to home screen ── */}
         <div className="px-4 py-5 border-t" style={{ borderColor: `${D.primary}20`, backgroundColor: D.background }}>
-          <button onClick={handleAddToHomeScreen} className="w-full py-4 border-2 rounded-2xl font-semibold text-sm flex items-center justify-center gap-2 transition-all active:scale-95" style={{ borderColor: D.primary, color: D.primary, backgroundColor: `${D.primary}0d` }}>
+          <button
+            onClick={handleAddToHomeScreen}
+            className="w-full py-4 border-2 rounded-2xl font-semibold text-sm flex items-center justify-center gap-2 transition-all active:scale-95"
+            style={{ borderColor: D.primary, color: D.primary, backgroundColor: `${D.primary}0d` }}
+          >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
             Ajouter à l'écran d'accueil
           </button>
@@ -700,6 +986,8 @@ export default function ClientDashboard() {
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes popIn { from { opacity: 0; transform: scale(0.85); } to { opacity: 1; transform: scale(1); } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes spin { to { transform: rotate(360deg); } }
         .animate-fadeIn { animation: fadeIn 0.3s ease-out; }
       `}</style>
     </div>
