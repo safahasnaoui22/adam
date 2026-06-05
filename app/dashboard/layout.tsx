@@ -31,7 +31,7 @@ export default async function DashboardLayout({
 
   // Changed: flex layout with sidebar on left, dark blue background
   return (
-    <div className="min-h-screen bg-[#0a1628] flex">
+    <div className="min-h-screen bg-[#2e283d] flex">
       <DashboardNav />
       <main className="flex-1 overflow-auto p-6">
         <div className="max-w-7xl mx-auto">
