@@ -288,7 +288,7 @@ export default function CustomerDetail({
   const shortId = customer.customerId.slice(-4);
 
   return (
-    <div className="min-h-screen bg-[#060e1e] p-4 md:p-8">
+    <div className="min-h-screen bg-[#2e283d] p-4 md:p-8">
       <div className="max-w-4xl mx-auto">
 
         {/* Back */}
