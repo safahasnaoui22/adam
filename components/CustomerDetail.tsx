@@ -4,6 +4,102 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
+// --- SVG Icon Components (pro, inline) ---
+const StarIcon = ({ className = "" }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+  </svg>
+);
+
+const GiftIcon = ({ className = "" }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" xmlns="http://www.w3.org/2000/svg">
+    <polyline points="20 12 20 22 4 22 4 12" />
+    <rect x="2" y="7" width="20" height="5" />
+    <line x1="12" y1="22" x2="12" y2="7" />
+    <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z" />
+    <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" />
+  </svg>
+);
+
+const CalendarIcon = ({ className = "" }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+    <line x1="16" y1="2" x2="16" y2="6" />
+    <line x1="8" y1="2" x2="8" y2="6" />
+    <line x1="3" y1="10" x2="21" y2="10" />
+  </svg>
+);
+
+const UserIcon = ({ className = "" }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+    <circle cx="12" cy="7" r="4" />
+  </svg>
+);
+
+const HashIcon = ({ className = "" }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="4" y1="9" x2="20" y2="9" />
+    <line x1="4" y1="15" x2="20" y2="15" />
+    <line x1="10" y1="3" x2="8" y2="21" />
+    <line x1="16" y1="3" x2="14" y2="21" />
+  </svg>
+);
+
+const PencilIcon = ({ className = "" }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+  </svg>
+);
+
+const TrashIcon = ({ className = "" }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="3 6 5 6 21 6" />
+    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+    <path d="M10 11v6" />
+    <path d="M14 11v6" />
+    <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+  </svg>
+);
+
+const ArrowLeftIcon = ({ className = "" }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="19" y1="12" x2="5" y2="12" />
+    <polyline points="12 19 5 12 12 5" />
+  </svg>
+);
+
+const CheckIcon = ({ className = "" }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="20 6 9 17 4 12" />
+  </svg>
+);
+
+const XIcon = ({ className = "" }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="18" y1="6" x2="6" y2="18" />
+    <line x1="6" y1="6" x2="18" y2="18" />
+  </svg>
+);
+
+const AlertTriangleIcon = ({ className = "" }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+    <line x1="12" y1="9" x2="12" y2="13" />
+    <line x1="12" y1="17" x2="12.01" y2="17" />
+  </svg>
+);
+
+const PlusCircleIcon = ({ className = "" }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10" />
+    <line x1="12" y1="8" x2="12" y2="16" />
+    <line x1="8" y1="12" x2="16" y2="12" />
+  </svg>
+);
+
+// --- Types ---
 interface Reward {
   id: string;
   name: string;
@@ -32,6 +128,11 @@ interface Customer {
   lastVisit: Date | null;
 }
 
+interface LoyaltyRule {
+  spendThreshold: number;
+  pointsEarned: number;
+}
+
 interface Props {
   customer: Customer;
   visits: Visit[];
@@ -39,6 +140,7 @@ interface Props {
   rewards: Reward[];
   nextReward: Reward | null;
   progress: number;
+  loyaltyRule?: LoyaltyRule; // passed from parent (fetched from /api/loyalty-program)
 }
 
 export default function CustomerDetail({
@@ -48,13 +150,12 @@ export default function CustomerDetail({
   rewards,
   nextReward,
   progress,
+  loyaltyRule = { spendThreshold: 1, pointsEarned: 10 },
 }: Props) {
   const router = useRouter();
   const [amount, setAmount] = useState("");
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState("");
-
-  // Local visits state for optimistic UI
+  const [message, setMessage] = useState<{ text: string; ok: boolean } | null>(null);
   const [visits, setVisits] = useState<Visit[]>(initialVisits);
 
   // Edit state
@@ -67,14 +168,21 @@ export default function CustomerDetail({
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
+  // Dynamic points preview based on loyalty rule
+  const previewAmount = parseFloat(amount) || 0;
+  const previewPoints =
+    previewAmount > 0 && loyaltyRule.spendThreshold > 0
+      ? Math.floor((previewAmount / loyaltyRule.spendThreshold) * loyaltyRule.pointsEarned)
+      : 0;
+
   const handleAddPoints = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!amount || parseFloat(amount) <= 0) {
-      setMessage("Montant invalide");
+      setMessage({ text: "Montant invalide", ok: false });
       return;
     }
     setLoading(true);
-    setMessage("");
+    setMessage(null);
     try {
       const res = await fetch("/api/customer/add-points", {
         method: "POST",
@@ -86,20 +194,19 @@ export default function CustomerDetail({
       });
       const data = await res.json();
       if (res.ok) {
-        setMessage(`${data.pointsAdded} points ajoutés !`);
-        setTimeout(() => router.refresh(), 1000);
+        setMessage({ text: `+${data.pointsAdded} points ajoutés avec succès`, ok: true });
+        setTimeout(() => router.refresh(), 1200);
       } else {
-        setMessage(data.error || "Erreur");
+        setMessage({ text: data.error || "Erreur", ok: false });
       }
     } catch {
-      setMessage("Erreur de connexion");
+      setMessage({ text: "Erreur de connexion", ok: false });
     } finally {
       setLoading(false);
       setAmount("");
     }
   };
 
-  // --- EDIT VISIT ---
   const startEdit = (visit: Visit) => {
     setEditingId(visit.id);
     setEditAmount(visit.amount?.toString() ?? "");
@@ -128,20 +235,25 @@ export default function CustomerDetail({
       });
       const data = await res.json();
       if (res.ok) {
-        // Optimistic update
         setVisits((prev) =>
           prev.map((v) =>
             v.id === visitId
-              ? { ...v, amount: newAmount, pointsEarned: data.pointsEarned ?? Math.floor(newAmount * 10) }
+              ? {
+                  ...v,
+                  amount: newAmount,
+                  pointsEarned:
+                    data.pointsEarned ??
+                    Math.floor((newAmount / loyaltyRule.spendThreshold) * loyaltyRule.pointsEarned),
+                }
               : v
           )
         );
-        setEditMessage({ id: visitId, text: "Modifié ✓", ok: true });
+        setEditMessage({ id: visitId, text: "Modifié avec succès", ok: true });
         setTimeout(() => {
           setEditingId(null);
           setEditMessage(null);
           router.refresh();
-        }, 800);
+        }, 900);
       } else {
         setEditMessage({ id: visitId, text: data.error || "Erreur", ok: false });
       }
@@ -152,7 +264,6 @@ export default function CustomerDetail({
     }
   };
 
-  // --- DELETE VISIT ---
   const handleDelete = async (visitId: string) => {
     setDeleteLoading(true);
     try {
@@ -160,7 +271,6 @@ export default function CustomerDetail({
         method: "DELETE",
       });
       if (res.ok) {
-        // Optimistic remove
         setVisits((prev) => prev.filter((v) => v.id !== visitId));
         setConfirmDeleteId(null);
         router.refresh();
@@ -178,214 +288,372 @@ export default function CustomerDetail({
   const shortId = customer.customerId.slice(-4);
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <button onClick={() => router.back()} className="text-[#fe5502] mb-4 hover:underline">
-        ← Retour
-      </button>
+    <div className="min-h-screen bg-[#060e1e] p-4 md:p-8">
+      <div className="max-w-4xl mx-auto">
 
-      {/* Customer Info */}
-      <div className="bg-[#0d1f3c] rounded-lg p-6 border border-[#1e3a5f] mb-6">
-        <h1 className="text-2xl font-bold text-white mb-4">Détails de la carte</h1>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <p className="text-gray-400 text-sm">Client</p>
-            <p className="text-white text-lg font-semibold">{customer.name}</p>
+        {/* Back */}
+        <button
+          onClick={() => router.back()}
+          className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-[#fe5502] transition-colors mb-6 group"
+        >
+          <ArrowLeftIcon className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" />
+          Retour
+        </button>
+
+        {/* ── Customer Info Card ── */}
+        <div className="rounded-2xl bg-gradient-to-br from-[#0d1f3c] to-[#091529] border border-[#1e3a5f]/60 p-6 mb-5 shadow-xl shadow-black/30">
+          <div className="flex items-start justify-between mb-5">
+            <div>
+              <p className="text-xs font-semibold tracking-widest text-[#fe5502]/70 uppercase mb-1">Fiche client</p>
+              <h1 className="text-2xl font-bold text-white">{customer.name}</h1>
+            </div>
+            <div className="w-12 h-12 rounded-xl bg-[#fe5502]/10 border border-[#fe5502]/20 flex items-center justify-center">
+              <UserIcon className="w-5 h-5 text-[#fe5502]" />
+            </div>
           </div>
-          <div>
-            <p className="text-gray-400 text-sm">ID client</p>
-            <p className="text-white font-mono">#{shortId}</p>
-            <p className="text-gray-500 text-xs">{customer.customerId}</p>
-          </div>
-          <div>
-            <p className="text-gray-400 text-sm">Carte créée</p>
-            <p className="text-white">{new Date(customer.createdAt).toLocaleDateString()}</p>
-          </div>
-          <div>
-            <p className="text-gray-400 text-sm">Dernière visite</p>
-            <p className="text-white">
-              {customer.lastVisit ? new Date(customer.lastVisit).toLocaleDateString() : "Jamais"}
-            </p>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {[
+              {
+                icon: <HashIcon className="w-4 h-4" />,
+                label: "ID client",
+                value: `#${shortId}`,
+                sub: customer.customerId.slice(-8),
+              },
+              {
+                icon: <CalendarIcon className="w-4 h-4" />,
+                label: "Carte créée",
+                value: new Date(customer.createdAt).toLocaleDateString("fr-FR"),
+                sub: null,
+              },
+              {
+                icon: <CalendarIcon className="w-4 h-4" />,
+                label: "Dernière visite",
+                value: customer.lastVisit
+                  ? new Date(customer.lastVisit).toLocaleDateString("fr-FR")
+                  : "—",
+                sub: null,
+              },
+              {
+                icon: <StarIcon className="w-4 h-4" />,
+                label: "Solde actuel",
+                value: `${customer.points} pts`,
+                sub: null,
+              },
+            ].map((item, i) => (
+              <div key={i} className="bg-[#0a1628]/60 rounded-xl p-3 border border-[#1e3a5f]/40">
+                <div className="flex items-center gap-1.5 text-gray-500 mb-1.5">
+                  {item.icon}
+                  <span className="text-xs">{item.label}</span>
+                </div>
+                <p className="text-white font-semibold text-sm">{item.value}</p>
+                {item.sub && <p className="text-gray-600 text-xs font-mono mt-0.5 truncate">{item.sub}</p>}
+              </div>
+            ))}
           </div>
         </div>
-      </div>
 
-      {/* Points Wallet */}
-      <div className="bg-[#0d1f3c] rounded-lg p-6 border border-[#1e3a5f] mb-6">
-        <h2 className="text-xl font-semibold text-white mb-3">Portefeuille ⭐</h2>
-        <p className="text-3xl font-bold text-[#fe5502]">{customer.points} points</p>
-        <div className="mt-4">
-          <div className="flex justify-between text-sm text-gray-400 mb-1">
-            <span>Prochaine récompense</span>
-            {nextReward && (
-              <span>
-                {customer.points} / {nextReward.pointsRequired} pts
-              </span>
+        {/* ── Points Wallet ── */}
+        <div className="rounded-2xl bg-gradient-to-br from-[#0d1f3c] to-[#091529] border border-[#1e3a5f]/60 p-6 mb-5 shadow-xl shadow-black/30">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-base font-semibold text-white tracking-tight">Portefeuille de points</h2>
+            <StarIcon className="w-5 h-5 text-[#fe5502]" />
+          </div>
+
+          <div className="flex items-end gap-2 mb-4">
+            <span className="text-5xl font-bold text-white tabular-nums">{customer.points}</span>
+            <span className="text-lg text-[#fe5502] font-semibold mb-1">pts</span>
+          </div>
+
+          {nextReward && (
+            <>
+              <div className="flex justify-between text-xs text-gray-500 mb-1.5">
+                <span>Progression vers la prochaine récompense</span>
+                <span className="text-gray-400 font-medium">
+                  {customer.points} / {nextReward.pointsRequired} pts
+                </span>
+              </div>
+              <div className="w-full bg-[#0a1628] rounded-full h-2 border border-[#1e3a5f]/40 overflow-hidden">
+                <div
+                  className="bg-gradient-to-r from-[#fe5502] to-[#ff7a3d] h-full rounded-full transition-all duration-700"
+                  style={{ width: `${Math.min(progress, 100)}%` }}
+                />
+              </div>
+              <div className="flex items-center gap-2 mt-3 text-sm text-gray-400">
+                <GiftIcon className="w-4 h-4 text-[#fe5502] shrink-0" />
+                <span>{nextReward.name}</span>
+                <span className="ml-auto text-xs text-gray-600">
+                  encore {nextReward.pointsRequired - customer.points} pts
+                </span>
+              </div>
+            </>
+          )}
+
+          {!nextReward && (
+            <div className="flex items-center gap-2 mt-2 text-sm text-gray-500">
+              <GiftIcon className="w-4 h-4 shrink-0" />
+              <span>Aucune récompense disponible pour le moment</span>
+            </div>
+          )}
+        </div>
+
+        {/* ── Add Points ── */}
+        <div className="rounded-2xl bg-gradient-to-br from-[#0d1f3c] to-[#091529] border border-[#1e3a5f]/60 p-6 mb-5 shadow-xl shadow-black/30">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-base font-semibold text-white tracking-tight">Enregistrer une addition</h2>
+            <PlusCircleIcon className="w-5 h-5 text-[#fe5502]" />
+          </div>
+
+          <form onSubmit={handleAddPoints} className="space-y-4">
+            <div>
+              <label className="block text-xs font-medium text-gray-400 mb-1.5 tracking-wide uppercase">
+                Montant de l'addition (DT)
+              </label>
+              <div className="flex gap-3">
+                <div className="relative flex-1">
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={amount}
+                    onChange={(e) => {
+                      setAmount(e.target.value);
+                      setMessage(null);
+                    }}
+                    placeholder="0.00"
+                    className="w-full px-4 py-2.5 bg-[#0a1628] border border-[#1e3a5f] rounded-xl text-white placeholder-gray-600 focus:outline-none focus:border-[#fe5502]/60 focus:ring-1 focus:ring-[#fe5502]/20 transition-all text-sm"
+                    disabled={loading}
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500 pointer-events-none">DT</span>
+                </div>
+                <button
+                  type="submit"
+                  disabled={loading || !amount || parseFloat(amount) <= 0}
+                  className="px-5 py-2.5 bg-[#fe5502] hover:bg-[#e04d02] disabled:bg-[#fe5502]/30 disabled:cursor-not-allowed text-white rounded-xl text-sm font-semibold transition-all duration-150 shadow-lg shadow-[#fe5502]/20 hover:shadow-[#fe5502]/30"
+                >
+                  {loading ? (
+                    <span className="flex items-center gap-2">
+                      <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Calcul...
+                    </span>
+                  ) : (
+                    "Valider"
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Live points preview */}
+            <div className={`rounded-xl border p-3.5 transition-all duration-200 ${
+              previewPoints > 0
+                ? "bg-[#fe5502]/5 border-[#fe5502]/20"
+                : "bg-[#0a1628]/40 border-[#1e3a5f]/40"
+            }`}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-xs text-gray-500">
+                  <StarIcon className="w-3.5 h-3.5 text-gray-600" />
+                  <span>Points générés</span>
+                </div>
+                <span className={`text-lg font-bold tabular-nums transition-all ${
+                  previewPoints > 0 ? "text-[#fe5502]" : "text-gray-600"
+                }`}>
+                  {previewPoints > 0 ? `+${previewPoints}` : "—"}
+                </span>
+              </div>
+              <p className="text-xs text-gray-600 mt-1.5">
+                Règle : {loyaltyRule.pointsEarned} pts par tranche de {loyaltyRule.spendThreshold} DT
+              </p>
+            </div>
+
+            {/* Feedback message */}
+            {message && (
+              <div className={`flex items-center gap-2 text-sm rounded-lg px-3 py-2 ${
+                message.ok
+                  ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                  : "bg-red-500/10 text-red-400 border border-red-500/20"
+              }`}>
+                {message.ok ? <CheckIcon className="w-4 h-4 shrink-0" /> : <AlertTriangleIcon className="w-4 h-4 shrink-0" />}
+                {message.text}
+              </div>
             )}
-          </div>
-          <div className="w-full bg-gray-700 rounded-full h-2">
-            <div className="bg-[#fe5502] h-2 rounded-full" style={{ width: `${progress}%` }} />
-          </div>
-          {nextReward && <p className="text-sm text-gray-400 mt-2">🎁 {nextReward.name}</p>}
+          </form>
         </div>
-      </div>
 
-      {/* Add Points */}
-      <div className="bg-[#0d1f3c] rounded-lg p-6 border border-[#1e3a5f] mb-6">
-        <h2 className="text-xl font-semibold text-white mb-3">Ajouter des points</h2>
-        <form onSubmit={handleAddPoints} className="flex flex-col sm:flex-row gap-3">
-          <input
-            type="number"
-            step="0.01"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            placeholder="Montant dépensé (DT)"
-            className="flex-1 px-3 py-2 bg-[#0a1628] border border-[#1e3a5f] rounded-md text-white"
-            disabled={loading}
-          />
-          <button
-            type="submit"
-            disabled={loading}
-            className="px-4 py-2 bg-[#fe5502] text-white rounded-md hover:bg-[#e0682e] disabled:opacity-50"
-          >
-            {loading ? "..." : "Ajouter"}
-          </button>
-        </form>
-        {message && <p className="mt-2 text-sm text-green-400">{message}</p>}
-        <p className="text-xs text-gray-500 mt-2">1 DT = 10 ⭐</p>
-      </div>
+        {/* ── Visit History ── */}
+        <div className="rounded-2xl bg-gradient-to-br from-[#0d1f3c] to-[#091529] border border-[#1e3a5f]/60 p-6 mb-5 shadow-xl shadow-black/30">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-base font-semibold text-white tracking-tight">Historique des visites</h2>
+            <span className="text-xs text-gray-500 bg-[#0a1628] border border-[#1e3a5f]/40 px-2.5 py-1 rounded-full">
+              {visits.length} entrée{visits.length !== 1 ? "s" : ""}
+            </span>
+          </div>
 
-      {/* Visit History with CRUD */}
-      <div className="bg-[#0d1f3c] rounded-lg p-6 border border-[#1e3a5f] mb-6">
-        <h2 className="text-xl font-semibold text-white mb-3">Historique des points</h2>
-        {visits.length === 0 ? (
-          <p className="text-gray-400">Aucune activité</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="text-gray-400 border-b border-[#1e3a5f]">
-                <tr>
-                  <th className="text-left py-2">Date</th>
-                  <th className="text-left py-2">Montant (DT)</th>
-                  <th className="text-left py-2">Points gagnés</th>
-                  <th className="text-right py-2">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {visits.map((visit) => (
-                  <tr key={visit.id} className="border-b border-[#1e3a5f]/50">
-                    {/* Date */}
-                    <td className="py-2 text-white">
-                      {new Date(visit.date).toLocaleDateString()}
-                    </td>
-
-                    {/* Amount — editable inline */}
-                    <td className="py-2">
-                      {editingId === visit.id ? (
-                        <input
-                          type="number"
-                          step="0.01"
-                          value={editAmount}
-                          onChange={(e) => setEditAmount(e.target.value)}
-                          className="w-24 px-2 py-1 bg-[#0a1628] border border-[#fe5502] rounded text-white text-sm"
-                          autoFocus
-                        />
-                      ) : (
-                        <span className="text-white">{visit.amount?.toFixed(2) ?? "-"}</span>
-                      )}
-                    </td>
-
-                    {/* Points */}
-                    <td className="py-2 text-[#fe5502]">{visit.pointsEarned}⭐</td>
-
-                    {/* Action buttons */}
-                    <td className="py-2 text-right">
-                      {confirmDeleteId === visit.id ? (
-                        /* Delete confirmation */
-                        <span className="inline-flex items-center gap-2">
-                          <span className="text-red-400 text-xs">Supprimer ?</span>
-                          <button
-                            onClick={() => handleDelete(visit.id)}
-                            disabled={deleteLoading}
-                            className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs disabled:opacity-50"
-                          >
-                            {deleteLoading ? "..." : "Oui"}
-                          </button>
-                          <button
-                            onClick={() => setConfirmDeleteId(null)}
-                            className="px-2 py-1 bg-gray-600 hover:bg-gray-700 text-white rounded text-xs"
-                          >
-                            Non
-                          </button>
-                        </span>
-                      ) : editingId === visit.id ? (
-                        /* Save / Cancel edit */
-                        <span className="inline-flex items-center gap-2">
-                          {editMessage?.id === visit.id && (
-                            <span
-                              className={`text-xs ${editMessage.ok ? "text-green-400" : "text-red-400"}`}
-                            >
-                              {editMessage.text}
-                            </span>
-                          )}
-                          <button
-                            onClick={() => handleEditSave(visit.id)}
-                            disabled={editLoading}
-                            className="px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs disabled:opacity-50"
-                          >
-                            {editLoading ? "..." : "Enregistrer"}
-                          </button>
-                          <button
-                            onClick={cancelEdit}
-                            className="px-2 py-1 bg-gray-600 hover:bg-gray-700 text-white rounded text-xs"
-                          >
-                            Annuler
-                          </button>
-                        </span>
-                      ) : (
-                        /* Default edit + delete buttons */
-                        <span className="inline-flex items-center gap-2">
-                          <button
-                            onClick={() => startEdit(visit)}
-                            title="Modifier"
-                            className="px-2 py-1 bg-[#1e3a5f] hover:bg-[#2a4f7c] text-white rounded text-xs transition-colors"
-                          >
-                            ✏️ Modifier
-                          </button>
-                          <button
-                            onClick={() => {
-                              setConfirmDeleteId(visit.id);
-                              setEditingId(null);
-                            }}
-                            title="Supprimer"
-                            className="px-2 py-1 bg-red-900/50 hover:bg-red-800 text-red-300 rounded text-xs transition-colors"
-                          >
-                            🗑️ Supprimer
-                          </button>
-                        </span>
-                      )}
-                    </td>
+          {visits.length === 0 ? (
+            <div className="text-center py-10 text-gray-600">
+              <CalendarIcon className="w-8 h-8 mx-auto mb-3 opacity-30" />
+              <p className="text-sm">Aucune activité enregistrée</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto -mx-1">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-xs text-gray-600 uppercase tracking-wider border-b border-[#1e3a5f]/40">
+                    <th className="text-left py-2.5 px-1 font-medium">Date</th>
+                    <th className="text-left py-2.5 px-1 font-medium">Montant</th>
+                    <th className="text-left py-2.5 px-1 font-medium">Points</th>
+                    <th className="text-right py-2.5 px-1 font-medium">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-[#1e3a5f]/25">
+                  {visits.map((visit) => (
+                    <tr key={visit.id} className="group hover:bg-[#0a1628]/40 transition-colors">
+                      {/* Date */}
+                      <td className="py-3 px-1 text-gray-300 text-xs">
+                        {new Date(visit.date).toLocaleDateString("fr-FR")}
+                      </td>
+
+                      {/* Amount */}
+                      <td className="py-3 px-1">
+                        {editingId === visit.id ? (
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={editAmount}
+                            onChange={(e) => setEditAmount(e.target.value)}
+                            className="w-24 px-2 py-1.5 bg-[#0a1628] border border-[#fe5502]/50 rounded-lg text-white text-xs focus:outline-none focus:ring-1 focus:ring-[#fe5502]/30"
+                            autoFocus
+                          />
+                        ) : (
+                          <span className="text-white font-medium">
+                            {visit.amount != null ? `${visit.amount.toFixed(2)} DT` : "—"}
+                          </span>
+                        )}
+                      </td>
+
+                      {/* Points */}
+                      <td className="py-3 px-1">
+                        <span className="inline-flex items-center gap-1 text-[#fe5502] font-semibold text-xs">
+                          <StarIcon className="w-3 h-3" />
+                          {visit.pointsEarned}
+                        </span>
+                      </td>
+
+                      {/* Actions */}
+                      <td className="py-3 px-1 text-right">
+                        {confirmDeleteId === visit.id ? (
+                          <span className="inline-flex items-center gap-1.5">
+                            <span className="text-red-400 text-xs mr-1">Confirmer ?</span>
+                            <button
+                              onClick={() => handleDelete(visit.id)}
+                              disabled={deleteLoading}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 bg-red-600/80 hover:bg-red-600 text-white rounded-lg text-xs font-medium disabled:opacity-50 transition-colors"
+                            >
+                              {deleteLoading ? (
+                                <span className="w-3 h-3 border border-white/30 border-t-white rounded-full animate-spin" />
+                              ) : (
+                                <CheckIcon className="w-3 h-3" />
+                              )}
+                              Oui
+                            </button>
+                            <button
+                              onClick={() => setConfirmDeleteId(null)}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 bg-[#1e3a5f]/60 hover:bg-[#1e3a5f] text-gray-300 rounded-lg text-xs font-medium transition-colors"
+                            >
+                              <XIcon className="w-3 h-3" />
+                              Non
+                            </button>
+                          </span>
+                        ) : editingId === visit.id ? (
+                          <span className="inline-flex items-center gap-1.5">
+                            {editMessage?.id === visit.id && (
+                              <span className={`text-xs mr-1 ${editMessage.ok ? "text-emerald-400" : "text-red-400"}`}>
+                                {editMessage.text}
+                              </span>
+                            )}
+                            <button
+                              onClick={() => handleEditSave(visit.id)}
+                              disabled={editLoading}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-600/80 hover:bg-emerald-600 text-white rounded-lg text-xs font-medium disabled:opacity-50 transition-colors"
+                            >
+                              {editLoading ? (
+                                <span className="w-3 h-3 border border-white/30 border-t-white rounded-full animate-spin" />
+                              ) : (
+                                <CheckIcon className="w-3 h-3" />
+                              )}
+                              Enregistrer
+                            </button>
+                            <button
+                              onClick={cancelEdit}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 bg-[#1e3a5f]/60 hover:bg-[#1e3a5f] text-gray-300 rounded-lg text-xs font-medium transition-colors"
+                            >
+                              <XIcon className="w-3 h-3" />
+                              Annuler
+                            </button>
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button
+                              onClick={() => startEdit(visit)}
+                              title="Modifier"
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-[#1e3a5f]/60 hover:bg-[#1e3a5f] text-gray-300 hover:text-white rounded-lg text-xs font-medium transition-colors"
+                            >
+                              <PencilIcon className="w-3 h-3" />
+                              Modifier
+                            </button>
+                            <button
+                              onClick={() => {
+                                setConfirmDeleteId(visit.id);
+                                setEditingId(null);
+                              }}
+                              title="Supprimer"
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-red-900/20 hover:bg-red-900/50 text-red-400 hover:text-red-300 rounded-lg text-xs font-medium transition-colors"
+                            >
+                              <TrashIcon className="w-3 h-3" />
+                              Supprimer
+                            </button>
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        {/* ── Earned Rewards ── */}
+        {earnedRewards.length > 0 && (
+          <div className="rounded-2xl bg-gradient-to-br from-[#0d1f3c] to-[#091529] border border-[#1e3a5f]/60 p-6 shadow-xl shadow-black/30">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-base font-semibold text-white tracking-tight">Récompenses échangées</h2>
+              <GiftIcon className="w-5 h-5 text-[#fe5502]" />
+            </div>
+            <ul className="space-y-2">
+              {earnedRewards.map((er, i) => (
+                <li
+                  key={i}
+                  className="flex items-center justify-between py-2.5 px-3 rounded-xl bg-[#0a1628]/60 border border-[#1e3a5f]/30"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-6 h-6 rounded-lg bg-[#fe5502]/10 border border-[#fe5502]/20 flex items-center justify-center shrink-0">
+                      <GiftIcon className="w-3 h-3 text-[#fe5502]" />
+                    </div>
+                    <span className="text-white text-sm font-medium">{er.reward.name}</span>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs text-gray-500">{new Date(er.earnedAt).toLocaleDateString("fr-FR")}</p>
+                    {er.usedAt && (
+                      <p className="text-xs text-emerald-500/70">Utilisé</p>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
           </div>
         )}
-      </div>
 
-      {/* Earned Rewards */}
-      {earnedRewards.length > 0 && (
-        <div className="bg-[#0d1f3c] rounded-lg p-6 border border-[#1e3a5f]">
-          <h2 className="text-xl font-semibold text-white mb-3">Récompenses échangées</h2>
-          <ul className="space-y-2">
-            {earnedRewards.map((er) => (
-              <li key={er.reward.id} className="flex justify-between text-sm">
-                <span className="text-white">{er.reward.name}</span>
-                <span className="text-gray-400">{new Date(er.earnedAt).toLocaleDateString()}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+      </div>
     </div>
   );
 }
