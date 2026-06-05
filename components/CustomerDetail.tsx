@@ -592,25 +592,26 @@ export default function CustomerDetail({
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-2">
-                            <button
-                              onClick={() => startEdit(visit)}
-                              title="Modifier"
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#1e3a5f] hover:bg-[#2a4f7c] border border-[#2a4f7c] hover:border-[#3a6090] text-white rounded-lg text-xs font-semibold transition-all shadow-sm"
-                            >
-                              <PencilIcon className="w-3.5 h-3.5" />
-                              Modifier
-                            </button>
-                            <button
-                              onClick={() => {
-                                setConfirmDeleteId(visit.id);
-                                setEditingId(null);
-                              }}
-                              title="Supprimer"
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-950/60 hover:bg-red-900/80 border border-red-800/50 hover:border-red-700 text-red-400 hover:text-red-300 rounded-lg text-xs font-semibold transition-all shadow-sm"
-                            >
-                              <TrashIcon className="w-3.5 h-3.5" />
-                              Supprimer
-                            </button>
+                          <button
+  onClick={() => startEdit(visit)}
+  title="Modifier"
+  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium transition-all duration-200 bg-[#1e3a5f]/30 text-white hover:bg-[#fe5502] hover:text-white border border-transparent hover:border-[#fe5502] focus:outline-none focus:ring-2 focus:ring-[#fe5502]/50"
+>
+  <PencilIcon className="w-3.5 h-3.5" />
+  Modifier
+</button>
+
+<button
+  onClick={() => {
+    setConfirmDeleteId(visit.id);
+    setEditingId(null);
+  }}
+  title="Supprimer"
+  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium transition-all duration-200 bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white border border-transparent hover:border-red-400 focus:outline-none focus:ring-2 focus:ring-red-500/50"
+>
+  <TrashIcon className="w-3.5 h-3.5" />
+  Supprimer
+</button>
                           </span>
                         )}
                       </td>
