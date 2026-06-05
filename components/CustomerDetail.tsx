@@ -1,9 +1,10 @@
+// components/CustomerDetail.tsx
 "use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-// --- SVG Icon Components ---
+// --- SVG Icon Components (pro, inline) ---
 const StarIcon = ({ className = "" }: { className?: string }) => (
   <svg className={className} viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
     <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
@@ -98,19 +99,11 @@ const PlusCircleIcon = ({ className = "" }: { className?: string }) => (
   </svg>
 );
 
-const MinusCircleIcon = ({ className = "" }: { className?: string }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="10" />
-    <line x1="8" y1="12" x2="16" y2="12" />
-  </svg>
-);
-
 // --- Types ---
 interface Reward {
   id: string;
   name: string;
   pointsRequired: number;
-  description?: string;
 }
 
 interface Visit {
@@ -147,7 +140,7 @@ interface Props {
   rewards: Reward[];
   nextReward: Reward | null;
   progress: number;
-  loyaltyRule?: LoyaltyRule;
+  loyaltyRule?: LoyaltyRule; // passed from parent (fetched from /api/loyalty-program)
 }
 
 export default function CustomerDetail({
@@ -160,44 +153,28 @@ export default function CustomerDetail({
   loyaltyRule = { spendThreshold: 1, pointsEarned: 10 },
 }: Props) {
   const router = useRouter();
-
-  // ── Add Points state (from CustomerDetail) ──
   const [amount, setAmount] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ text: string; ok: boolean } | null>(null);
   const [visits, setVisits] = useState<Visit[]>(initialVisits);
 
-  // ── Edit Visit state ──
+  // Edit state
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editAmount, setEditAmount] = useState("");
   const [editLoading, setEditLoading] = useState(false);
   const [editMessage, setEditMessage] = useState<{ id: string; text: string; ok: boolean } | null>(null);
 
-  // ── Delete Confirm state ──
+  // Delete confirm state
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
-  // ── Redeem Points (manual deduction) state — from ScanClientForm ──
-  const [redeemStars, setRedeemStars] = useState("");
-  const [loadingRedeem, setLoadingRedeem] = useState(false);
-
-  // ── Redeem Reward state — from ScanClientForm ──
-  const [loadingReward, setLoadingReward] = useState<string | null>(null);
-
-  // ── Live points balance (kept in sync with all operations) ──
-  const [livePoints, setLivePoints] = useState(customer.points);
-
-  // ── Active tab for Add/Redeem section ──
-  const [activeTab, setActiveTab] = useState<"add" | "redeem" | "rewards">("add");
-
-  // ── Dynamic points preview ──
+  // Dynamic points preview based on loyalty rule
   const previewAmount = parseFloat(amount) || 0;
   const previewPoints =
     previewAmount > 0 && loyaltyRule.spendThreshold > 0
       ? Math.floor((previewAmount / loyaltyRule.spendThreshold) * loyaltyRule.pointsEarned)
       : 0;
 
-  // ── Handle: Add Points (record a purchase) ──
   const handleAddPoints = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!amount || parseFloat(amount) <= 0) {
@@ -217,7 +194,6 @@ export default function CustomerDetail({
       });
       const data = await res.json();
       if (res.ok) {
-        setLivePoints(data.newPoints ?? livePoints + (data.pointsAdded ?? 0));
         setMessage({ text: `+${data.pointsAdded} points ajoutés avec succès`, ok: true });
         setTimeout(() => router.refresh(), 1200);
       } else {
@@ -231,72 +207,6 @@ export default function CustomerDetail({
     }
   };
 
-  // ── Handle: Redeem Points manually (deduct raw points) ──
-  const handleRedeemPoints = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const stars = parseInt(redeemStars);
-    if (isNaN(stars) || stars <= 0) {
-      setMessage({ text: "Veuillez entrer un nombre valide de points", ok: false });
-      return;
-    }
-    if (stars > livePoints) {
-      setMessage({ text: "Points insuffisants", ok: false });
-      return;
-    }
-    setLoadingRedeem(true);
-    setMessage(null);
-    try {
-      const res = await fetch("/api/customer/deduct-points", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ customerId: customer.id, pointsToDeduct: stars }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setLivePoints(data.newPoints);
-        setMessage({ text: `${data.deducted} points déduits. Nouveau solde : ${data.newPoints} pts`, ok: true });
-        setRedeemStars("");
-        setTimeout(() => router.refresh(), 1200);
-      } else {
-        setMessage({ text: data.error || "Erreur", ok: false });
-      }
-    } catch {
-      setMessage({ text: "Erreur de connexion", ok: false });
-    } finally {
-      setLoadingRedeem(false);
-    }
-  };
-
-  // ── Handle: Redeem a specific Reward ──
-  const handleRedeemReward = async (rewardId: string, pointsRequired: number) => {
-    if (livePoints < pointsRequired) {
-      setMessage({ text: "Points insuffisants pour cette récompense", ok: false });
-      return;
-    }
-    setLoadingReward(rewardId);
-    setMessage(null);
-    try {
-      const res = await fetch("/api/customer/redeem-reward", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ customerId: customer.id, rewardId }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setLivePoints(data.newPoints);
-        setMessage({ text: `Récompense échangée ! Nouveau solde : ${data.newPoints} pts`, ok: true });
-        setTimeout(() => router.refresh(), 1200);
-      } else {
-        setMessage({ text: data.error || "Erreur", ok: false });
-      }
-    } catch {
-      setMessage({ text: "Erreur de connexion", ok: false });
-    } finally {
-      setLoadingReward(null);
-    }
-  };
-
-  // ── Handle: Start editing a visit ──
   const startEdit = (visit: Visit) => {
     setEditingId(visit.id);
     setEditAmount(visit.amount?.toString() ?? "");
@@ -304,14 +214,12 @@ export default function CustomerDetail({
     setConfirmDeleteId(null);
   };
 
-  // ── Handle: Cancel editing ──
   const cancelEdit = () => {
     setEditingId(null);
     setEditAmount("");
     setEditMessage(null);
   };
 
-  // ── Handle: Save edited visit ──
   const handleEditSave = async (visitId: string) => {
     const newAmount = parseFloat(editAmount);
     if (isNaN(newAmount) || newAmount <= 0) {
@@ -356,7 +264,6 @@ export default function CustomerDetail({
     }
   };
 
-  // ── Handle: Delete a visit ──
   const handleDelete = async (visitId: string) => {
     setDeleteLoading(true);
     try {
@@ -379,13 +286,6 @@ export default function CustomerDetail({
   };
 
   const shortId = customer.customerId.slice(-4);
-
-  // Recompute nextReward and progress against livePoints
-  const sortedRewards = [...rewards].sort((a, b) => a.pointsRequired - b.pointsRequired);
-  const liveNextReward = sortedRewards.find((r) => r.pointsRequired > livePoints) ?? nextReward;
-  const liveProgress = liveNextReward
-    ? Math.min((livePoints / liveNextReward.pointsRequired) * 100, 100)
-    : progress;
 
   return (
     <div className="min-h-screen bg-[#2e283d] p-4 md:p-8">
@@ -437,7 +337,7 @@ export default function CustomerDetail({
               {
                 icon: <StarIcon className="w-4 h-4" />,
                 label: "Solde actuel",
-                value: `${livePoints} pts`,
+                value: `${customer.points} pts`,
                 sub: null,
               },
             ].map((item, i) => (
@@ -461,35 +361,35 @@ export default function CustomerDetail({
           </div>
 
           <div className="flex items-end gap-2 mb-4">
-            <span className="text-5xl font-bold text-white tabular-nums">{livePoints}</span>
+            <span className="text-5xl font-bold text-white tabular-nums">{customer.points}</span>
             <span className="text-lg text-[#fe5502] font-semibold mb-1">pts</span>
           </div>
 
-          {liveNextReward && (
+          {nextReward && (
             <>
               <div className="flex justify-between text-xs text-gray-500 mb-1.5">
                 <span>Progression vers la prochaine récompense</span>
                 <span className="text-gray-400 font-medium">
-                  {livePoints} / {liveNextReward.pointsRequired} pts
+                  {customer.points} / {nextReward.pointsRequired} pts
                 </span>
               </div>
               <div className="w-full bg-[#0a1628] rounded-full h-2 border border-[#1e3a5f]/40 overflow-hidden">
                 <div
                   className="bg-gradient-to-r from-[#fe5502] to-[#ff7a3d] h-full rounded-full transition-all duration-700"
-                  style={{ width: `${Math.min(liveProgress, 100)}%` }}
+                  style={{ width: `${Math.min(progress, 100)}%` }}
                 />
               </div>
               <div className="flex items-center gap-2 mt-3 text-sm text-gray-400">
                 <GiftIcon className="w-4 h-4 text-[#fe5502] shrink-0" />
-                <span>{liveNextReward.name}</span>
+                <span>{nextReward.name}</span>
                 <span className="ml-auto text-xs text-gray-600">
-                  encore {liveNextReward.pointsRequired - livePoints} pts
+                  encore {nextReward.pointsRequired - customer.points} pts
                 </span>
               </div>
             </>
           )}
 
-          {!liveNextReward && (
+          {!nextReward && (
             <div className="flex items-center gap-2 mt-2 text-sm text-gray-500">
               <GiftIcon className="w-4 h-4 shrink-0" />
               <span>Aucune récompense disponible pour le moment</span>
@@ -497,228 +397,86 @@ export default function CustomerDetail({
           )}
         </div>
 
-        {/* ── Points Operations (Add / Redeem / Rewards tabs) ── */}
+        {/* ── Add Points ── */}
         <div className="rounded-2xl bg-gradient-to-br from-[#0d1f3c] to-[#091529] border border-[#1e3a5f]/60 p-6 mb-5 shadow-xl shadow-black/30">
-          {/* Tab bar */}
-          <div className="flex gap-1 bg-[#0a1628]/70 rounded-xl p-1 mb-5 border border-[#1e3a5f]/40">
-            {(
-              [
-                { key: "add", label: "Enregistrer", icon: <PlusCircleIcon className="w-3.5 h-3.5" /> },
-                { key: "redeem", label: "Déduire", icon: <MinusCircleIcon className="w-3.5 h-3.5" /> },
-                { key: "rewards", label: "Récompenses", icon: <GiftIcon className="w-3.5 h-3.5" /> },
-              ] as const
-            ).map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => { setActiveTab(tab.key); setMessage(null); }}
-                className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-all duration-200 ${
-                  activeTab === tab.key
-                    ? "bg-[#fe5502] text-white shadow-md shadow-[#fe5502]/20"
-                    : "text-gray-500 hover:text-gray-300"
-                }`}
-              >
-                {tab.icon}
-                {tab.label}
-              </button>
-            ))}
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-base font-semibold text-white tracking-tight">Enregistrer une addition</h2>
+            <PlusCircleIcon className="w-5 h-5 text-[#fe5502]" />
           </div>
 
-          {/* Tab: Add Points */}
-          {activeTab === "add" && (
-            <form onSubmit={handleAddPoints} className="space-y-4">
-              <div>
-                <label className="block text-xs font-medium text-gray-400 mb-1.5 tracking-wide uppercase">
-                  Montant de l'addition (DT)
-                </label>
-                <div className="flex gap-3">
-                  <div className="relative flex-1">
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={amount}
-                      onChange={(e) => {
-                        setAmount(e.target.value);
-                        setMessage(null);
-                      }}
-                      placeholder="0.00"
-                      className="w-full px-4 py-2.5 bg-[#0a1628] border border-[#1e3a5f] rounded-xl text-white placeholder-gray-600 focus:outline-none focus:border-[#fe5502]/60 focus:ring-1 focus:ring-[#fe5502]/20 transition-all text-sm"
-                      disabled={loading}
-                    />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500 pointer-events-none">DT</span>
-                  </div>
-                  <button
-                    type="submit"
-                    disabled={loading || !amount || parseFloat(amount) <= 0}
-                    className="px-5 py-2.5 bg-[#fe5502] hover:bg-[#e04d02] disabled:bg-[#fe5502]/30 disabled:cursor-not-allowed text-white rounded-xl text-sm font-semibold transition-all duration-150 shadow-lg shadow-[#fe5502]/20 hover:shadow-[#fe5502]/30"
-                  >
-                    {loading ? (
-                      <span className="flex items-center gap-2">
-                        <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        Calcul...
-                      </span>
-                    ) : (
-                      "Valider"
-                    )}
-                  </button>
-                </div>
-              </div>
-
-              {/* Live points preview */}
-              <div className={`rounded-xl border p-3.5 transition-all duration-200 ${
-                previewPoints > 0
-                  ? "bg-[#fe5502]/5 border-[#fe5502]/20"
-                  : "bg-[#0a1628]/40 border-[#1e3a5f]/40"
-              }`}>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-xs text-gray-500">
-                    <StarIcon className="w-3.5 h-3.5 text-gray-600" />
-                    <span>Points générés</span>
-                  </div>
-                  <span className={`text-lg font-bold tabular-nums transition-all ${
-                    previewPoints > 0 ? "text-[#fe5502]" : "text-gray-600"
-                  }`}>
-                    {previewPoints > 0 ? `+${previewPoints}` : "—"}
-                  </span>
-                </div>
-                <p className="text-xs text-gray-600 mt-1.5">
-                  Règle : {loyaltyRule.pointsEarned} pts par tranche de {loyaltyRule.spendThreshold} DT
-                </p>
-              </div>
-            </form>
-          )}
-
-          {/* Tab: Redeem Points (manual deduction) */}
-          {activeTab === "redeem" && (
-            <form onSubmit={handleRedeemPoints} className="space-y-4">
-              <div>
-                <label className="block text-xs font-medium text-gray-400 mb-1.5 tracking-wide uppercase">
-                  Nombre de points à déduire
-                </label>
-                <div className="flex gap-3">
-                  <div className="relative flex-1">
-                    <input
-                      type="number"
-                      step="1"
-                      min="1"
-                      value={redeemStars}
-                      onChange={(e) => {
-                        setRedeemStars(e.target.value);
-                        setMessage(null);
-                      }}
-                      placeholder="Ex : 100"
-                      className="w-full px-4 py-2.5 bg-[#0a1628] border border-[#1e3a5f] rounded-xl text-white placeholder-gray-600 focus:outline-none focus:border-red-500/60 focus:ring-1 focus:ring-red-500/20 transition-all text-sm"
-                      disabled={loadingRedeem}
-                    />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500 pointer-events-none">pts</span>
-                  </div>
-                  <button
-                    type="submit"
-                    disabled={loadingRedeem || !redeemStars || parseInt(redeemStars) <= 0}
-                    className="px-5 py-2.5 bg-red-600 hover:bg-red-700 disabled:bg-red-600/30 disabled:cursor-not-allowed text-white rounded-xl text-sm font-semibold transition-all duration-150 shadow-lg shadow-red-600/20"
-                  >
-                    {loadingRedeem ? (
-                      <span className="flex items-center gap-2">
-                        <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        ...
-                      </span>
-                    ) : (
-                      "Déduire"
-                    )}
-                  </button>
-                </div>
-              </div>
-              <div className="rounded-xl border bg-[#0a1628]/40 border-[#1e3a5f]/40 p-3.5">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-xs text-gray-500">
-                    <StarIcon className="w-3.5 h-3.5 text-gray-600" />
-                    <span>Points disponibles</span>
-                  </div>
-                  <span className="text-lg font-bold tabular-nums text-white">{livePoints}</span>
-                </div>
-                {redeemStars && parseInt(redeemStars) > 0 && parseInt(redeemStars) <= livePoints && (
-                  <p className="text-xs text-red-400/80 mt-1.5">
-                    Solde après déduction : {livePoints - parseInt(redeemStars)} pts
-                  </p>
-                )}
-                {redeemStars && parseInt(redeemStars) > livePoints && (
-                  <p className="text-xs text-red-400 mt-1.5">⚠ Points insuffisants</p>
-                )}
-              </div>
-            </form>
-          )}
-
-          {/* Tab: Available Rewards */}
-          {activeTab === "rewards" && (
+          <form onSubmit={handleAddPoints} className="space-y-4">
             <div>
-              {rewards.length === 0 ? (
-                <div className="text-center py-8 text-gray-600">
-                  <GiftIcon className="w-8 h-8 mx-auto mb-3 opacity-30" />
-                  <p className="text-sm">Aucune récompense configurée</p>
+              <label className="block text-xs font-medium text-gray-400 mb-1.5 tracking-wide uppercase">
+                Montant de l'addition (DT)
+              </label>
+              <div className="flex gap-3">
+                <div className="relative flex-1">
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={amount}
+                    onChange={(e) => {
+                      setAmount(e.target.value);
+                      setMessage(null);
+                    }}
+                    placeholder="0.00"
+                    className="w-full px-4 py-2.5 bg-[#0a1628] border border-[#1e3a5f] rounded-xl text-white placeholder-gray-600 focus:outline-none focus:border-[#fe5502]/60 focus:ring-1 focus:ring-[#fe5502]/20 transition-all text-sm"
+                    disabled={loading}
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500 pointer-events-none">DT</span>
                 </div>
-              ) : (
-                <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
-                  {rewards.map((reward) => {
-                    const isAvailable = livePoints >= reward.pointsRequired;
-                    const isLoading = loadingReward === reward.id;
-                    return (
-                      <div
-                        key={reward.id}
-                        className={`flex items-center justify-between p-3 rounded-xl border transition-all ${
-                          isAvailable
-                            ? "bg-[#fe5502]/5 border-[#fe5502]/20"
-                            : "bg-[#0a1628]/40 border-[#1e3a5f]/30 opacity-60"
-                        }`}
-                      >
-                        <div className="flex items-center gap-2.5">
-                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
-                            isAvailable ? "bg-[#fe5502]/10 border border-[#fe5502]/20" : "bg-[#1e3a5f]/30 border border-[#1e3a5f]/20"
-                          }`}>
-                            <GiftIcon className={`w-3.5 h-3.5 ${isAvailable ? "text-[#fe5502]" : "text-gray-600"}`} />
-                          </div>
-                          <div>
-                            <p className="text-white text-sm font-medium">{reward.name}</p>
-                            <p className="text-xs text-gray-500">{reward.pointsRequired} pts requis</p>
-                            {reward.description && (
-                              <p className="text-xs text-gray-600 mt-0.5">{reward.description}</p>
-                            )}
-                          </div>
-                        </div>
-                        {isAvailable && (
-                          <button
-                            onClick={() => handleRedeemReward(reward.id, reward.pointsRequired)}
-                            disabled={isLoading}
-                            className="ml-3 shrink-0 px-3 py-1.5 bg-emerald-600/80 hover:bg-emerald-600 text-white rounded-lg text-xs font-semibold disabled:opacity-50 transition-all flex items-center gap-1.5"
-                          >
-                            {isLoading ? (
-                              <span className="w-3 h-3 border border-white/30 border-t-white rounded-full animate-spin" />
-                            ) : (
-                              <CheckIcon className="w-3 h-3" />
-                            )}
-                            Échanger
-                          </button>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+                <button
+                  type="submit"
+                  disabled={loading || !amount || parseFloat(amount) <= 0}
+                  className="px-5 py-2.5 bg-[#fe5502] hover:bg-[#e04d02] disabled:bg-[#fe5502]/30 disabled:cursor-not-allowed text-white rounded-xl text-sm font-semibold transition-all duration-150 shadow-lg shadow-[#fe5502]/20 hover:shadow-[#fe5502]/30"
+                >
+                  {loading ? (
+                    <span className="flex items-center gap-2">
+                      <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Calcul...
+                    </span>
+                  ) : (
+                    "Valider"
+                  )}
+                </button>
+              </div>
             </div>
-          )}
 
-          {/* Shared feedback message */}
-          {message && (
-            <div className={`flex items-center gap-2 text-sm rounded-lg px-3 py-2 mt-4 ${
-              message.ok
-                ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                : "bg-red-500/10 text-red-400 border border-red-500/20"
+            {/* Live points preview */}
+            <div className={`rounded-xl border p-3.5 transition-all duration-200 ${
+              previewPoints > 0
+                ? "bg-[#fe5502]/5 border-[#fe5502]/20"
+                : "bg-[#0a1628]/40 border-[#1e3a5f]/40"
             }`}>
-              {message.ok
-                ? <CheckIcon className="w-4 h-4 shrink-0" />
-                : <AlertTriangleIcon className="w-4 h-4 shrink-0" />}
-              {message.text}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-xs text-gray-500">
+                  <StarIcon className="w-3.5 h-3.5 text-gray-600" />
+                  <span>Points générés</span>
+                </div>
+                <span className={`text-lg font-bold tabular-nums transition-all ${
+                  previewPoints > 0 ? "text-[#fe5502]" : "text-gray-600"
+                }`}>
+                  {previewPoints > 0 ? `+${previewPoints}` : "—"}
+                </span>
+              </div>
+              <p className="text-xs text-gray-600 mt-1.5">
+                Règle : {loyaltyRule.pointsEarned} pts par tranche de {loyaltyRule.spendThreshold} DT
+              </p>
             </div>
-          )}
+
+            {/* Feedback message */}
+            {message && (
+              <div className={`flex items-center gap-2 text-sm rounded-lg px-3 py-2 ${
+                message.ok
+                  ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                  : "bg-red-500/10 text-red-400 border border-red-500/20"
+              }`}>
+                {message.ok ? <CheckIcon className="w-4 h-4 shrink-0" /> : <AlertTriangleIcon className="w-4 h-4 shrink-0" />}
+                {message.text}
+              </div>
+            )}
+          </form>
         </div>
 
         {/* ── Visit History ── */}
@@ -834,25 +592,26 @@ export default function CustomerDetail({
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-2">
-                            <button
-                              onClick={() => startEdit(visit)}
-                              title="Modifier"
-                              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium transition-all duration-200 bg-[#1e3a5f]/30 text-white hover:bg-[#fe5502] hover:text-white border border-transparent hover:border-[#fe5502] focus:outline-none focus:ring-2 focus:ring-[#fe5502]/50"
-                            >
-                              <PencilIcon className="w-3.5 h-3.5" />
-                              Modifier
-                            </button>
-                            <button
-                              onClick={() => {
-                                setConfirmDeleteId(visit.id);
-                                setEditingId(null);
-                              }}
-                              title="Supprimer"
-                              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium transition-all duration-200 bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white border border-transparent hover:border-red-400 focus:outline-none focus:ring-2 focus:ring-red-500/50"
-                            >
-                              <TrashIcon className="w-3.5 h-3.5" />
-                              Supprimer
-                            </button>
+                          <button
+  onClick={() => startEdit(visit)}
+  title="Modifier"
+  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium transition-all duration-200 bg-[#1e3a5f]/30 text-white hover:bg-[#fe5502] hover:text-white border border-transparent hover:border-[#fe5502] focus:outline-none focus:ring-2 focus:ring-[#fe5502]/50"
+>
+  <PencilIcon className="w-3.5 h-3.5" />
+  Modifier
+</button>
+
+<button
+  onClick={() => {
+    setConfirmDeleteId(visit.id);
+    setEditingId(null);
+  }}
+  title="Supprimer"
+  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium transition-all duration-200 bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white border border-transparent hover:border-red-400 focus:outline-none focus:ring-2 focus:ring-red-500/50"
+>
+  <TrashIcon className="w-3.5 h-3.5" />
+  Supprimer
+</button>
                           </span>
                         )}
                       </td>
