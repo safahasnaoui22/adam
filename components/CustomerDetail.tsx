@@ -506,7 +506,7 @@ export default function CustomerDetail({
                 </thead>
                 <tbody className="divide-y divide-[#1e3a5f]/25">
                   {visits.map((visit) => (
-                    <tr key={visit.id} className="group hover:bg-[#0a1628]/40 transition-colors">
+                    <tr key={visit.id} className="hover:bg-[#0a1628]/40 transition-colors">
                       {/* Date */}
                       <td className="py-3 px-1 text-gray-300 text-xs">
                         {new Date(visit.date).toLocaleDateString("fr-FR")}
@@ -591,13 +591,13 @@ export default function CustomerDetail({
                             </button>
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <span className="inline-flex items-center gap-2">
                             <button
                               onClick={() => startEdit(visit)}
                               title="Modifier"
-                              className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-[#1e3a5f]/60 hover:bg-[#1e3a5f] text-gray-300 hover:text-white rounded-lg text-xs font-medium transition-colors"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#1e3a5f] hover:bg-[#2a4f7c] border border-[#2a4f7c] hover:border-[#3a6090] text-white rounded-lg text-xs font-semibold transition-all shadow-sm"
                             >
-                              <PencilIcon className="w-3 h-3" />
+                              <PencilIcon className="w-3.5 h-3.5" />
                               Modifier
                             </button>
                             <button
@@ -606,9 +606,9 @@ export default function CustomerDetail({
                                 setEditingId(null);
                               }}
                               title="Supprimer"
-                              className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-red-900/20 hover:bg-red-900/50 text-red-400 hover:text-red-300 rounded-lg text-xs font-medium transition-colors"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-950/60 hover:bg-red-900/80 border border-red-800/50 hover:border-red-700 text-red-400 hover:text-red-300 rounded-lg text-xs font-semibold transition-all shadow-sm"
                             >
-                              <TrashIcon className="w-3 h-3" />
+                              <TrashIcon className="w-3.5 h-3.5" />
                               Supprimer
                             </button>
                           </span>
