@@ -1,7 +1,9 @@
 // app/api/customer/visits/[visitId]/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma"; // adjust this import to match your prisma client path
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/lib/auth";
+import { prisma } from "@/app/lib/prisma";
 
 // ── PATCH /api/customer/visits/[visitId] ─────────────────────────────────────
 // Updates the amount of a visit and recalculates pointsEarned
@@ -10,6 +12,11 @@ export async function PATCH(
   { params }: { params: { visitId: string } }
 ) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.restaurantId) {
+      return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
+    }
+
     const { visitId } = params;
     const body = await req.json();
     const amount = parseFloat(body.amount);
@@ -22,28 +29,28 @@ export async function PATCH(
       return NextResponse.json({ error: "Montant invalide" }, { status: 400 });
     }
 
-    // Fetch the existing visit (to get the linked customer)
+    // Fetch the existing visit (to get the linked customer + verify ownership)
     const existingVisit = await prisma.visit.findUnique({
       where: { id: visitId },
-      select: { id: true, pointsEarned: true, customerId: true },
+      select: {
+        id: true,
+        pointsEarned: true,
+        customerId: true,
+        customer: { select: { restaurantId: true } },
+      },
     });
 
     if (!existingVisit) {
       return NextResponse.json({ error: "Visite introuvable" }, { status: 404 });
     }
 
-    // Fetch the active loyalty rule
-    const loyaltyProgram = await prisma.loyaltyProgram.findFirst({
-      where: { isActive: true },
-    });
+    // Ensure the visit belongs to this restaurant
+    if (existingVisit.customer.restaurantId !== session.user.restaurantId) {
+      return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
+    }
 
-    const spendThreshold = loyaltyProgram?.spendThreshold ?? 1;
-    const pointsEarned_per_threshold = loyaltyProgram?.pointsEarned ?? 10;
-
-    const newPointsEarned = Math.floor(
-      (amount / spendThreshold) * pointsEarned_per_threshold
-    );
-
+    // Same formula as add-points: 1 DT = 10 points
+    const newPointsEarned = Math.floor(amount * 10);
     const pointsDiff = newPointsEarned - existingVisit.pointsEarned;
 
     // Update visit + adjust customer points in a transaction
@@ -55,11 +62,10 @@ export async function PATCH(
           pointsEarned: newPointsEarned,
         },
       }),
-      prisma.customer.update({
+      prisma.customerProfile.update({
         where: { id: existingVisit.customerId },
         data: {
           points: { increment: pointsDiff },
-          lastVisit: new Date(),
         },
       }),
     ]);
@@ -71,10 +77,7 @@ export async function PATCH(
     });
   } catch (error) {
     console.error("[PATCH /api/customer/visits]", error);
-    return NextResponse.json(
-      { error: "Erreur serveur" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
 }
 
@@ -85,20 +88,35 @@ export async function DELETE(
   { params }: { params: { visitId: string } }
 ) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.restaurantId) {
+      return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
+    }
+
     const { visitId } = params;
 
     if (!visitId) {
       return NextResponse.json({ error: "Visit ID manquant" }, { status: 400 });
     }
 
-    // Fetch first so we know how many points to subtract
+    // Fetch first so we know how many points to subtract + verify ownership
     const visit = await prisma.visit.findUnique({
       where: { id: visitId },
-      select: { id: true, pointsEarned: true, customerId: true },
+      select: {
+        id: true,
+        pointsEarned: true,
+        customerId: true,
+        customer: { select: { restaurantId: true } },
+      },
     });
 
     if (!visit) {
       return NextResponse.json({ error: "Visite introuvable" }, { status: 404 });
+    }
+
+    // Ensure the visit belongs to this restaurant
+    if (visit.customer.restaurantId !== session.user.restaurantId) {
+      return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
     }
 
     // Delete visit + subtract points in a transaction
@@ -106,7 +124,7 @@ export async function DELETE(
       prisma.visit.delete({
         where: { id: visitId },
       }),
-      prisma.customer.update({
+      prisma.customerProfile.update({
         where: { id: visit.customerId },
         data: {
           points: { decrement: visit.pointsEarned },
@@ -117,9 +135,6 @@ export async function DELETE(
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("[DELETE /api/customer/visits]", error);
-    return NextResponse.json(
-      { error: "Erreur serveur" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
 }
