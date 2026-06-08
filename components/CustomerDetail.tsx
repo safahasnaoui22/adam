@@ -99,25 +99,11 @@ const PlusCircleIcon = ({ className = "" }: { className?: string }) => (
   </svg>
 );
 
-const MinusCircleIcon = ({ className = "" }: { className?: string }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="10" />
-    <line x1="8" y1="12" x2="16" y2="12" />
-  </svg>
-);
-
-const SparkleIcon = ({ className = "" }: { className?: string }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M12 3v3M12 18v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M3 12h3M18 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12" />
-  </svg>
-);
-
 // --- Types ---
 interface Reward {
   id: string;
   name: string;
   pointsRequired: number;
-  description?: string;
 }
 
 interface Visit {
@@ -154,7 +140,7 @@ interface Props {
   rewards: Reward[];
   nextReward: Reward | null;
   progress: number;
-  loyaltyRule?: LoyaltyRule;
+  loyaltyRule?: LoyaltyRule; // passed from parent (fetched from /api/loyalty-program)
 }
 
 export default function CustomerDetail({
@@ -167,10 +153,6 @@ export default function CustomerDetail({
   loyaltyRule = { spendThreshold: 1, pointsEarned: 10 },
 }: Props) {
   const router = useRouter();
-
-  // Live points balance (updated optimistically after add/deduct/redeem)
-  const [currentPoints, setCurrentPoints] = useState(customer.points);
-
   const [amount, setAmount] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ text: string; ok: boolean } | null>(null);
@@ -186,15 +168,6 @@ export default function CustomerDetail({
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
-  // Deduct points state
-  const [deductPoints, setDeductPoints] = useState("");
-  const [deductLoading, setDeductLoading] = useState(false);
-  const [deductMessage, setDeductMessage] = useState<{ text: string; ok: boolean } | null>(null);
-
-  // Redeem reward state
-  const [redeemLoadingId, setRedeemLoadingId] = useState<string | null>(null);
-  const [redeemMessage, setRedeemMessage] = useState<{ text: string; ok: boolean } | null>(null);
-
   // Dynamic points preview based on loyalty rule
   const previewAmount = parseFloat(amount) || 0;
   const previewPoints =
@@ -202,7 +175,6 @@ export default function CustomerDetail({
       ? Math.floor((previewAmount / loyaltyRule.spendThreshold) * loyaltyRule.pointsEarned)
       : 0;
 
-  // ── Add Points ──
   const handleAddPoints = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!amount || parseFloat(amount) <= 0) {
@@ -222,7 +194,6 @@ export default function CustomerDetail({
       });
       const data = await res.json();
       if (res.ok) {
-        setCurrentPoints(data.newPoints);
         setMessage({ text: `+${data.pointsAdded} points ajoutés avec succès`, ok: true });
         setTimeout(() => router.refresh(), 1200);
       } else {
@@ -236,72 +207,6 @@ export default function CustomerDetail({
     }
   };
 
-  // ── Deduct Points ──
-  const handleDeductPoints = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const pts = parseInt(deductPoints);
-    if (isNaN(pts) || pts <= 0) {
-      setDeductMessage({ text: "Nombre de points invalide", ok: false });
-      return;
-    }
-    if (pts > currentPoints) {
-      setDeductMessage({ text: "Points insuffisants", ok: false });
-      return;
-    }
-    setDeductLoading(true);
-    setDeductMessage(null);
-    try {
-      const res = await fetch("/api/customer/deduct-points", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ customerId: customer.id, pointsToDeduct: pts }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setCurrentPoints(data.newPoints);
-        setDeductMessage({ text: `${data.deducted} points déduits. Nouveau solde : ${data.newPoints} pts`, ok: true });
-        setDeductPoints("");
-        setTimeout(() => router.refresh(), 1200);
-      } else {
-        setDeductMessage({ text: data.error || "Erreur", ok: false });
-      }
-    } catch {
-      setDeductMessage({ text: "Erreur de connexion", ok: false });
-    } finally {
-      setDeductLoading(false);
-    }
-  };
-
-  // ── Redeem Reward ──
-  const handleRedeemReward = async (rewardId: string, pointsRequired: number) => {
-    if (currentPoints < pointsRequired) {
-      setRedeemMessage({ text: "Points insuffisants pour cette récompense", ok: false });
-      return;
-    }
-    setRedeemLoadingId(rewardId);
-    setRedeemMessage(null);
-    try {
-      const res = await fetch("/api/customer/redeem-reward", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ customerId: customer.id, rewardId }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setCurrentPoints(data.newPoints);
-        setRedeemMessage({ text: `Récompense échangée ! Nouveau solde : ${data.newPoints} pts`, ok: true });
-        setTimeout(() => router.refresh(), 1200);
-      } else {
-        setRedeemMessage({ text: data.error || "Erreur", ok: false });
-      }
-    } catch {
-      setRedeemMessage({ text: "Erreur de connexion", ok: false });
-    } finally {
-      setRedeemLoadingId(null);
-    }
-  };
-
-  // ── Visit Edit / Delete ──
   const startEdit = (visit: Visit) => {
     setEditingId(visit.id);
     setEditAmount(visit.amount?.toString() ?? "");
@@ -432,7 +337,7 @@ export default function CustomerDetail({
               {
                 icon: <StarIcon className="w-4 h-4" />,
                 label: "Solde actuel",
-                value: `${currentPoints} pts`,
+                value: `${customer.points} pts`,
                 sub: null,
               },
             ].map((item, i) => (
@@ -456,7 +361,7 @@ export default function CustomerDetail({
           </div>
 
           <div className="flex items-end gap-2 mb-4">
-            <span className="text-5xl font-bold text-white tabular-nums">{currentPoints}</span>
+            <span className="text-5xl font-bold text-white tabular-nums">{customer.points}</span>
             <span className="text-lg text-[#fe5502] font-semibold mb-1">pts</span>
           </div>
 
@@ -465,7 +370,7 @@ export default function CustomerDetail({
               <div className="flex justify-between text-xs text-gray-500 mb-1.5">
                 <span>Progression vers la prochaine récompense</span>
                 <span className="text-gray-400 font-medium">
-                  {currentPoints} / {nextReward.pointsRequired} pts
+                  {customer.points} / {nextReward.pointsRequired} pts
                 </span>
               </div>
               <div className="w-full bg-[#0a1628] rounded-full h-2 border border-[#1e3a5f]/40 overflow-hidden">
@@ -478,7 +383,7 @@ export default function CustomerDetail({
                 <GiftIcon className="w-4 h-4 text-[#fe5502] shrink-0" />
                 <span>{nextReward.name}</span>
                 <span className="ml-auto text-xs text-gray-600">
-                  encore {nextReward.pointsRequired - currentPoints} pts
+                  encore {nextReward.pointsRequired - customer.points} pts
                 </span>
               </div>
             </>
@@ -573,155 +478,6 @@ export default function CustomerDetail({
             )}
           </form>
         </div>
-
-        {/* ── Deduct Points ── */}
-        <div className="rounded-2xl bg-gradient-to-br from-[#0d1f3c] to-[#091529] border border-[#1e3a5f]/60 p-6 mb-5 shadow-xl shadow-black/30">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-semibold text-white tracking-tight">Utiliser des points</h2>
-            <MinusCircleIcon className="w-5 h-5 text-[#fe5502]" />
-          </div>
-
-          <form onSubmit={handleDeductPoints} className="space-y-4">
-            <div>
-              <label className="block text-xs font-medium text-gray-400 mb-1.5 tracking-wide uppercase">
-                Nombre de points à déduire
-              </label>
-              <div className="flex gap-3">
-                <div className="relative flex-1">
-                  <input
-                    type="number"
-                    step="1"
-                    min="1"
-                    value={deductPoints}
-                    onChange={(e) => {
-                      setDeductPoints(e.target.value);
-                      setDeductMessage(null);
-                    }}
-                    placeholder="Ex : 100"
-                    className="w-full px-4 py-2.5 bg-[#0a1628] border border-[#1e3a5f] rounded-xl text-white placeholder-gray-600 focus:outline-none focus:border-[#fe5502]/60 focus:ring-1 focus:ring-[#fe5502]/20 transition-all text-sm"
-                    disabled={deductLoading}
-                  />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500 pointer-events-none">pts</span>
-                </div>
-                <button
-                  type="submit"
-                  disabled={deductLoading || !deductPoints || parseInt(deductPoints) <= 0}
-                  className="px-5 py-2.5 bg-red-600 hover:bg-red-700 disabled:bg-red-600/30 disabled:cursor-not-allowed text-white rounded-xl text-sm font-semibold transition-all duration-150 shadow-lg shadow-red-900/20"
-                >
-                  {deductLoading ? (
-                    <span className="flex items-center gap-2">
-                      <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      ...
-                    </span>
-                  ) : (
-                    "Déduire"
-                  )}
-                </button>
-              </div>
-            </div>
-
-            {/* Available points hint */}
-            <div className="flex items-center gap-2 rounded-xl border bg-[#0a1628]/40 border-[#1e3a5f]/40 p-3.5">
-              <StarIcon className="w-3.5 h-3.5 text-[#fe5502]" />
-              <span className="text-xs text-gray-500">
-                Points disponibles :{" "}
-                <span className="text-white font-semibold">{currentPoints}</span>
-              </span>
-            </div>
-
-            {/* Feedback message */}
-            {deductMessage && (
-              <div className={`flex items-center gap-2 text-sm rounded-lg px-3 py-2 ${
-                deductMessage.ok
-                  ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                  : "bg-red-500/10 text-red-400 border border-red-500/20"
-              }`}>
-                {deductMessage.ok ? <CheckIcon className="w-4 h-4 shrink-0" /> : <AlertTriangleIcon className="w-4 h-4 shrink-0" />}
-                {deductMessage.text}
-              </div>
-            )}
-          </form>
-        </div>
-
-        {/* ── Available Rewards ── */}
-        {rewards.length > 0 && (
-          <div className="rounded-2xl bg-gradient-to-br from-[#0d1f3c] to-[#091529] border border-[#1e3a5f]/60 p-6 mb-5 shadow-xl shadow-black/30">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-base font-semibold text-white tracking-tight">Récompenses disponibles</h2>
-              <SparkleIcon className="w-5 h-5 text-[#fe5502]" />
-            </div>
-
-            <div className="space-y-2.5 max-h-72 overflow-y-auto pr-1 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-[#1e3a5f]">
-              {rewards.map((reward) => {
-                const isAvailable = currentPoints >= reward.pointsRequired;
-                const isLoading = redeemLoadingId === reward.id;
-                return (
-                  <div
-                    key={reward.id}
-                    className={`flex items-center justify-between rounded-xl border p-3.5 transition-all duration-200 ${
-                      isAvailable
-                        ? "bg-[#fe5502]/5 border-[#fe5502]/20"
-                        : "bg-[#0a1628]/40 border-[#1e3a5f]/30 opacity-50"
-                    }`}
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border ${
-                        isAvailable
-                          ? "bg-[#fe5502]/10 border-[#fe5502]/20"
-                          : "bg-[#1e3a5f]/20 border-[#1e3a5f]/30"
-                      }`}>
-                        <GiftIcon className={`w-4 h-4 ${isAvailable ? "text-[#fe5502]" : "text-gray-600"}`} />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-white text-sm font-medium truncate">{reward.name}</p>
-                        {reward.description && (
-                          <p className="text-gray-500 text-xs truncate">{reward.description}</p>
-                        )}
-                        <div className="flex items-center gap-1 mt-0.5">
-                          <StarIcon className="w-3 h-3 text-[#fe5502]" />
-                          <span className="text-xs text-gray-400 font-medium">{reward.pointsRequired} pts requis</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {isAvailable && (
-                      <button
-                        onClick={() => handleRedeemReward(reward.id, reward.pointsRequired)}
-                        disabled={isLoading}
-                        className="ml-3 shrink-0 px-3.5 py-1.5 bg-emerald-600/80 hover:bg-emerald-600 disabled:opacity-50 text-white rounded-lg text-xs font-semibold transition-all duration-150 shadow-sm shadow-emerald-900/30 inline-flex items-center gap-1.5"
-                      >
-                        {isLoading ? (
-                          <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        ) : (
-                          <CheckIcon className="w-3.5 h-3.5" />
-                        )}
-                        Échanger
-                      </button>
-                    )}
-
-                    {!isAvailable && (
-                      <span className="ml-3 shrink-0 text-xs text-gray-600 font-medium">
-                        −{reward.pointsRequired - currentPoints} pts
-                      </span>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Redeem feedback message */}
-            {redeemMessage && (
-              <div className={`flex items-center gap-2 text-sm rounded-lg px-3 py-2 mt-3 ${
-                redeemMessage.ok
-                  ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                  : "bg-red-500/10 text-red-400 border border-red-500/20"
-              }`}>
-                {redeemMessage.ok ? <CheckIcon className="w-4 h-4 shrink-0" /> : <AlertTriangleIcon className="w-4 h-4 shrink-0" />}
-                {redeemMessage.text}
-              </div>
-            )}
-          </div>
-        )}
 
         {/* ── Visit History ── */}
         <div className="rounded-2xl bg-gradient-to-br from-[#0d1f3c] to-[#091529] border border-[#1e3a5f]/60 p-6 mb-5 shadow-xl shadow-black/30">
@@ -836,25 +592,26 @@ export default function CustomerDetail({
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-2">
-                            <button
-                              onClick={() => startEdit(visit)}
-                              title="Modifier"
-                              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium transition-all duration-200 bg-[#1e3a5f]/30 text-white hover:bg-[#fe5502] hover:text-white border border-transparent hover:border-[#fe5502] focus:outline-none focus:ring-2 focus:ring-[#fe5502]/50"
-                            >
-                              <PencilIcon className="w-3.5 h-3.5" />
-                              Modifier
-                            </button>
-                            <button
-                              onClick={() => {
-                                setConfirmDeleteId(visit.id);
-                                setEditingId(null);
-                              }}
-                              title="Supprimer"
-                              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium transition-all duration-200 bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white border border-transparent hover:border-red-400 focus:outline-none focus:ring-2 focus:ring-red-500/50"
-                            >
-                              <TrashIcon className="w-3.5 h-3.5" />
-                              Supprimer
-                            </button>
+                          <button
+  onClick={() => startEdit(visit)}
+  title="Modifier"
+  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium transition-all duration-200 bg-[#1e3a5f]/30 text-white hover:bg-[#fe5502] hover:text-white border border-transparent hover:border-[#fe5502] focus:outline-none focus:ring-2 focus:ring-[#fe5502]/50"
+>
+  <PencilIcon className="w-3.5 h-3.5" />
+  Modifier
+</button>
+
+<button
+  onClick={() => {
+    setConfirmDeleteId(visit.id);
+    setEditingId(null);
+  }}
+  title="Supprimer"
+  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium transition-all duration-200 bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white border border-transparent hover:border-red-400 focus:outline-none focus:ring-2 focus:ring-red-500/50"
+>
+  <TrashIcon className="w-3.5 h-3.5" />
+  Supprimer
+</button>
                           </span>
                         )}
                       </td>
