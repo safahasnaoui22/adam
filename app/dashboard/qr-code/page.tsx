@@ -47,9 +47,11 @@ export default function QRCodePage() {
   const [restaurantName, setRestaurantName] = useState("");
   const [restaurantLogo, setRestaurantLogo] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
-  const [exporting, setExporting] = useState(false);
+  const [flyerExporting, setFlyerExporting] = useState(false);
+  const [qrExporting, setQrExporting] = useState(false);
 
   const flyerRef = useRef<HTMLDivElement>(null);
+  const qrCardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     generateQRCode();
@@ -108,9 +110,10 @@ export default function QRCodePage() {
     return Promise.all(promises).then(() => {});
   };
 
+  // FLYER export functions
   const downloadPosterAsPNG = async () => {
-    if (!flyerRef.current || exporting) return;
-    setExporting(true);
+    if (!flyerRef.current || flyerExporting) return;
+    setFlyerExporting(true);
     try {
       await waitForImages(flyerRef.current);
       const canvas = await html2canvas(flyerRef.current, {
@@ -128,13 +131,13 @@ export default function QRCodePage() {
       console.error("Error generating PNG:", err);
       setError("Impossible de générer l'image. Réessayez.");
     } finally {
-      setExporting(false);
+      setFlyerExporting(false);
     }
   };
 
   const downloadPosterAsPDF = async () => {
-    if (!flyerRef.current || exporting) return;
-    setExporting(true);
+    if (!flyerRef.current || flyerExporting) return;
+    setFlyerExporting(true);
     try {
       await waitForImages(flyerRef.current);
       const canvas = await html2canvas(flyerRef.current, {
@@ -170,7 +173,7 @@ export default function QRCodePage() {
       console.error("Error generating PDF:", err);
       setError("Impossible de générer le PDF. Réessayez.");
     } finally {
-      setExporting(false);
+      setFlyerExporting(false);
     }
   };
 
@@ -246,6 +249,135 @@ export default function QRCodePage() {
     printWindow.document.close();
   };
 
+  // QR CODE standalone export functions
+  const downloadQRCodeAsPNG = async () => {
+    if (!qrCardRef.current || qrExporting) return;
+    setQrExporting(true);
+    try {
+      await waitForImages(qrCardRef.current);
+      const canvas = await html2canvas(qrCardRef.current, {
+        scale: 3,
+        backgroundColor: "#ffffff",
+        logging: false,
+        useCORS: true,
+        allowTaint: false,
+      });
+      const link = document.createElement("a");
+      link.download = `qr-code-${restaurantName.replace(/\s/g, "-")}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    } catch (err) {
+      console.error("Error generating QR PNG:", err);
+      setError("Impossible de générer le QR code. Réessayez.");
+    } finally {
+      setQrExporting(false);
+    }
+  };
+
+  const downloadQRCodeAsPDF = async () => {
+    if (!qrCardRef.current || qrExporting) return;
+    setQrExporting(true);
+    try {
+      await waitForImages(qrCardRef.current);
+      const canvas = await html2canvas(qrCardRef.current, {
+        scale: 3,
+        backgroundColor: "#ffffff",
+        logging: false,
+        useCORS: true,
+        allowTaint: false,
+      });
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+      });
+      const imgWidth = 150;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      const xPosition = (210 - imgWidth) / 2;
+      const yPosition = (297 - imgHeight) / 2;
+      pdf.addImage(imgData, "PNG", xPosition, yPosition, imgWidth, imgHeight);
+      pdf.save(`qr-code-${restaurantName.replace(/\s/g, "-")}.pdf`);
+    } catch (err) {
+      console.error("Error generating QR PDF:", err);
+      setError("Impossible de générer le PDF du QR code. Réessayez.");
+    } finally {
+      setQrExporting(false);
+    }
+  };
+
+  const printQRCode = () => {
+    if (!qrCardRef.current) return;
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) {
+      setError("Veuillez autoriser les popups pour l'impression");
+      return;
+    }
+
+    const qrHtml = qrCardRef.current.cloneNode(true) as HTMLElement;
+    const images = qrHtml.querySelectorAll("img");
+    images.forEach((img) => {
+      if (img.src) img.setAttribute("src", img.src);
+    });
+
+    const styles = document.querySelectorAll("link[rel='stylesheet'], style");
+    let styleHtml = "";
+    styles.forEach((style) => {
+      if (style.tagName === "LINK") {
+        const link = style as HTMLLinkElement;
+        styleHtml += `<link href="${link.href}" rel="stylesheet">`;
+      } else {
+        styleHtml += style.outerHTML;
+      }
+    });
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>QR Code - ${restaurantName}</title>
+          ${styleHtml}
+          <style>
+            body {
+              margin: 0;
+              padding: 20px;
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              min-height: 100vh;
+              background: #f1f5f9;
+              font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            }
+            .print-container {
+              display: flex;
+              justify-content: center;
+              align-items: center;
+            }
+            button, .no-print {
+              display: none;
+            }
+            .qr-card {
+              box-shadow: none !important;
+              border: 1px solid #e2e8f0;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="print-container">
+            ${qrHtml.outerHTML}
+          </div>
+          <script>
+            window.onload = () => {
+              window.print();
+              window.onafterprint = () => window.close();
+            };
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
   if (loading && !qrCode) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -272,210 +404,244 @@ export default function QRCodePage() {
         )}
 
         {qrCode && (
-          <div className="grid md:grid-cols-2 gap-8">
-            {/* Left side: Flyer + download buttons */}
-            <div className="space-y-6">
-              {/* ─── FLYER ─── */}
-              <div
-                ref={flyerRef}
-                className="flyer-card w-full max-w-md mx-auto rounded-2xl shadow-2xl overflow-hidden"
-                style={{
-                  fontFamily: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
-                  background: "linear-gradient(160deg, #ff9a00 0%, #ff7200 60%, #ff5500 100%)",
-                }}
-              >
-                {/* Top section: logo + name (slightly smaller) */}
+          <>
+            {/* TOP ROW: Flyer + Standalone QR Code */}
+            <div className="grid md:grid-cols-2 gap-8 mb-12">
+              {/* Left: Flyer Section */}
+              <div className="space-y-6">
+                {/* FLYER */}
                 <div
+                  ref={flyerRef}
+                  className="flyer-card w-full max-w-md mx-auto rounded-2xl shadow-2xl overflow-hidden"
                   style={{
-                    padding: "1.2rem 1.5rem 0.8rem",
-                    textAlign: "center",
+                    fontFamily: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
+                    background: "linear-gradient(160deg, #ff9a00 0%, #ff7200 60%, #ff5500 100%)",
                   }}
                 >
-                  {/* Logo container smaller: 70px instead of 88px */}
-                  <div style={{ display: "flex", justifyContent: "center", marginBottom: "0.5rem" }}>
-                    {restaurantLogo ? (
-                      <div
-                        style={{
-                          width: "70px",
-                          height: "70px",
-                          borderRadius: "50%",
-                          backgroundColor: "rgba(255,255,255,0.9)",
-                          padding: "4px",
-                          boxShadow: "0 6px 20px rgba(0,0,0,0.25)",
-                          overflow: "hidden",
-                        }}
-                      >
-                        <img
-                          src={restaurantLogo}
-                          alt={restaurantName}
+                  {/* Top section: logo + name */}
+                  <div style={{ padding: "1.2rem 1.5rem 0.8rem", textAlign: "center" }}>
+                    <div style={{ display: "flex", justifyContent: "center", marginBottom: "0.5rem" }}>
+                      {restaurantLogo ? (
+                        <div
                           style={{
-                            width: "100%",
-                            height: "100%",
+                            width: "70px",
+                            height: "70px",
                             borderRadius: "50%",
-                            objectFit: "cover",
+                            backgroundColor: "rgba(255,255,255,0.9)",
+                            padding: "4px",
+                            boxShadow: "0 6px 20px rgba(0,0,0,0.25)",
+                            overflow: "hidden",
                           }}
-                          crossOrigin="anonymous"
-                        />
-                      </div>
-                    ) : (
+                        >
+                          <img
+                            src={restaurantLogo}
+                            alt={restaurantName}
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              borderRadius: "50%",
+                              objectFit: "cover",
+                            }}
+                            crossOrigin="anonymous"
+                          />
+                        </div>
+                      ) : (
+                        <div
+                          style={{
+                            width: "70px",
+                            height: "70px",
+                            borderRadius: "50%",
+                            background: "rgba(255,255,255,0.25)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            boxShadow: "0 6px 20px rgba(0,0,0,0.2)",
+                            border: "2px solid rgba(255,255,255,0.5)",
+                          }}
+                        >
+                          <StoreIcon />
+                        </div>
+                      )}
+                    </div>
+
+                    <h2
+                      style={{
+                        fontSize: "1.3rem",
+                        fontWeight: "800",
+                        color: "#ffffff",
+                        marginBottom: "0.2rem",
+                        textShadow: "0 2px 8px rgba(0,0,0,0.2)",
+                      }}
+                    >
+                      {restaurantName}
+                    </h2>
+
+                    <div style={{ display: "flex", justifyContent: "center", marginBottom: "0.5rem" }}>
                       <div
                         style={{
-                          width: "70px",
-                          height: "70px",
-                          borderRadius: "50%",
-                          background: "rgba(255,255,255,0.25)",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          boxShadow: "0 6px 20px rgba(0,0,0,0.2)",
-                          border: "2px solid rgba(255,255,255,0.5)",
+                          width: "40px",
+                          height: "3px",
+                          background: "rgba(255,255,255,0.6)",
+                          borderRadius: "9999px",
                         }}
-                      >
-                        <StoreIcon />
-                      </div>
-                    )}
+                      />
+                    </div>
                   </div>
 
-                  {/* Restaurant name smaller: 1.3rem instead of 1.6rem */}
-                  <h2
+                  <div style={{ textAlign: "center", padding: "0 1rem 0.2rem" }}>
+                    <span
+                      style={{
+                        display: "inline-block",
+                        fontSize: "2.8rem",
+                        fontWeight: "900",
+                        color: "#ffffff",
+                        letterSpacing: "0.04em",
+                        textShadow: "0 3px 12px rgba(0,0,0,0.3), 0 1px 0 rgba(0,0,0,0.15)",
+                      }}
+                    >
+                      SCAN TO WIN
+                    </span>
+                  </div>
+
+                  <div
                     style={{
-                      fontSize: "1.3rem",
-                      fontWeight: "800",
-                      color: "#ffffff",
-                      marginBottom: "0.2rem",
-                      textShadow: "0 2px 8px rgba(0,0,0,0.2)",
+                      position: "relative",
+                      width: "360px",
+                      height: "360px",
+                      margin: "0 auto",
                     }}
                   >
-                    {restaurantName}
-                  </h2>
+                    <Image
+                      src="/images/box.png"
+                      alt="Gift Box"
+                      width={370}
+                      height={370}
+                      style={{
+                        position: "relative",
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "contain",
+                        zIndex: 1,
+                      }}
+                      unoptimized
+                    />
 
-                  {/* Divider */}
-                  <div style={{ display: "flex", justifyContent: "center", marginBottom: "0.5rem" }}>
                     <div
                       style={{
-                        width: "40px",
-                        height: "3px",
-                        background: "rgba(255,255,255,0.6)",
+                        position: "absolute",
+                        top: "50%",
+                        left: "50%",
+                        marginLeft: "-75px",
+                        marginTop: "-75px",
+                        width: "170px",
+                        height: "170px",
+                        zIndex: 2,
+                      }}
+                    >
+                      <img
+                        src={qrCode}
+                        alt="QR Code"
+                        width={170}
+                        height={170}
+                        style={{ width: "100%", height: "100%" }}
+                      />
+                    </div>
+                  </div>
+
+                  <div style={{ textAlign: "center", padding: "0.25rem 1rem 1rem" }}>
+                    <span
+                      style={{
+                        display: "inline-block",
+                        color: "#ffffff",
+                        padding: "0.3rem 1rem",
                         borderRadius: "9999px",
+                        fontSize: "0.7rem",
+                      }}
+                    >
+                      SCANNEZ , GAGNEZ DES POINTS  &amp; RECEVEZ DES CADEAUX !
+                    </span>
+                  </div>
+                </div>
+
+                {/* Flyer buttons */}
+                <div className="flex flex-wrap gap-3 justify-center">
+                  <button
+                    onClick={downloadPosterAsPNG}
+                    disabled={flyerExporting}
+                    className="flex-1 min-w-[100px] px-4 py-2.5 bg-[#fe5502] text-white rounded-lg hover:bg-[#e0682e] flex items-center justify-center transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50"
+                  >
+                    <DownloadIcon />
+                    <span className="ml-2">PNG</span>
+                  </button>
+                  <button
+                    onClick={downloadPosterAsPDF}
+                    disabled={flyerExporting}
+                    className="flex-1 min-w-[100px] px-4 py-2.5 bg-[#1e3a5f] text-white rounded-lg hover:bg-[#2a4a75] flex items-center justify-center transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50"
+                  >
+                    <PdfIcon />
+                    <span className="ml-2">PDF</span>
+                  </button>
+                  <button
+                    onClick={printPoster}
+                    className="flex-1 min-w-[100px] px-4 py-2.5 bg-[#2d2d44] text-gray-200 rounded-lg hover:bg-[#3d3d5c] flex items-center justify-center transition-all duration-200 shadow-md hover:shadow-lg"
+                  >
+                    <PrintIcon />
+                    <span className="ml-2">Imprimer</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Right: Standalone QR Code Card (no text) */}
+              <div className="space-y-6">
+                <div
+                  ref={qrCardRef}
+                  className="qr-card w-full max-w-md mx-auto bg-white rounded-2xl shadow-xl overflow-hidden"
+                  style={{ padding: "2rem" }}
+                >
+                  <div className="flex justify-center">
+                    <img
+                      src={qrCode}
+                      alt="QR Code"
+                      style={{
+                        width: "100%",
+                        maxWidth: "280px",
+                        height: "auto",
+                        display: "block",
                       }}
                     />
                   </div>
                 </div>
 
-                {/* SCAN TO WIN headline (bigger) */}
-                <div style={{ textAlign: "center", padding: "0 1rem 0.2rem" }}>
-                  <span
-                    style={{
-                      display: "inline-block",
-                      fontSize: "2.8rem",
-                      fontWeight: "900",
-                      color: "#ffffff",
-                      letterSpacing: "0.04em",
-                      textShadow: "0 3px 12px rgba(0,0,0,0.3), 0 1px 0 rgba(0,0,0,0.15)",
-                    }}
+                {/* QR Code standalone buttons */}
+                <div className="flex flex-wrap gap-3 justify-center">
+                  <button
+                    onClick={downloadQRCodeAsPNG}
+                    disabled={qrExporting}
+                    className="flex-1 min-w-[100px] px-4 py-2.5 bg-[#fe5502] text-white rounded-lg hover:bg-[#e0682e] flex items-center justify-center transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50"
                   >
-                    SCAN TO WIN
-                  </span>
-                </div>
-
-                {/* Box container – smaller (360x360) */}
-                <div
-                  style={{
-                    position: "relative",
-                    width: "360px",
-                    height: "360px",
-                    margin: "0 auto",
-                  }}
-                >
-                  {/* Gift Box Image */}
-                  <Image
-                    src="/images/box.png"
-                    alt="Gift Box"
-                    width={370}
-                    height={370}
-                    style={{
-                      position: "relative",
-                      width: "100%",
-                      height: "100%",
-                      objectFit: "contain",
-                      zIndex: 1,
-                    }}
-                    unoptimized
-                  />
-
-                  {/* QR Code – now 150x150, centered with negative margins */}
-                  <div
-                    style={{
-                      position: "absolute",
-                      top: "50%",
-                      left: "50%",
-                      marginLeft: "-75px",
-                      marginTop: "-75px",
-                      width: "170px",
-                      height: "170px",
-                      zIndex: 2,
-                    }}
+                    <DownloadIcon />
+                    <span className="ml-2">PNG</span>
+                  </button>
+                  <button
+                    onClick={downloadQRCodeAsPDF}
+                    disabled={qrExporting}
+                    className="flex-1 min-w-[100px] px-4 py-2.5 bg-[#1e3a5f] text-white rounded-lg hover:bg-[#2a4a75] flex items-center justify-center transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50"
                   >
-                    <img
-                      src={qrCode}
-                      alt="QR Code"
-                      width={170}
-                      height={170}
-                      style={{ width: "100%", height: "100%" }}
-                    />
-                  </div>
-                </div>
-
-                {/* CTA badge – smaller */}
-                <div style={{ textAlign: "center", padding: "0.25rem 1rem 1rem" }}>
-                  <span
-                    style={{
-                      display: "inline-block",
-                    
-                      color: "#ffffff",
-                   
-                      padding: "0.3rem 1rem",
-                      borderRadius: "9999px",
-                      fontSize: "0.7rem",
-                     
-                    }}
+                    <PdfIcon />
+                    <span className="ml-2">PDF</span>
+                  </button>
+                  <button
+                    onClick={printQRCode}
+                    className="flex-1 min-w-[100px] px-4 py-2.5 bg-[#2d2d44] text-gray-200 rounded-lg hover:bg-[#3d3d5c] flex items-center justify-center transition-all duration-200 shadow-md hover:shadow-lg"
                   >
-                     SCANNEZ , GAGNEZ DES POINTS  &amp; RECEVEZ DES CADEAUX !
-                  </span>
+                    <PrintIcon />
+                    <span className="ml-2">Imprimer</span>
+                  </button>
                 </div>
-
-                {/* Footer removed entirely */}
-              </div>
-
-              {/* Download buttons */}
-              <div className="flex flex-wrap gap-3 justify-center">
-                <button
-                  onClick={downloadPosterAsPNG}
-                  disabled={exporting}
-                  className="flex-1 min-w-[100px] px-4 py-2.5 bg-[#fe5502] text-white rounded-lg hover:bg-[#e0682e] flex items-center justify-center transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50"
-                >
-                  <DownloadIcon />
-                  <span className="ml-2">PNG</span>
-                </button>
-                <button
-                  onClick={downloadPosterAsPDF}
-                  disabled={exporting}
-                  className="flex-1 min-w-[100px] px-4 py-2.5 bg-[#1e3a5f] text-white rounded-lg hover:bg-[#2a4a75] flex items-center justify-center transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50"
-                >
-                  <PdfIcon />
-                  <span className="ml-2">PDF</span>
-                </button>
-                <button
-                  onClick={printPoster}
-                  className="flex-1 min-w-[100px] px-4 py-2.5 bg-[#2d2d44] text-gray-200 rounded-lg hover:bg-[#3d3d5c] flex items-center justify-center transition-all duration-200 shadow-md hover:shadow-lg"
-                >
-                  <PrintIcon />
-                  <span className="ml-2">Imprimer</span>
-                </button>
               </div>
             </div>
 
-            {/* Right column: Instructions, URL, Stats */}
+            {/* BOTTOM SECTION: Instructions, URL, Stats */}
             <div className="space-y-6">
               <div className="bg-[#1a1a2e] p-6 rounded-xl shadow-lg border border-[#2d2d44]">
                 <h2 className="text-xl font-semibold mb-4 text-white">Comment utiliser ce QR code ?</h2>
@@ -536,7 +702,7 @@ export default function QRCodePage() {
                 </div>
               </div>
             </div>
-          </div>
+          </>
         )}
       </div>
     </div>
