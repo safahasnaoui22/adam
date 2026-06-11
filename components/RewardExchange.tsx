@@ -344,33 +344,77 @@ function CustomerPopup({
   onClose: () => void;
 }) {
   const [points, setPoints] = useState(customer.points);
-  const [addAmount, setAddAmount] = useState("");
-  const [redeemAmount, setRedeemAmount] = useState("");
-  const [loadingAdd, setLoadingAdd] = useState(false);
-  const [loadingRedeem, setLoadingRedeem] = useState(false);
-  const [loadingReward, setLoadingReward] = useState<string | null>(null);
   const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
+
+  // ─ Add points (same logic/UI as AddPointsModal) ─
+  const [addAmount, setAddAmount] = useState("");
+  const [loadingAdd, setLoadingAdd] = useState(false);
+  const [spendThreshold, setSpendThreshold] = useState<number | null>(null);
+  const [pointsEarned, setPointsEarned] = useState<number | null>(null);
+  const [loadingRules, setLoadingRules] = useState(true);
+
+  // ─ Redeem points manually ─
+  const [redeemAmount, setRedeemAmount] = useState("");
+  const [loadingRedeem, setLoadingRedeem] = useState(false);
+
+  // ─ Redeem reward ─
+  const [loadingReward, setLoadingReward] = useState<string | null>(null);
 
   const shortId = customer.customerId.slice(-4);
 
+  useEffect(() => {
+    const fetchRules = async () => {
+      try {
+        const res = await fetch("/api/loyalty-program");
+        const data = await res.json();
+        if (res.ok) {
+          setSpendThreshold(data.spendThreshold);
+          setPointsEarned(data.pointsEarned);
+        }
+      } catch (err) {
+        console.error("Failed to fetch loyalty program rules", err);
+      } finally {
+        setLoadingRules(false);
+      }
+    };
+    fetchRules();
+  }, []);
+
+  const computeStars = (amountDT: number): number => {
+    if (!spendThreshold || !pointsEarned || amountDT <= 0) return 0;
+    return Math.floor(amountDT / spendThreshold) * pointsEarned;
+  };
+
+  const addAmountNum = parseFloat(addAmount);
+  const previewStars = !isNaN(addAmountNum) && addAmountNum > 0 ? computeStars(addAmountNum) : null;
+
   const handleAddPoints = async () => {
-    const val = parseFloat(addAmount);
-    if (isNaN(val) || val <= 0) {
-      setMessage({ text: "Montant invalide", type: "error" });
+    if (isNaN(addAmountNum) || addAmountNum <= 0) {
+      setMessage({ text: "Veuillez entrer un montant valide (> 0 DT)", type: "error" });
       return;
     }
+    if (spendThreshold === null || pointsEarned === null) {
+      setMessage({ text: "Impossible de charger les règles du programme de fidélité", type: "error" });
+      return;
+    }
+    const starsToAdd = computeStars(addAmountNum);
+    if (starsToAdd <= 0) {
+      setMessage({ text: `Montant inférieur au palier minimum de ${spendThreshold} DT`, type: "error" });
+      return;
+    }
+
     setLoadingAdd(true);
     setMessage(null);
     try {
       const res = await fetch("/api/customer/add-points", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ customerId: customer.id, amount: val }),
+        body: JSON.stringify({ customerId: customer.id, amount: starsToAdd / 10 }),
       });
       const data = await res.json();
       if (res.ok) {
         setPoints(data.newPoints);
-        setMessage({ text: `+${data.pointsAdded} ⭐ — Nouveau solde : ${data.newPoints}`, type: "success" });
+        setMessage({ text: `+${starsToAdd} pts pour ${addAmountNum} DT — Solde : ${data.newPoints}`, type: "success" });
         setAddAmount("");
       } else {
         setMessage({ text: data.error || "Erreur", type: "error" });
@@ -403,7 +447,7 @@ function CustomerPopup({
       const data = await res.json();
       if (res.ok) {
         setPoints(data.newPoints);
-        setMessage({ text: `-${data.deducted} ⭐ — Nouveau solde : ${data.newPoints}`, type: "success" });
+        setMessage({ text: `-${data.deducted} pts — Solde : ${data.newPoints}`, type: "success" });
         setRedeemAmount("");
       } else {
         setMessage({ text: data.error || "Erreur", type: "error" });
@@ -431,7 +475,7 @@ function CustomerPopup({
       const data = await res.json();
       if (res.ok) {
         setPoints(data.newPoints);
-        setMessage({ text: `Récompense échangée 🎉 — Nouveau solde : ${data.newPoints}`, type: "success" });
+        setMessage({ text: `Récompense échangée 🎉 — Solde : ${data.newPoints}`, type: "success" });
       } else {
         setMessage({ text: data.error || "Erreur", type: "error" });
       }
@@ -460,36 +504,103 @@ function CustomerPopup({
           <p className="cp-id">#{shortId}</p>
         </div>
 
-        <div className="cp-points">
-          <span className="cp-star">⭐</span>
-          <span className="cp-points-value">{points}</span>
-          <span className="cp-points-label">points</span>
-        </div>
-
-        {message && <div className={`cp-message ${message.type}`}>{message.text}</div>}
-
-        <div className="cp-section">
-          <h3>Ajouter des points</h3>
-          <div className="cp-row">
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              placeholder="Montant dépensé (DT)"
-              value={addAmount}
-              onChange={(e) => setAddAmount(e.target.value)}
-              disabled={loadingAdd}
-              className="cp-input"
-            />
-            <button onClick={handleAddPoints} disabled={loadingAdd} className="cp-btn cp-btn-orange">
-              {loadingAdd ? "…" : "Ajouter"}
-            </button>
+        <div className="cp-balance">
+          <div className="cp-balance-icon">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="12" y1="1" x2="12" y2="23" />
+              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+            </svg>
           </div>
-          <p className="cp-hint">1 DT = 10 ⭐</p>
+          <div className="cp-balance-info">
+            <span className="cp-balance-value">{points}</span>
+            <span className="cp-balance-label">points disponibles</span>
+          </div>
         </div>
 
-        <div className="cp-section">
-          <h3>Utiliser des points</h3>
+        {message && (
+          <div className={`cp-message ${message.type}`}>
+            <span className="cp-message-icon">
+              {message.type === "success" ? (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              ) : (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              )}
+            </span>
+            {message.text}
+          </div>
+        )}
+
+        {/* Ajouter des points — same function as AddPointsModal */}
+        <div className="cp-section" style={{ animationDelay: "0.05s" }}>
+          <div className="cp-section-header">
+            <span className="cp-section-icon cp-icon-orange">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fe5502" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="16" />
+                <line x1="8" y1="12" x2="16" y2="12" />
+              </svg>
+            </span>
+            <h3>Ajouter des points</h3>
+          </div>
+
+          {!loadingRules && spendThreshold !== null && pointsEarned !== null && (
+            <div className="cp-rule-banner">
+              <strong>Règle active :</strong> {spendThreshold} DT dépensé → {pointsEarned} étoile(s) gagnée(s)
+            </div>
+          )}
+
+          <input
+            type="number"
+            step="0.01"
+            min="0"
+            placeholder="Montant de l'addition (DT)"
+            value={addAmount}
+            onChange={(e) => setAddAmount(e.target.value)}
+            disabled={loadingAdd}
+            className="cp-input cp-input-full"
+          />
+
+          {previewStars !== null && (
+            <div className={`cp-preview ${previewStars > 0 ? "ok" : "warn"}`}>
+              ⭐{" "}
+              {previewStars > 0
+                ? `= ${previewStars} étoile(s) seront ajoutées`
+                : `Montant insuffisant (palier min. : ${spendThreshold} DT)`}
+            </div>
+          )}
+
+          <button onClick={handleAddPoints} disabled={loadingAdd || loadingRules} className="cp-submit-btn">
+            {loadingAdd ? (
+              "Envoi en cours…"
+            ) : loadingRules ? (
+              "Chargement des règles…"
+            ) : (
+              <>
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                </svg>
+                Valider et Envoyer
+              </>
+            )}
+          </button>
+        </div>
+
+        {/* Utiliser des points */}
+        <div className="cp-section" style={{ animationDelay: "0.1s" }}>
+          <div className="cp-section-header">
+            <span className="cp-section-icon cp-icon-red">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="8" y1="12" x2="16" y2="12" />
+              </svg>
+            </span>
+            <h3>Utiliser des points</h3>
+          </div>
           <div className="cp-row">
             <input
               type="number"
@@ -507,9 +618,21 @@ function CustomerPopup({
           </div>
         </div>
 
+        {/* Récompenses disponibles */}
         {rewards.length > 0 && (
-          <div className="cp-section">
-            <h3>Récompenses disponibles</h3>
+          <div className="cp-section" style={{ animationDelay: "0.15s" }}>
+            <div className="cp-section-header">
+              <span className="cp-section-icon cp-icon-green">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 12 20 22 4 22 4 12" />
+                  <rect x="2" y="7" width="20" height="5" />
+                  <line x1="12" y1="22" x2="12" y2="7" />
+                  <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z" />
+                  <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" />
+                </svg>
+              </span>
+              <h3>Récompenses disponibles</h3>
+            </div>
             <div className="cp-rewards">
               {rewards.map((reward) => {
                 const isAvailable = points >= reward.pointsRequired;
@@ -520,7 +643,7 @@ function CustomerPopup({
                       <p className="cp-reward-points">{reward.pointsRequired} points</p>
                       {reward.description && <p className="cp-reward-desc">{reward.description}</p>}
                     </div>
-                    {isAvailable && (
+                    {isAvailable ? (
                       <button
                         className="cp-btn cp-btn-green"
                         onClick={() => handleRedeemReward(reward.id, reward.pointsRequired)}
@@ -528,6 +651,13 @@ function CustomerPopup({
                       >
                         {loadingReward === reward.id ? "…" : "Échanger"}
                       </button>
+                    ) : (
+                      <span className="cp-lock">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                          <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                        </svg>
+                      </span>
                     )}
                   </div>
                 );
@@ -540,8 +670,9 @@ function CustomerPopup({
       <style>{`
         @keyframes cpFadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes cpSlideUp { from { opacity: 0; transform: translateY(40px) scale(0.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
-        @keyframes cpPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.12); } }
+        @keyframes cpPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
         @keyframes cpPop { 0% { transform: scale(0.6); opacity: 0; } 60% { transform: scale(1.08); opacity: 1; } 100% { transform: scale(1); } }
+        @keyframes cpSectionIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
 
         .cp-overlay {
           position: fixed; inset: 0; z-index: 200;
@@ -574,40 +705,72 @@ function CustomerPopup({
         }
         .cp-close:hover { background: rgba(248,113,113,0.2); color: #f87171; transform: rotate(90deg); }
 
-        .cp-header { text-align: center; margin-bottom: 1.25rem; }
+        .cp-header { text-align: center; margin-bottom: 1rem; }
         .cp-avatar {
-          width: 64px; height: 64px; margin: 0 auto 0.75rem;
+          width: 60px; height: 60px; margin: 0 auto 0.6rem;
+          border-radius: 50%;
+          background: linear-gradient(135deg, #5b5aff, #8b8aff);
+          display: flex; align-items: center; justify-content: center;
+          color: #fff; font-size: 1.6rem; font-weight: 800;
+          box-shadow: 0 8px 24px rgba(91,90,255,0.4);
+          animation: cpPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s backwards;
+        }
+        .cp-name { color: #fff; font-size: 1.3rem; font-weight: 800; margin: 0 0 0.2rem; }
+        .cp-id { color: #6b7280; font-size: 0.8rem; font-family: monospace; margin: 0; letter-spacing: 0.05em; }
+
+        .cp-balance {
+          display: flex; align-items: center; gap: 1rem;
+          background: linear-gradient(135deg, rgba(254,85,2,0.18), rgba(254,85,2,0.04));
+          border: 1px solid rgba(254,85,2,0.3);
+          border-radius: 1.1rem;
+          padding: 1.1rem 1.25rem;
+          margin-bottom: 1.25rem;
+        }
+        .cp-balance-icon {
+          width: 52px; height: 52px; flex-shrink: 0;
           border-radius: 50%;
           background: linear-gradient(135deg, #fe5502, #ff8a3d);
           display: flex; align-items: center; justify-content: center;
-          color: #fff; font-size: 1.75rem; font-weight: 800;
-          box-shadow: 0 8px 24px rgba(254,85,2,0.4);
-          animation: cpPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s backwards;
+          box-shadow: 0 8px 20px rgba(254,85,2,0.4);
+          animation: cpPulse 2.4s ease-in-out infinite;
         }
-        .cp-name { color: #fff; font-size: 1.35rem; font-weight: 800; margin: 0 0 0.2rem; }
-        .cp-id { color: #6b7280; font-size: 0.82rem; font-family: monospace; margin: 0; letter-spacing: 0.05em; }
-
-        .cp-points {
-          display: flex; align-items: center; justify-content: center; gap: 0.55rem;
-          background: rgba(254,85,2,0.1);
-          border: 1px solid rgba(254,85,2,0.3);
-          border-radius: 1rem;
-          padding: 1.1rem;
-          margin-bottom: 1.25rem;
-        }
-        .cp-star { font-size: 1.8rem; display: inline-block; animation: cpPulse 2.2s ease-in-out infinite; }
-        .cp-points-value { color: #fe5502; font-size: 2.2rem; font-weight: 800; }
-        .cp-points-label { color: #fdb27a; font-size: 0.9rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; }
+        .cp-balance-info { display: flex; flex-direction: column; }
+        .cp-balance-value { color: #fff; font-size: 2rem; font-weight: 800; line-height: 1.1; }
+        .cp-balance-label { color: #fdb27a; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 0.15rem; }
 
         .cp-message {
+          display: flex; align-items: center; gap: 0.5rem;
           padding: 0.6rem 0.9rem; border-radius: 0.6rem; font-size: 0.85rem; font-weight: 600;
           margin-bottom: 1.1rem; animation: cpFadeIn 0.2s ease-out;
         }
+        .cp-message-icon { display: flex; flex-shrink: 0; }
         .cp-message.success { background: rgba(52,211,153,0.12); color: #34d399; border: 1px solid rgba(52,211,153,0.3); }
         .cp-message.error { background: rgba(248,113,113,0.12); color: #f87171; border: 1px solid rgba(248,113,113,0.3); }
 
-        .cp-section { margin-bottom: 1.25rem; }
-        .cp-section h3 { color: #e5e7eb; font-size: 0.95rem; font-weight: 700; margin: 0 0 0.6rem; }
+        .cp-section {
+          background: rgba(255,255,255,0.03);
+          border: 1px solid rgba(255,255,255,0.06);
+          border-radius: 0.9rem;
+          padding: 1.1rem;
+          margin-bottom: 1rem;
+          animation: cpSectionIn 0.4s ease-out backwards;
+        }
+        .cp-section-header { display: flex; align-items: center; gap: 0.55rem; margin-bottom: 0.85rem; }
+        .cp-section-icon {
+          width: 30px; height: 30px; border-radius: 0.5rem;
+          display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+        }
+        .cp-icon-orange { background: rgba(254,85,2,0.12); }
+        .cp-icon-red { background: rgba(239,68,68,0.12); }
+        .cp-icon-green { background: rgba(22,163,74,0.12); }
+        .cp-section h3 { color: #e5e7eb; font-size: 0.95rem; font-weight: 700; margin: 0; }
+
+        .cp-rule-banner {
+          background: rgba(254,85,2,0.12); border: 1px solid rgba(254,85,2,0.35);
+          border-radius: 0.6rem; padding: 0.55rem 0.85rem; margin-bottom: 0.85rem;
+          font-size: 0.8rem; color: #fdb27a;
+        }
+
         .cp-row { display: flex; gap: 0.5rem; }
         .cp-input {
           flex: 1; padding: 0.85rem 1rem; border-radius: 0.65rem;
@@ -617,7 +780,26 @@ function CustomerPopup({
         }
         .cp-input:focus { border-color: #5b5aff; }
         .cp-input::placeholder { color: #7c7aa0; }
-        .cp-hint { color: #6b7280; font-size: 0.75rem; margin: 0.4rem 0 0; }
+        .cp-input-full { width: 100%; margin-bottom: 0.6rem; }
+
+        .cp-preview {
+          display: flex; align-items: center; gap: 0.4rem;
+          padding: 0.5rem 0.75rem; border-radius: 0.5rem;
+          font-size: 0.82rem; font-weight: 600; margin-bottom: 0.85rem;
+        }
+        .cp-preview.ok { background: rgba(52,211,153,0.1); border: 1px solid rgba(52,211,153,0.3); color: #34d399; }
+        .cp-preview.warn { background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.3); color: #f87171; }
+
+        .cp-submit-btn {
+          width: 100%; padding: 0.9rem; border: none; border-radius: 0.65rem;
+          background: linear-gradient(135deg, #fe5502, #ff8a3d);
+          color: #fff; font-weight: 700; font-size: 0.98rem; cursor: pointer;
+          display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+          transition: filter 0.15s, transform 0.1s;
+        }
+        .cp-submit-btn:hover:not(:disabled) { filter: brightness(1.08); }
+        .cp-submit-btn:active:not(:disabled) { transform: scale(0.98); }
+        .cp-submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
         .cp-btn {
           padding: 0.85rem 1.1rem; border: none; border-radius: 0.65rem;
@@ -627,8 +809,6 @@ function CustomerPopup({
         }
         .cp-btn:active { transform: scale(0.97); }
         .cp-btn:disabled { opacity: 0.55; cursor: not-allowed; }
-        .cp-btn-orange { background: #fe5502; }
-        .cp-btn-orange:hover:not(:disabled) { filter: brightness(1.1); }
         .cp-btn-red { background: #ef4444; }
         .cp-btn-red:hover:not(:disabled) { filter: brightness(1.1); }
         .cp-btn-green { background: #16a34a; }
@@ -645,6 +825,7 @@ function CustomerPopup({
         .cp-reward-name { color: #fff; font-weight: 600; font-size: 0.92rem; margin: 0; }
         .cp-reward-points { color: #fdb27a; font-size: 0.78rem; margin: 0.15rem 0 0; }
         .cp-reward-desc { color: #6b7280; font-size: 0.75rem; margin: 0.15rem 0 0; }
+        .cp-lock { display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; flex-shrink: 0; }
       `}</style>
     </div>
   );
