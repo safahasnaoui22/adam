@@ -41,12 +41,26 @@ export default function LoyaltyProgramPage() {
   });
   const [editingReward, setEditingReward] = useState<Reward | null>(null);
 
-  // Helper: get next required points (current max + 100, or 100 if none)
-  const getNextPointsRequired = (rewardsList: Reward[]): number => {
-    if (rewardsList.length === 0) return 100;
+  // ─── Range helpers ───────────────────────────────────────────────────────────
+  /**
+   * Returns the [min, max] points range for the *next* reward to be added.
+   *
+   * Rules:
+   *  - First reward  → 100 – 300 pts
+   *  - Every subsequent reward → (prevMax + 100) – (prevMax + 300)
+   *
+   * This ensures every tier is meaningfully harder to reach than the one before
+   * it, while giving the owner flexibility to space tiers as they see fit.
+   */
+  const getNextPointsRange = (rewardsList: Reward[]): [number, number] => {
+    if (rewardsList.length === 0) return [100, 300];
     const maxPoints = Math.max(...rewardsList.map((r) => r.pointsRequired));
-    return maxPoints + 100;
+    return [maxPoints + 100, maxPoints + 300];
   };
+
+  /** Clamp a value to [min, max] */
+  const clamp = (value: number, min: number, max: number) =>
+    Math.max(min, Math.min(max, value));
 
   useEffect(() => {
     fetchLoyaltyProgram();
@@ -97,11 +111,11 @@ export default function LoyaltyProgramPage() {
   const handleCreateReward = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Enforce increment rule on the frontend
-    const nextRequired = getNextPointsRequired(rewards);
-    if (newReward.pointsRequired !== nextRequired) {
+    const [minPts, maxPts] = getNextPointsRange(rewards);
+
+    if (newReward.pointsRequired < minPts || newReward.pointsRequired > maxPts) {
       toast?.error(
-        `Les points requis doivent être exactement ${nextRequired} (incrément de 100 points par palier).`
+        `Les points requis doivent être compris entre ${minPts} et ${maxPts}.`
       );
       return;
     }
@@ -115,11 +129,14 @@ export default function LoyaltyProgramPage() {
       });
       const data = await res.json();
       if (res.ok) {
-        setRewards([...rewards, data]);
+        const updatedRewards = [...rewards, data];
+        setRewards(updatedRewards);
         setShowRewardForm(false);
+
+        const [nextMin] = getNextPointsRange(updatedRewards);
         setNewReward({
           name: "",
-          pointsRequired: getNextPointsRequired([...rewards, data]),
+          pointsRequired: nextMin,
           description: "",
           isActive: true,
         });
@@ -157,60 +174,57 @@ export default function LoyaltyProgramPage() {
     }
   };
 
-const handleDeleteReward = async (id: string) => {
-  if (!confirm("Supprimer cette récompense ?")) return;
+  const handleDeleteReward = async (id: string) => {
+    if (!confirm("Supprimer cette récompense ?")) return;
 
-  setSaving(true);
-  try {
-    const res = await fetch(`/api/rewards/${id}`, { method: "DELETE" });
-    const data = await res.json();
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/rewards/${id}`, { method: "DELETE" });
+      const data = await res.json();
 
-    if (res.ok) {
-      setRewards(rewards.filter((r) => r.id !== id));
-      toast?.success("Récompense supprimée");
+      if (res.ok) {
+        setRewards(rewards.filter((r) => r.id !== id));
+        toast?.success("Récompense supprimée");
+      } else if (res.status === 409) {
+        const deactivate = confirm(
+          "Cette récompense a déjà été utilisée par des clients et ne peut pas être supprimée.\n\n" +
+            "Voulez-vous la désactiver à la place ? Elle n'apparaîtra plus pour les nouveaux clients."
+        );
+        if (deactivate) {
+          const reward = rewards.find((r) => r.id === id);
+          if (!reward) return;
 
-    } else if (res.status === 409) {
-      // Reward has been redeemed — offer to deactivate instead
-      const deactivate = confirm(
-        "Cette récompense a déjà été utilisée par des clients et ne peut pas être supprimée.\n\n" +
-        "Voulez-vous la désactiver à la place ? Elle n'apparaîtra plus pour les nouveaux clients."
-      );
-      if (deactivate) {
-        const reward = rewards.find((r) => r.id === id);
-        if (!reward) return;
+          const patchRes = await fetch(`/api/rewards/${id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ...reward, isActive: false }),
+          });
 
-        const patchRes = await fetch(`/api/rewards/${id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...reward, isActive: false }),
-        });
-
-        if (patchRes.ok) {
-          const updated = await patchRes.json();
-          setRewards(rewards.map((r) => (r.id === id ? updated : r)));
-          toast?.success("Récompense désactivée");
-        } else {
-          toast?.error("Échec de la désactivation");
+          if (patchRes.ok) {
+            const updated = await patchRes.json();
+            setRewards(rewards.map((r) => (r.id === id ? updated : r)));
+            toast?.success("Récompense désactivée");
+          } else {
+            toast?.error("Échec de la désactivation");
+          }
         }
+      } else {
+        toast?.error(data.error || "Échec de la suppression");
       }
-
-    } else {
-      toast?.error(data.error || "Échec de la suppression");
+    } catch (error) {
+      console.error(error);
+      toast?.error("Erreur de connexion au serveur");
+    } finally {
+      setSaving(false);
     }
-  } catch (error) {
-    console.error(error);
-    toast?.error("Erreur de connexion au serveur");
-  } finally {
-    setSaving(false);
-  }
-};
+  };
 
-  // When opening the "add reward" form, pre‑fill the correct next points
+  // Open the add-reward form, pre-filling with the minimum of the valid range
   const openAddRewardForm = () => {
-    const nextPoints = getNextPointsRequired(rewards);
+    const [minPts] = getNextPointsRange(rewards);
     setNewReward({
       name: "",
-      pointsRequired: nextPoints,
+      pointsRequired: minPts,
       description: "",
       isActive: true,
     });
@@ -224,6 +238,10 @@ const handleDeleteReward = async (id: string) => {
       </div>
     );
   }
+
+  // ─── Derived range for the "add" form ────────────────────────────────────────
+  const [minPts, maxPts] = getNextPointsRange(rewards);
+  const isFirstReward = rewards.length === 0;
 
   return (
     <div className="max-w-4xl mx-auto py-8 px-4">
@@ -335,18 +353,90 @@ const handleDeleteReward = async (id: string) => {
                   required
                 />
               </div>
+
+              {/* ── Points requis with range input ── */}
               <div>
-                <label className="block text-sm font-medium text-gray-300">Points requis *</label>
+                <label className="block text-sm font-medium text-gray-300 mb-1">
+                  Points requis *
+                  <span className="ml-2 font-normal text-[#fe5502]">
+                    {newReward.pointsRequired} pts
+                  </span>
+                </label>
+
+                {/* Slider */}
+                <input
+                  type="range"
+                  min={minPts}
+                  max={maxPts}
+                  step={10}
+                  value={newReward.pointsRequired}
+                  onChange={(e) =>
+                    setNewReward({
+                      ...newReward,
+                      pointsRequired: parseInt(e.target.value),
+                    })
+                  }
+                  className="w-full accent-[#fe5502] mb-2"
+                />
+
+                {/* Min / max labels */}
+                <div className="flex justify-between text-xs text-gray-500 mb-2">
+                  <span>{minPts} pts (min)</span>
+                  <span>{maxPts} pts (max)</span>
+                </div>
+
+                {/* Precise numeric input (clamped on blur) */}
                 <input
                   type="number"
+                  min={minPts}
+                  max={maxPts}
+                  step={10}
                   value={newReward.pointsRequired}
-                  disabled
-                  className="w-full px-3 py-2 border border-[#1e3a5f] rounded-md bg-[#1e2a4a] text-gray-300 cursor-not-allowed"
+                  onChange={(e) =>
+                    setNewReward({
+                      ...newReward,
+                      pointsRequired: parseInt(e.target.value) || minPts,
+                    })
+                  }
+                  onBlur={(e) =>
+                    setNewReward({
+                      ...newReward,
+                      pointsRequired: clamp(parseInt(e.target.value) || minPts, minPts, maxPts),
+                    })
+                  }
+                  className="w-full px-3 py-2 border border-[#1e3a5f] rounded-md bg-[#0a1628] text-white"
                 />
-                <p className="text-xs text-gray-500 mt-1">
-                  Incrément automatique de 100 points. Prochain palier : {getNextPointsRequired(rewards)} points.
-                </p>
+
+                {/* Contextual explanation */}
+                <div className="mt-3 p-3 rounded-md bg-[#0d1f3c] border border-[#1e3a5f] text-xs text-gray-400 space-y-1">
+                  {isFirstReward ? (
+                    <>
+                      <p className="font-medium text-gray-300">
+                        Pourquoi entre {minPts} et {maxPts} points ?
+                      </p>
+                      <p>
+                        La première récompense doit être atteignable sans être trop facile. Une fourchette
+                        de <span className="text-white">{minPts}–{maxPts} points</span> encourage les
+                        clients à revenir plusieurs fois avant d'obtenir leur première récompense, sans
+                        les décourager.
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="font-medium text-gray-300">
+                        Pourquoi entre {minPts} et {maxPts} points ?
+                      </p>
+                      <p>
+                        Chaque palier doit être <span className="text-white">au moins 100 points</span> au-dessus
+                        du précédent pour rester motivant. L'écart maximal de{" "}
+                        <span className="text-white">300 points</span> évite que les clients perdent patience
+                        avant d'atteindre la prochaine récompense.
+                      </p>
+                    </>
+                  )}
+                </div>
               </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-300">Description (optionnel)</label>
                 <textarea
@@ -393,7 +483,6 @@ const handleDeleteReward = async (id: string) => {
             {rewards.map((reward) => (
               <div key={reward.id} className="border border-[#1e3a5f] rounded-lg p-4 bg-[#0a1628]">
                 {editingReward?.id === reward.id ? (
-                  // Edit form (no automatic increment enforcement for edits – keeps flexibility)
                   <div className="space-y-3">
                     <input
                       type="text"
@@ -444,7 +533,6 @@ const handleDeleteReward = async (id: string) => {
                     </div>
                   </div>
                 ) : (
-                  // View mode
                   <div className="flex justify-between items-start">
                     <div>
                       <div className="flex items-center gap-2">
