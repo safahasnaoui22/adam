@@ -546,6 +546,40 @@ export default function QRCodePage() {
                         style={{ width: "100%", height: "100%" }}
                       />
                     </div>
+
+                    {/* Logo overlay inside QR code */}
+                    {restaurantLogo && (
+                      <div
+                        style={{
+                          position: "absolute",
+                          top: "50%",
+                          left: "50%",
+                          transform: "translate(-50%, -50%)",
+                          width: "48px",
+                          height: "48px",
+                          backgroundColor: "white",
+                          borderRadius: "50%",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          boxShadow: "0 2px 8px rgba(0,0,0,0.25)",
+                          zIndex: 3,
+                          border: "2px solid #ffffff",
+                        }}
+                      >
+                        <img
+                          src={restaurantLogo}
+                          alt="Logo"
+                          style={{
+                            width: "40px",
+                            height: "40px",
+                            borderRadius: "50%",
+                            objectFit: "cover",
+                          }}
+                          crossOrigin="anonymous"
+                        />
+                      </div>
+                    )}
                   </div>
 
                   <div style={{ textAlign: "center", padding: "0.25rem 1rem 1rem" }}>
@@ -599,16 +633,49 @@ export default function QRCodePage() {
                   style={{ padding: "2rem" }}
                 >
                   <div className="flex justify-center">
-                    <img
-                      src={qrCode}
-                      alt="QR Code"
-                      style={{
-                        width: "100%",
-                        maxWidth: "280px",
-                        height: "auto",
-                        display: "block",
-                      }}
-                    />
+                    <div className="relative" style={{ width: "280px", margin: "0 auto" }}>
+                      <img
+                        src={qrCode}
+                        alt="QR Code"
+                        style={{
+                          width: "100%",
+                          maxWidth: "280px",
+                          height: "auto",
+                          display: "block",
+                        }}
+                      />
+                      {restaurantLogo && (
+                        <div
+                          style={{
+                            position: "absolute",
+                            top: "50%",
+                            left: "50%",
+                            transform: "translate(-50%, -50%)",
+                            width: "64px",
+                            height: "64px",
+                            backgroundColor: "white",
+                            borderRadius: "50%",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
+                            border: "2px solid #ffffff",
+                          }}
+                        >
+                          <img
+                            src={restaurantLogo}
+                            alt="Logo"
+                            style={{
+                              width: "52px",
+                              height: "52px",
+                              borderRadius: "50%",
+                              objectFit: "cover",
+                            }}
+                            crossOrigin="anonymous"
+                          />
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
 
