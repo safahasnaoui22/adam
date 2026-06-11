@@ -55,17 +55,9 @@ const IconCheck = ({ size = 14, color = "currentColor" }: { size?: number; color
 
 const IconStar = ({ size = 14, color = "currentColor" }: { size?: number; color?: string }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill={color} stroke="none">
-  <text
-  x="18"
-  y="23"
-  textAnchor="middle"
-  fontSize="16"
-  fontWeight="700"
-  fontFamily="'Inter', system-ui, sans-serif"
-  fill={primaryColor}
->
-  $
-</text>
+ <svg width={size} height={size} viewBox="0 0 24 24" fill={color} stroke="none">
+    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+  </svg>
   </svg>
 );
 
@@ -87,10 +79,17 @@ const IconPointsCoin = ({ size = 36, primaryColor }: { size?: number; primaryCol
     {/* Inner fill */}
     <circle cx="18" cy="18" r="13" fill={primaryColor} opacity="0.2"/>
     {/* Star center */}
-    <polygon
-      points="18,9 20.47,15.18 27,15.64 22.27,19.82 23.88,26.18 18,22.77 12.12,26.18 13.73,19.82 9,15.64 15.53,15.18"
-      fill={primaryColor}
-    />
+  <text
+  x="18"
+  y="23"
+  textAnchor="middle"
+  fontSize="16"
+  fontWeight="700"
+  fontFamily="'Inter', system-ui, sans-serif"
+  fill={primaryColor}
+>
+  $
+</text>
     {/* Shine arc top-left */}
     <path d="M11 11 Q14 9 17 10" stroke="white" strokeWidth="1.2" strokeLinecap="round" opacity="0.5"/>
   </svg>
@@ -236,10 +235,17 @@ function PointsCelebration({
             animation: phase === "enter" ? "coinBounce 0.5s cubic-bezier(0.34,1.56,0.64,1)" : "none",
           }}>
             <svg width="30" height="30" viewBox="0 0 36 36" fill="none">
-              <polygon
-                points="18,6 21.09,13.26 29,14.27 23.5,19.64 24.88,27.62 18,23.77 11.12,27.62 12.5,19.64 7,14.27 14.91,13.26"
-                fill={primaryColor}
-              />
+             <text
+  x="18"
+  y="23"
+  textAnchor="middle"
+  fontSize="16"
+  fontWeight="700"
+  fontFamily="'Inter', system-ui, sans-serif"
+  fill={primaryColor}
+>
+  $
+</text>
             </svg>
           </div>
         </div>
