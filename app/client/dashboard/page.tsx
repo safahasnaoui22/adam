@@ -6,6 +6,7 @@ import Image from "next/image";
 import { QRCodeSVG } from "qrcode.react";
 import { getPatternStyle } from "@/lib/patterns";
 import SpinWheel from "@/components/SpinWheel";
+
 // ── Icon components ───────────────────────────────────────────────────
 const IconGoogleMaps = ({ size = 18 }: { size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
@@ -66,6 +67,244 @@ const IconExternalLink = ({ size = 14, color = "currentColor" }: { size?: number
   </svg>
 );
 
+// ── Pro Points Coin Icon ──────────────────────────────────────────────
+// Flat 2-tone SVG coin — no 3D, clean and modern
+const IconPointsCoin = ({ size = 36, primaryColor }: { size?: number; primaryColor: string }) => (
+  <svg width={size} height={size} viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+    {/* Outer ring */}
+    <circle cx="18" cy="18" r="17" fill={primaryColor} opacity="0.15"/>
+    <circle cx="18" cy="18" r="17" stroke={primaryColor} strokeWidth="1.5" fill="none"/>
+    {/* Inner fill */}
+    <circle cx="18" cy="18" r="13" fill={primaryColor} opacity="0.2"/>
+    {/* Star center */}
+    <polygon
+      points="18,9 20.47,15.18 27,15.64 22.27,19.82 23.88,26.18 18,22.77 12.12,26.18 13.73,19.82 9,15.64 15.53,15.18"
+      fill={primaryColor}
+    />
+    {/* Shine arc top-left */}
+    <path d="M11 11 Q14 9 17 10" stroke="white" strokeWidth="1.2" strokeLinecap="round" opacity="0.5"/>
+  </svg>
+);
+
+// ── Points Celebration Overlay ────────────────────────────────────────
+type PointsCelebrationProps = {
+  pointsEarned: number;
+  newTotal: number;
+  primaryColor: string;
+  textColor: string;
+  cardBg: string;
+  onClose: () => void;
+};
+
+function PointsCelebration({
+  pointsEarned,
+  newTotal,
+  primaryColor,
+  textColor,
+  cardBg,
+  onClose,
+}: PointsCelebrationProps) {
+  const [displayCount, setDisplayCount] = useState(0);
+  const [phase, setPhase] = useState<"enter" | "count" | "done">("enter");
+  const [particles, setParticles] = useState<{ x: number; y: number; delay: number; size: number; color: string }[]>([]);
+
+  // Generate confetti particles
+  useEffect(() => {
+    const colors = [primaryColor, "#FFD700", "#FF6B6B", "#4ECDC4", "#45B7D1", "#FFA07A"];
+    const ps = Array.from({ length: 28 }, (_, i) => ({
+      x: Math.random() * 100,
+      y: -10 - Math.random() * 20,
+      delay: Math.random() * 0.6,
+      size: 5 + Math.random() * 7,
+      color: colors[i % colors.length],
+    }));
+    setParticles(ps);
+  }, []);
+
+  // Count-up animation
+  useEffect(() => {
+    const enterTimer = setTimeout(() => {
+      setPhase("count");
+      const duration = 1200;
+      const steps = 40;
+      const stepTime = duration / steps;
+      let current = 0;
+      const interval = setInterval(() => {
+        current++;
+        const eased = Math.round((1 - Math.pow(1 - current / steps, 3)) * pointsEarned);
+        setDisplayCount(eased);
+        if (current >= steps) {
+          clearInterval(interval);
+          setDisplayCount(pointsEarned);
+          setPhase("done");
+        }
+      }, stepTime);
+      return () => clearInterval(interval);
+    }, 400);
+    return () => clearTimeout(enterTimer);
+  }, [pointsEarned]);
+
+  // Auto-dismiss after 4.5s
+  useEffect(() => {
+    const t = setTimeout(onClose, 4500);
+    return () => clearTimeout(t);
+  }, [onClose]);
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 200,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: "rgba(0,0,0,0.65)",
+        backdropFilter: "blur(6px)",
+        WebkitBackdropFilter: "blur(6px)",
+        animation: "celebFadeIn 0.25s ease",
+      }}
+      onClick={onClose}
+    >
+      {/* Confetti particles */}
+      {particles.map((p, i) => (
+        <div
+          key={i}
+          style={{
+            position: "absolute",
+            left: `${p.x}%`,
+            top: `${p.y}%`,
+            width: p.size,
+            height: p.size,
+            borderRadius: i % 3 === 0 ? "50%" : "2px",
+            backgroundColor: p.color,
+            animation: `confettiFall 2.2s ${p.delay}s ease-in both`,
+            pointerEvents: "none",
+          }}
+        />
+      ))}
+
+      {/* Card */}
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          backgroundColor: cardBg,
+          borderRadius: 28,
+          padding: "36px 32px 28px",
+          width: "min(340px, 88vw)",
+          textAlign: "center",
+          position: "relative",
+          animation: "celebCardIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)",
+          border: `1.5px solid ${primaryColor}30`,
+          boxShadow: `0 24px 60px rgba(0,0,0,0.3), 0 0 0 1px ${primaryColor}10`,
+        }}
+      >
+        {/* Pulse ring behind coin */}
+        <div style={{ position: "relative", display: "inline-flex", alignItems: "center", justifyContent: "center", marginBottom: 20 }}>
+          <div style={{
+            position: "absolute",
+            width: 88, height: 88,
+            borderRadius: "50%",
+            backgroundColor: `${primaryColor}15`,
+            animation: "pulseRing 1.5s ease-out 0.3s infinite",
+          }}/>
+          <div style={{
+            position: "absolute",
+            width: 68, height: 68,
+            borderRadius: "50%",
+            backgroundColor: `${primaryColor}20`,
+            animation: "pulseRing 1.5s ease-out 0.1s infinite",
+          }}/>
+          {/* Big coin */}
+          <div style={{
+            width: 56, height: 56,
+            borderRadius: "50%",
+            backgroundColor: `${primaryColor}20`,
+            border: `2px solid ${primaryColor}`,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            position: "relative", zIndex: 1,
+            animation: phase === "enter" ? "coinBounce 0.5s cubic-bezier(0.34,1.56,0.64,1)" : "none",
+          }}>
+            <svg width="30" height="30" viewBox="0 0 36 36" fill="none">
+              <polygon
+                points="18,6 21.09,13.26 29,14.27 23.5,19.64 24.88,27.62 18,23.77 11.12,27.62 12.5,19.64 7,14.27 14.91,13.26"
+                fill={primaryColor}
+              />
+            </svg>
+          </div>
+        </div>
+
+        {/* "You earned" label */}
+        <p style={{
+          fontSize: 13,
+          fontWeight: 600,
+          letterSpacing: "0.08em",
+          textTransform: "uppercase",
+          color: `${textColor}60`,
+          margin: "0 0 8px",
+        }}>
+          Vous avez gagné
+        </p>
+
+        {/* Big animated number */}
+        <div style={{
+          fontSize: 72,
+          fontWeight: 800,
+          lineHeight: 1,
+          color: primaryColor,
+          margin: "0 0 4px",
+          fontVariantNumeric: "tabular-nums",
+          letterSpacing: "-2px",
+          animation: phase === "done" ? "numberPop 0.3s cubic-bezier(0.34,1.56,0.64,1)" : "none",
+        }}>
+          +{displayCount}
+        </div>
+
+        <p style={{
+          fontSize: 16,
+          fontWeight: 600,
+          color: `${textColor}80`,
+          margin: "0 0 24px",
+          letterSpacing: "0.04em",
+        }}>
+          points
+        </p>
+
+        {/* Divider */}
+        <div style={{ height: 1, backgroundColor: `${textColor}10`, margin: "0 0 16px" }} />
+
+        {/* New total */}
+        <p style={{ fontSize: 13, color: `${textColor}55`, margin: "0 0 4px" }}>Nouveau solde</p>
+        <p style={{ fontSize: 24, fontWeight: 700, color: textColor, margin: "0 0 20px", fontVariantNumeric: "tabular-nums" }}>
+          {newTotal} pts
+        </p>
+
+        {/* Close button */}
+        <button
+          onClick={onClose}
+          style={{
+            width: "100%",
+            padding: "13px",
+            backgroundColor: primaryColor,
+            border: "none",
+            borderRadius: 14,
+            color: "#fff",
+            fontWeight: 700,
+            fontSize: 15,
+            cursor: "pointer",
+            letterSpacing: "0.01em",
+          }}
+        >
+          Super, merci ! 🎉
+        </button>
+
+        {/* Auto-dismiss hint */}
+        <p style={{ fontSize: 11, color: `${textColor}35`, marginTop: 10 }}>Se ferme automatiquement…</p>
+      </div>
+    </div>
+  );
+}
+
 // ── Types ─────────────────────────────────────────────────────────────
 type BonusAction = {
   id: string;
@@ -74,7 +313,7 @@ type BonusAction = {
   starsKey: keyof RestaurantBonusStars;
   icon: React.ReactNode;
   hint: string;
-  actionLabel: string; // what the user should do (for the modal)
+  actionLabel: string;
 };
 
 interface RestaurantBonusUrls {
@@ -176,7 +415,6 @@ function BonusModal({
   }, []);
 
   return (
-    // Overlay — uses normal-flow wrapper to avoid fixed positioning
     <div
       style={{
         position: "fixed",
@@ -199,10 +437,8 @@ function BonusModal({
           animation: "slideUp 0.3s ease",
         }}
       >
-        {/* Handle bar */}
         <div style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: `${textColor}20`, margin: "0 auto 20px" }} />
 
-        {/* Step: intro */}
         {step === "intro" && (
           <div style={{ textAlign: "center" }}>
             <div style={{ width: 60, height: 60, borderRadius: 16, backgroundColor: `${primaryColor}15`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
@@ -218,7 +454,6 @@ function BonusModal({
               <IconStar size={14} color={primaryColor} />
               <span style={{ fontSize: 15, fontWeight: 700, color: primaryColor }}>+{pointsValue} points</span>
             </div>
-
             <div style={{ backgroundColor: `${textColor}06`, borderRadius: 12, padding: "12px 16px", marginBottom: 20, textAlign: "left" }}>
               <p style={{ fontSize: 12, color: `${textColor}60`, margin: 0, lineHeight: 1.6 }}>
                 1. Appuyez sur <strong style={{ color: textColor }}>Ouvrir {action.label}</strong><br/>
@@ -226,7 +461,6 @@ function BonusModal({
                 3. Revenez ici et confirmez
               </p>
             </div>
-
             <a
               href="#"
               onClick={(e) => {
@@ -262,15 +496,12 @@ function BonusModal({
           </div>
         )}
 
-        {/* Step: waiting (countdown) */}
         {step === "waiting" && (
           <div style={{ textAlign: "center" }}>
             <div style={{ width: 72, height: 72, borderRadius: "50%", border: `3px solid ${primaryColor}30`, borderTopColor: primaryColor, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px", animation: "spin 1s linear infinite" }}>
               <span style={{ fontSize: 24, fontWeight: 700, color: primaryColor }}>{countdown}</span>
             </div>
-            <h3 style={{ fontSize: 16, fontWeight: 700, color: textColor, margin: "0 0 8px" }}>
-              En cours…
-            </h3>
+            <h3 style={{ fontSize: 16, fontWeight: 700, color: textColor, margin: "0 0 8px" }}>En cours…</h3>
             <p style={{ fontSize: 13, color: `${textColor}70`, margin: "0 0 20px" }}>
               Effectuez l'action sur {action.label},<br/>puis revenez ici.
             </p>
@@ -289,7 +520,6 @@ function BonusModal({
           </div>
         )}
 
-        {/* Step: confirm */}
         {step === "confirm" && (
           <div style={{ textAlign: "center" }}>
             <div style={{ fontSize: 52, marginBottom: 12 }}>🎯</div>
@@ -345,8 +575,11 @@ export default function ClientDashboard() {
   const [patternStyle, setPatternStyle] = useState<React.CSSProperties>({});
   const [completedBonuses, setCompletedBonuses] = useState<string[]>([]);
   const [claimingBonus, setClaimingBonus] = useState<string | null>(null);
-  // Modal state
   const [activeBonusModal, setActiveBonusModal] = useState<BonusAction | null>(null);
+  // ── Celebration state ──
+  const [celebration, setCelebration] = useState<{ pointsEarned: number; newTotal: number } | null>(null);
+  // Track previous points to detect changes
+  const prevPointsRef = useRef<number | null>(null);
 
   // Swiper state
   const [swiperOffset, setSwiperOffset] = useState(0);
@@ -379,7 +612,14 @@ export default function ClientDashboard() {
       const res = await fetch(`/api/client/${id}`);
       const data = await res.json();
       if (res.ok) {
-        setClient(data);
+        setClient((prev: any) => {
+          // Detect points increase and trigger celebration
+          if (prev !== null && data.points > prev.points) {
+            const gained = data.points - prev.points;
+            setCelebration({ pointsEarned: gained, newTotal: data.points });
+          }
+          return data;
+        });
         if (data.completedBonuses && Array.isArray(data.completedBonuses)) {
           setCompletedBonuses(data.completedBonuses);
         }
@@ -453,19 +693,16 @@ export default function ClientDashboard() {
     }
   };
 
-  // ── Open bonus modal ──────────────────────────────────────────────
   const handleOpenBonusModal = (action: BonusAction) => {
     if (completedBonuses.includes(action.id)) return;
     if (!restaurant?.[action.urlKey]) {
       alert("Ce lien n'est pas encore configuré par le restaurant.");
       return;
     }
-    // Store the URL on window so the modal can access it without prop drilling issues
     (window as any).__bonusUrl = restaurant[action.urlKey];
     setActiveBonusModal(action);
   };
 
-  // ── Confirm bonus (called after user says "yes I did it") ─────────
   const handleConfirmBonus = async () => {
     if (!activeBonusModal) return;
     setClaimingBonus(activeBonusModal.id);
@@ -480,13 +717,16 @@ export default function ClientDashboard() {
       });
       const data = await res.json();
       if (res.ok) {
-        setClient((prev: any) => ({ ...prev, points: data.newPoints }));
+        const gained = data.pointsEarned;
+        const newTotal = data.newPoints;
+        // Update state
+        setClient((prev: any) => ({ ...prev, points: newTotal }));
         setCompletedBonuses((prev) => [...prev, activeBonusModal.id]);
         setActiveBonusModal(null);
-        // Small delay for the modal to close before showing success
+        // Show celebration after modal closes
         setTimeout(() => {
-          alert(`🎉 Félicitations ! Vous avez gagné ${data.pointsEarned} points.`);
-        }, 300);
+          setCelebration({ pointsEarned: gained, newTotal });
+        }, 350);
       } else {
         alert(data.error || "Une erreur est survenue. Réessayez plus tard.");
         setActiveBonusModal(null);
@@ -600,6 +840,18 @@ export default function ClientDashboard() {
         />
       )}
 
+      {/* ── Points Celebration ── */}
+      {celebration && (
+        <PointsCelebration
+          pointsEarned={celebration.pointsEarned}
+          newTotal={celebration.newTotal}
+          primaryColor={D.primary}
+          textColor={D.text}
+          cardBg={D.cardBg}
+          onClose={() => setCelebration(null)}
+        />
+      )}
+
       <div
         className="max-w-md mx-auto min-h-screen shadow-lg relative border-x"
         style={{ backgroundColor: D.cardBg, ...patternStyle, borderColor: `${D.primary}20`, color: D.text }}
@@ -652,12 +904,21 @@ export default function ClientDashboard() {
 
         {/* ── Balance ── */}
         <div className="px-4 py-5 border-b" style={{ borderColor: `${D.primary}20`, backgroundColor: `${D.primary}08` }}>
-          <p className="text-xs font-medium uppercase tracking-widest mb-1" style={{ color: `${D.text}60` }}>Votre solde</p>
-          <div className="flex items-baseline gap-2">
-            <p className="text-4xl font-bold tracking-tight" style={{ color: D.primary }}>{clientPts}</p>
-            <p className="text-lg font-medium" style={{ color: `${D.primary}90` }}>points</p>
+          <p className="text-xs font-medium uppercase tracking-widest mb-2" style={{ color: `${D.text}60` }}>Votre solde</p>
+          <div className="flex items-center gap-3">
+            {/* Pro coin icon */}
+            <IconPointsCoin size={38} primaryColor={D.primary} />
+            <div className="flex items-baseline gap-2">
+              <p
+                className="text-4xl font-bold tracking-tight"
+                style={{ color: D.primary, fontVariantNumeric: "tabular-nums" }}
+              >
+                {clientPts}
+              </p>
+              <p className="text-lg font-medium" style={{ color: `${D.primary}90` }}>points</p>
+            </div>
           </div>
-          <p className="text-xs mt-1 font-medium" style={{ color: `${D.text}50` }}>1 DT dépensé = 10 points gagnés</p>
+          <p className="text-xs mt-2 font-medium" style={{ color: `${D.text}50` }}>1 DT dépensé = 10 points gagnés</p>
         </div>
 
         {/* ── QR ── */}
@@ -778,21 +1039,17 @@ export default function ClientDashboard() {
         {/* ── Points à gagner ── */}
         {availableBonuses.length > 0 && (
           <div className="px-4 py-5 border-b" style={{ borderColor: `${D.primary}20` }}>
-            {/* Section header */}
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <IconStar size={16} color={D.primary} />
                 <h3 className="text-base font-semibold tracking-tight" style={{ color: D.text }}>Points à gagner</h3>
               </div>
-              {/* Progress pill */}
               {completedCount > 0 && (
                 <span className="text-xs font-semibold px-3 py-1 rounded-full" style={{ backgroundColor: `${D.primary}15`, color: D.primary }}>
                   +{earnedBonusPoints} / {totalBonusPoints} pts
                 </span>
               )}
             </div>
-
-            {/* Mini progress bar if some completed */}
             {availableBonuses.length > 1 && (
               <div className="mb-4">
                 <div className="flex justify-between text-xs mb-1.5" style={{ color: `${D.text}60` }}>
@@ -807,7 +1064,6 @@ export default function ClientDashboard() {
                 </div>
               </div>
             )}
-
             <div className="space-y-3">
               {availableBonuses.map((bonus) => {
                 const isCompleted = completedBonuses.includes(bonus.id);
@@ -822,31 +1078,18 @@ export default function ClientDashboard() {
                     }}
                   >
                     <div className="flex items-center gap-3">
-                      <div
-                        className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                        style={{ backgroundColor: isCompleted ? `${D.primary}15` : `${D.primary}10` }}
-                      >
+                      <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: isCompleted ? `${D.primary}15` : `${D.primary}10` }}>
                         {bonus.icon}
                       </div>
                       <div>
-                        <p className="text-sm font-medium" style={{ color: isCompleted ? `${D.text}80` : D.text }}>
-                          {bonus.label}
-                        </p>
+                        <p className="text-sm font-medium" style={{ color: isCompleted ? `${D.text}80` : D.text }}>{bonus.label}</p>
                         <p className="text-xs" style={{ color: `${D.text}55` }}>{bonus.hint}</p>
-                        {!isCompleted && (
-                          <p className="text-[11px] font-semibold mt-0.5" style={{ color: D.primary }}>+{pointsValue} points</p>
-                        )}
-                        {isCompleted && (
-                          <p className="text-[11px] font-semibold mt-0.5" style={{ color: `${D.primary}80` }}>+{pointsValue} pts gagnés ✓</p>
-                        )}
+                        {!isCompleted && <p className="text-[11px] font-semibold mt-0.5" style={{ color: D.primary }}>+{pointsValue} points</p>}
+                        {isCompleted && <p className="text-[11px] font-semibold mt-0.5" style={{ color: `${D.primary}80` }}>+{pointsValue} pts gagnés ✓</p>}
                       </div>
                     </div>
-
                     {isCompleted ? (
-                      <div
-                        className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-                        style={{ backgroundColor: `${D.primary}15` }}
-                      >
+                      <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${D.primary}15` }}>
                         <IconCheck size={14} color={D.primary} />
                       </div>
                     ) : (
@@ -862,7 +1105,6 @@ export default function ClientDashboard() {
                 );
               })}
             </div>
-
             <p className="text-[10px] text-center mt-3" style={{ color: `${D.text}40` }}>
               ✨ Chaque action n'est récompensée qu'une seule fois.
             </p>
@@ -989,6 +1231,29 @@ export default function ClientDashboard() {
         @keyframes slideUp { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes spin { to { transform: rotate(360deg); } }
         .animate-fadeIn { animation: fadeIn 0.3s ease-out; }
+        /* Celebration keyframes */
+        @keyframes celebFadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes celebCardIn { from { opacity: 0; transform: scale(0.7) translateY(30px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+        @keyframes confettiFall {
+          0%   { transform: translateY(0) rotate(0deg) scale(1); opacity: 1; }
+          80%  { opacity: 1; }
+          100% { transform: translateY(110vh) rotate(720deg) scale(0.5); opacity: 0; }
+        }
+        @keyframes pulseRing {
+          0%   { transform: scale(0.85); opacity: 0.6; }
+          70%  { transform: scale(1.3); opacity: 0; }
+          100% { transform: scale(0.85); opacity: 0; }
+        }
+        @keyframes coinBounce {
+          0%   { transform: scale(0.4) rotate(-20deg); opacity: 0; }
+          70%  { transform: scale(1.15) rotate(5deg); opacity: 1; }
+          100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+        @keyframes numberPop {
+          0%   { transform: scale(1); }
+          50%  { transform: scale(1.12); }
+          100% { transform: scale(1); }
+        }
       `}</style>
     </div>
   );
