@@ -919,7 +919,60 @@ const pointsEarned   = loyaltyRule?.pointsEarned   ?? 10;
             <span className="inline-block min-w-[200px]">{typedGreeting}<span className="animate-pulse">|</span></span>
           </p>
         </div>
-
+{/* ── Modern Animated Progress Bar (above Rewards) ── */}
+{nextReward && (
+  <div className="px-4 py-3 border-b" style={{ borderColor: `${D.primary}20` }}>
+    <div className="rounded-2xl p-4" style={{ backgroundColor: `${D.primary}06`, border: `1px solid ${D.primary}15` }}>
+      <div className="flex items-center justify-between mb-2 flex-wrap gap-1">
+        <p className="text-sm font-semibold" style={{ color: D.text }}>
+          🎯 Il vous manque&nbsp;
+          <span
+            className="inline-block min-w-[3rem] text-center font-extrabold text-lg"
+            style={{ color: D.primary, fontVariantNumeric: "tabular-nums" }}
+          >
+            {pointsToNext}
+          </span>
+          &nbsp;points
+        </p>
+        <span
+          className="text-xs font-bold px-3 py-1 rounded-full"
+          style={{ backgroundColor: D.primary, color: '#fff' }}
+        >
+          {nextReward.name}
+        </span>
+      </div>
+      <p className="text-xs mb-3" style={{ color: `${D.text}70` }}>
+        Pour débloquer <strong style={{ color: D.primary }}>{nextReward.name}</strong> et profiter de votre récompense&nbsp;!
+      </p>
+      <div className="relative w-full h-2 rounded-full overflow-hidden" style={{ backgroundColor: `${D.primary}20` }}>
+        <div
+          className="h-full rounded-full transition-all duration-700 ease-out"
+          style={{
+            width: `${progress}%`,
+            background: `linear-gradient(90deg, ${D.primary}, ${D.secondary || D.primary})`,
+            boxShadow: `0 0 6px ${D.primary}`,
+          }}
+        />
+      </div>
+      <div className="flex justify-between mt-1.5">
+        <span className="text-[11px]" style={{ color: `${D.text}50` }}>{clientPts} pts</span>
+        <span className="text-[11px]" style={{ color: `${D.text}50` }}>{nextReward.pts} pts</span>
+      </div>
+    </div>
+  </div>
+)}
+{!nextReward && rewards.length > 0 && (
+  <div className="px-4 py-3 border-b" style={{ borderColor: `${D.primary}20` }}>
+    <div className="rounded-2xl p-4 text-center" style={{ backgroundColor: `${D.primary}08`, border: `1px solid ${D.primary}20` }}>
+      <p className="text-sm font-bold" style={{ color: D.primary }}>
+        🎉 Félicitations ! Vous avez débloqué toutes les récompenses !
+      </p>
+      <p className="text-xs mt-1" style={{ color: `${D.text}70` }}>
+        Continuez à gagner des points pour profiter de nouveaux avantages.
+      </p>
+    </div>
+  </div>
+)}
         {/* ── Balance ── */}
         <div className="px-4 py-5 border-b" style={{ borderColor: `${D.primary}20`, backgroundColor: `${D.primary}08` }}>
           <p className="text-xs font-medium uppercase tracking-widest mb-2" style={{ color: `${D.text}60` }}>Votre solde</p>
