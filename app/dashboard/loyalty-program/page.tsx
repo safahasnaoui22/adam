@@ -557,7 +557,7 @@ export default function LoyaltyProgramPage() {
                       </button>
                       <button
                         onClick={() => handleDeleteReward(reward.id)}
-                        className="text-red-500 hover:text-red-400 transition-colors"
+                        className="text-red-500 hoRécompensez les clients avec des pointser:text-red-400 transition-colors"
                       >
                         Supprimer
                       </button>

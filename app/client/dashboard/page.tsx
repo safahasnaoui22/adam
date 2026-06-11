@@ -55,7 +55,17 @@ const IconCheck = ({ size = 14, color = "currentColor" }: { size?: number; color
 
 const IconStar = ({ size = 14, color = "currentColor" }: { size?: number; color?: string }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill={color} stroke="none">
-    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+  <text
+  x="18"
+  y="23"
+  textAnchor="middle"
+  fontSize="16"
+  fontWeight="700"
+  fontFamily="'Inter', system-ui, sans-serif"
+  fill={primaryColor}
+>
+  $
+</text>
   </svg>
 );
 
@@ -776,7 +786,9 @@ export default function ClientDashboard() {
   const bgColor = theme.colors?.background || "#ffffff";
   const cardBgColor = theme.colors?.cardBackground || "#ffffff";
   const textColor = theme.colors?.text || "#1f2937";
-
+const loyaltyRule    = restaurant.loyaltyProgram;
+const spendThreshold = loyaltyRule?.spendThreshold ?? 1;
+const pointsEarned   = loyaltyRule?.pointsEarned   ?? 10;
   const D = {
     primary: primaryColor,
     secondary: secondaryColor,
@@ -918,7 +930,9 @@ export default function ClientDashboard() {
               <p className="text-lg font-medium" style={{ color: `${D.primary}90` }}>points</p>
             </div>
           </div>
-          <p className="text-xs mt-2 font-medium" style={{ color: `${D.text}50` }}>1 DT dépensé = 10 points gagnés</p>
+        <p className="text-xs mt-2 font-medium" style={{ color: `${D.text}50` }}>
+  {spendThreshold} DT dépensé = {pointsEarned} point{pointsEarned > 1 ? "s" : ""} gagnés
+</p>
         </div>
 
         {/* ── QR ── */}
