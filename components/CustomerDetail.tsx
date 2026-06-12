@@ -1,7 +1,7 @@
 // components/CustomerDetail.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 // --- SVG Icon Components (pro, inline) ---
@@ -162,7 +162,7 @@ interface Props {
   rewards: Reward[];
   nextReward: Reward | null;
   progress: number;
-  loyaltyRule?: LoyaltyRule; // passed from parent (fetched from /api/loyalty-program)
+  loyaltyRule?: LoyaltyRule; // optional initial value; component will fetch live
 }
 
 export default function CustomerDetail({
@@ -172,7 +172,7 @@ export default function CustomerDetail({
   rewards,
   nextReward,
   progress,
-  loyaltyRule = { spendThreshold: 1, pointsEarned: 10 },
+  loyaltyRule: initialLoyaltyRule,
 }: Props) {
   const router = useRouter();
   const [amount, setAmount] = useState("");
@@ -180,6 +180,42 @@ export default function CustomerDetail({
   const [message, setMessage] = useState<{ text: string; ok: boolean } | null>(null);
   const [visits, setVisits] = useState<Visit[]>(initialVisits);
   const [points, setPoints] = useState(customer.points);
+
+  // ── Live loyalty rule state (fetched from /api/loyalty-program) ──
+  const [loyaltyRule, setLoyaltyRule] = useState<LoyaltyRule>(
+    initialLoyaltyRule ?? { spendThreshold: 1, pointsEarned: 10 }
+  );
+  const [loyaltyRuleLoading, setLoyaltyRuleLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchLoyaltyRule = async () => {
+      try {
+        const res = await fetch("/api/loyalty-program");
+        if (res.ok) {
+          const data = await res.json();
+          // Support both { spendThreshold, pointsEarned } directly
+          // and { program: { spendThreshold, pointsEarned } } wrapper shapes
+          const rule = data?.program ?? data;
+          if (
+            typeof rule?.spendThreshold === "number" &&
+            typeof rule?.pointsEarned === "number" &&
+            rule.spendThreshold > 0
+          ) {
+            setLoyaltyRule({
+              spendThreshold: rule.spendThreshold,
+              pointsEarned: rule.pointsEarned,
+            });
+          }
+        }
+      } catch {
+        // silently fall back to prop/default value already in state
+      } finally {
+        setLoyaltyRuleLoading(false);
+      }
+    };
+
+    fetchLoyaltyRule();
+  }, []);
 
   // Edit state
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -200,7 +236,7 @@ export default function CustomerDetail({
   const [rewardLoadingId, setRewardLoadingId] = useState<string | null>(null);
   const [rewardMessage, setRewardMessage] = useState<{ text: string; ok: boolean } | null>(null);
 
-  // Dynamic points preview based on loyalty rule
+  // Dynamic points preview based on live loyalty rule
   const previewAmount = parseFloat(amount) || 0;
   const previewPoints =
     previewAmount > 0 && loyaltyRule.spendThreshold > 0
@@ -560,13 +596,26 @@ export default function CustomerDetail({
                 <span className={`text-lg font-bold tabular-nums transition-all ${
                   previewPoints > 0 ? "text-[#fe5502]" : "text-gray-600"
                 }`}>
-                  {previewPoints > 0 ? `+${previewPoints}` : "—"}
+                  {loyaltyRuleLoading ? (
+                    <span className="w-4 h-4 border-2 border-gray-600/40 border-t-gray-500 rounded-full animate-spin inline-block" />
+                  ) : previewPoints > 0 ? (
+                    `+${previewPoints}`
+                  ) : (
+                    "—"
+                  )}
                 </span>
               </div>
 
               <div className="flex items-center justify-between flex-wrap gap-2 mt-2 pt-2 border-t border-[#1e3a5f]/30">
                 <p className="text-xs text-gray-600">
-                  <span className="text-gray-500">Règle actuelle :</span> pour chaque {loyaltyRule.spendThreshold} DT dépensé → {loyaltyRule.pointsEarned} pts gagnés
+                  {loyaltyRuleLoading ? (
+                    <span className="text-gray-600">Chargement de la règle...</span>
+                  ) : (
+                    <>
+                      <span className="text-gray-500">Règle actuelle :</span>{" "}
+                      pour chaque {loyaltyRule.spendThreshold} DT dépensé → {loyaltyRule.pointsEarned} pts gagnés
+                    </>
+                  )}
                 </p>
                 <button
                   type="button"
@@ -854,26 +903,25 @@ export default function CustomerDetail({
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-2">
-                          <button
-  onClick={() => startEdit(visit)}
-  title="Modifier"
-  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium transition-all duration-200 bg-[#1e3a5f]/30 text-white hover:bg-[#fe5502] hover:text-white border border-transparent hover:border-[#fe5502] focus:outline-none focus:ring-2 focus:ring-[#fe5502]/50"
->
-  <PencilIcon className="w-3.5 h-3.5" />
-  Modifier
-</button>
-
-<button
-  onClick={() => {
-    setConfirmDeleteId(visit.id);
-    setEditingId(null);
-  }}
-  title="Supprimer"
-  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium transition-all duration-200 bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white border border-transparent hover:border-red-400 focus:outline-none focus:ring-2 focus:ring-red-500/50"
->
-  <TrashIcon className="w-3.5 h-3.5" />
-  Supprimer
-</button>
+                            <button
+                              onClick={() => startEdit(visit)}
+                              title="Modifier"
+                              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium transition-all duration-200 bg-[#1e3a5f]/30 text-white hover:bg-[#fe5502] hover:text-white border border-transparent hover:border-[#fe5502] focus:outline-none focus:ring-2 focus:ring-[#fe5502]/50"
+                            >
+                              <PencilIcon className="w-3.5 h-3.5" />
+                              Modifier
+                            </button>
+                            <button
+                              onClick={() => {
+                                setConfirmDeleteId(visit.id);
+                                setEditingId(null);
+                              }}
+                              title="Supprimer"
+                              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium transition-all duration-200 bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white border border-transparent hover:border-red-400 focus:outline-none focus:ring-2 focus:ring-red-500/50"
+                            >
+                              <TrashIcon className="w-3.5 h-3.5" />
+                              Supprimer
+                            </button>
                           </span>
                         )}
                       </td>
