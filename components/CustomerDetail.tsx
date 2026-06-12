@@ -99,11 +99,33 @@ const PlusCircleIcon = ({ className = "" }: { className?: string }) => (
   </svg>
 );
 
+const MinusCircleIcon = ({ className = "" }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10" />
+    <line x1="8" y1="12" x2="16" y2="12" />
+  </svg>
+);
+
+const LockIcon = ({ className = "" }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+  </svg>
+);
+
+const ArrowUpRightIcon = ({ className = "" }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="7" y1="17" x2="17" y2="7" />
+    <polyline points="7 7 17 7 17 17" />
+  </svg>
+);
+
 // --- Types ---
 interface Reward {
   id: string;
   name: string;
   pointsRequired: number;
+  description?: string;
 }
 
 interface Visit {
@@ -157,6 +179,7 @@ export default function CustomerDetail({
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ text: string; ok: boolean } | null>(null);
   const [visits, setVisits] = useState<Visit[]>(initialVisits);
+  const [points, setPoints] = useState(customer.points);
 
   // Edit state
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -167,6 +190,15 @@ export default function CustomerDetail({
   // Delete confirm state
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+
+  // Use points state
+  const [redeemAmount, setRedeemAmount] = useState("");
+  const [redeemLoading, setRedeemLoading] = useState(false);
+  const [redeemMessage, setRedeemMessage] = useState<{ text: string; ok: boolean } | null>(null);
+
+  // Available rewards state
+  const [rewardLoadingId, setRewardLoadingId] = useState<string | null>(null);
+  const [rewardMessage, setRewardMessage] = useState<{ text: string; ok: boolean } | null>(null);
 
   // Dynamic points preview based on loyalty rule
   const previewAmount = parseFloat(amount) || 0;
@@ -195,6 +227,7 @@ export default function CustomerDetail({
       const data = await res.json();
       if (res.ok) {
         setMessage({ text: `+${data.pointsAdded} points ajoutés avec succès`, ok: true });
+        if (typeof data.newPoints === "number") setPoints(data.newPoints);
         setTimeout(() => router.refresh(), 1200);
       } else {
         setMessage({ text: data.error || "Erreur", ok: false });
@@ -204,6 +237,66 @@ export default function CustomerDetail({
     } finally {
       setLoading(false);
       setAmount("");
+    }
+  };
+
+  const handleRedeemPoints = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const val = parseInt(redeemAmount);
+    if (isNaN(val) || val <= 0) {
+      setRedeemMessage({ text: "Nombre de points invalide", ok: false });
+      return;
+    }
+    if (val > points) {
+      setRedeemMessage({ text: "Points insuffisants", ok: false });
+      return;
+    }
+    setRedeemLoading(true);
+    setRedeemMessage(null);
+    try {
+      const res = await fetch("/api/customer/deduct-points", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ customerId: customer.id, pointsToDeduct: val }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setPoints(data.newPoints);
+        setRedeemMessage({ text: `-${data.deducted} pts déduits avec succès`, ok: true });
+        setRedeemAmount("");
+        setTimeout(() => router.refresh(), 1200);
+      } else {
+        setRedeemMessage({ text: data.error || "Erreur", ok: false });
+      }
+    } catch {
+      setRedeemMessage({ text: "Erreur de connexion", ok: false });
+    } finally {
+      setRedeemLoading(false);
+    }
+  };
+
+  const handleRedeemReward = async (rewardId: string, pointsRequired: number) => {
+    if (points < pointsRequired) return;
+    setRewardLoadingId(rewardId);
+    setRewardMessage(null);
+    try {
+      const res = await fetch("/api/customer/redeem-reward", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ customerId: customer.id, rewardId }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setPoints(data.newPoints);
+        setRewardMessage({ text: "Récompense échangée avec succès", ok: true });
+        setTimeout(() => router.refresh(), 1200);
+      } else {
+        setRewardMessage({ text: data.error || "Erreur", ok: false });
+      }
+    } catch {
+      setRewardMessage({ text: "Erreur de connexion", ok: false });
+    } finally {
+      setRewardLoadingId(null);
     }
   };
 
@@ -337,7 +430,7 @@ export default function CustomerDetail({
               {
                 icon: <StarIcon className="w-4 h-4" />,
                 label: "Solde actuel",
-                value: `${customer.points} pts`,
+                value: `${points} pts`,
                 sub: null,
               },
             ].map((item, i) => (
@@ -354,15 +447,21 @@ export default function CustomerDetail({
         </div>
 
         {/* ── Points Wallet ── */}
-        <div className="rounded-2xl bg-gradient-to-br from-[#0d1f3c] to-[#091529] border border-[#1e3a5f]/60 p-6 mb-5 shadow-xl shadow-black/30">
+        <div className="rounded-2xl bg-gradient-to-br from-[#0d1f3c] to-[#091529] border border-[#1e3a5f]/60 border-t-2 border-t-[#fe5502]/40 p-6 mb-5 shadow-xl shadow-black/30">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-semibold text-white tracking-tight">Portefeuille de points</h2>
-            <StarIcon className="w-5 h-5 text-[#fe5502]" />
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-lg bg-[#fe5502]/10 border border-[#fe5502]/20 flex items-center justify-center">
+                <StarIcon className="w-4 h-4 text-[#fe5502]" />
+              </div>
+              <h2 className="text-base font-semibold text-white tracking-tight">Portefeuille de points</h2>
+            </div>
           </div>
 
           <div className="flex items-end gap-2 mb-4">
-            <span className="text-5xl font-bold text-white tabular-nums">{customer.points}</span>
-            <span className="text-lg text-[#fe5502] font-semibold mb-1">pts</span>
+            <span className="text-5xl font-bold tabular-nums bg-gradient-to-br from-[#fe5502] to-[#ffb37a] bg-clip-text text-transparent">
+              {points}
+            </span>
+            <span className="text-sm text-gray-500 font-medium mb-1.5 tracking-wide uppercase">points</span>
           </div>
 
           {nextReward && (
@@ -370,7 +469,7 @@ export default function CustomerDetail({
               <div className="flex justify-between text-xs text-gray-500 mb-1.5">
                 <span>Progression vers la prochaine récompense</span>
                 <span className="text-gray-400 font-medium">
-                  {customer.points} / {nextReward.pointsRequired} pts
+                  {points} / {nextReward.pointsRequired} pts
                 </span>
               </div>
               <div className="w-full bg-[#0a1628] rounded-full h-2 border border-[#1e3a5f]/40 overflow-hidden">
@@ -383,7 +482,7 @@ export default function CustomerDetail({
                 <GiftIcon className="w-4 h-4 text-[#fe5502] shrink-0" />
                 <span>{nextReward.name}</span>
                 <span className="ml-auto text-xs text-gray-600">
-                  encore {nextReward.pointsRequired - customer.points} pts
+                  encore {Math.max(nextReward.pointsRequired - points, 0)} pts
                 </span>
               </div>
             </>
@@ -400,8 +499,12 @@ export default function CustomerDetail({
         {/* ── Add Points ── */}
         <div className="rounded-2xl bg-gradient-to-br from-[#0d1f3c] to-[#091529] border border-[#1e3a5f]/60 p-6 mb-5 shadow-xl shadow-black/30">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-semibold text-white tracking-tight">Enregistrer une addition</h2>
-            <PlusCircleIcon className="w-5 h-5 text-[#fe5502]" />
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-lg bg-[#fe5502]/10 border border-[#fe5502]/20 flex items-center justify-center">
+                <PlusCircleIcon className="w-4 h-4 text-[#fe5502]" />
+              </div>
+              <h2 className="text-base font-semibold text-white tracking-tight">Enregistrer une addition</h2>
+            </div>
           </div>
 
           <form onSubmit={handleAddPoints} className="space-y-4">
@@ -429,7 +532,7 @@ export default function CustomerDetail({
                 <button
                   type="submit"
                   disabled={loading || !amount || parseFloat(amount) <= 0}
-                  className="px-5 py-2.5 bg-[#fe5502] hover:bg-[#e04d02] disabled:bg-[#fe5502]/30 disabled:cursor-not-allowed text-white rounded-xl text-sm font-semibold transition-all duration-150 shadow-lg shadow-[#fe5502]/20 hover:shadow-[#fe5502]/30"
+                  className="px-5 py-2.5 bg-gradient-to-r from-[#fe5502] to-[#ff7a3d] hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl text-sm font-semibold transition-all duration-150 shadow-lg shadow-[#fe5502]/20 hover:shadow-[#fe5502]/30"
                 >
                   {loading ? (
                     <span className="flex items-center gap-2">
@@ -443,7 +546,7 @@ export default function CustomerDetail({
               </div>
             </div>
 
-            {/* Live points preview */}
+            {/* Live points preview + connected loyalty rule */}
             <div className={`rounded-xl border p-3.5 transition-all duration-200 ${
               previewPoints > 0
                 ? "bg-[#fe5502]/5 border-[#fe5502]/20"
@@ -460,9 +563,20 @@ export default function CustomerDetail({
                   {previewPoints > 0 ? `+${previewPoints}` : "—"}
                 </span>
               </div>
-              <p className="text-xs text-gray-600 mt-1.5">
-                Règle : {loyaltyRule.pointsEarned} pts par tranche de {loyaltyRule.spendThreshold} DT
-              </p>
+
+              <div className="flex items-center justify-between flex-wrap gap-2 mt-2 pt-2 border-t border-[#1e3a5f]/30">
+                <p className="text-xs text-gray-600">
+                  <span className="text-gray-500">Règle actuelle :</span> pour chaque {loyaltyRule.spendThreshold} DT dépensé → {loyaltyRule.pointsEarned} pts gagnés
+                </p>
+                <button
+                  type="button"
+                  onClick={() => router.push("/dashboard/loyalty-program")}
+                  className="inline-flex items-center gap-1 text-xs text-[#fe5502]/80 hover:text-[#fe5502] font-medium transition-colors shrink-0"
+                >
+                  Configurer
+                  <ArrowUpRightIcon className="w-3 h-3" />
+                </button>
+              </div>
             </div>
 
             {/* Feedback message */}
@@ -479,10 +593,158 @@ export default function CustomerDetail({
           </form>
         </div>
 
+        {/* ── Use Points ── */}
+        <div className="rounded-2xl bg-gradient-to-br from-[#0d1f3c] to-[#091529] border border-[#1e3a5f]/60 p-6 mb-5 shadow-xl shadow-black/30">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-lg bg-sky-500/10 border border-sky-500/20 flex items-center justify-center">
+                <MinusCircleIcon className="w-4 h-4 text-sky-400" />
+              </div>
+              <h2 className="text-base font-semibold text-white tracking-tight">Utiliser des points</h2>
+            </div>
+            <span className="text-xs text-gray-500 bg-[#0a1628] border border-[#1e3a5f]/40 px-2.5 py-1 rounded-full">
+              Solde : {points} pts
+            </span>
+          </div>
+
+          <form onSubmit={handleRedeemPoints} className="space-y-4">
+            <div>
+              <label className="block text-xs font-medium text-gray-400 mb-1.5 tracking-wide uppercase">
+                Points à déduire
+              </label>
+              <div className="flex gap-3">
+                <input
+                  type="number"
+                  step="10"
+                  min="0"
+                  value={redeemAmount}
+                  onChange={(e) => {
+                    setRedeemAmount(e.target.value);
+                    setRedeemMessage(null);
+                  }}
+                  placeholder="Ex : 100"
+                  className="flex-1 px-4 py-2.5 bg-[#0a1628] border border-[#1e3a5f] rounded-xl text-white placeholder-gray-600 focus:outline-none focus:border-sky-400/60 focus:ring-1 focus:ring-sky-400/20 transition-all text-sm"
+                  disabled={redeemLoading}
+                />
+                <button
+                  type="submit"
+                  disabled={redeemLoading || !redeemAmount || parseInt(redeemAmount) <= 0}
+                  className="px-5 py-2.5 bg-sky-500 hover:bg-sky-400 disabled:bg-sky-500/25 disabled:cursor-not-allowed text-white rounded-xl text-sm font-semibold transition-all duration-150 shadow-lg shadow-sky-500/15"
+                >
+                  {redeemLoading ? (
+                    <span className="flex items-center gap-2">
+                      <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      ...
+                    </span>
+                  ) : (
+                    "Déduire"
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {redeemMessage && (
+              <div className={`flex items-center gap-2 text-sm rounded-lg px-3 py-2 ${
+                redeemMessage.ok
+                  ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                  : "bg-red-500/10 text-red-400 border border-red-500/20"
+              }`}>
+                {redeemMessage.ok ? <CheckIcon className="w-4 h-4 shrink-0" /> : <AlertTriangleIcon className="w-4 h-4 shrink-0" />}
+                {redeemMessage.text}
+              </div>
+            )}
+          </form>
+        </div>
+
+        {/* ── Available Rewards ── */}
+        <div className="rounded-2xl bg-gradient-to-br from-[#0d1f3c] to-[#091529] border border-[#1e3a5f]/60 p-6 mb-5 shadow-xl shadow-black/30">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-lg bg-[#fe5502]/10 border border-[#fe5502]/20 flex items-center justify-center">
+                <GiftIcon className="w-4 h-4 text-[#fe5502]" />
+              </div>
+              <h2 className="text-base font-semibold text-white tracking-tight">Récompenses disponibles</h2>
+            </div>
+            {rewards.length > 0 && (
+              <span className="text-xs text-gray-500 bg-[#0a1628] border border-[#1e3a5f]/40 px-2.5 py-1 rounded-full">
+                {rewards.length} récompense{rewards.length !== 1 ? "s" : ""}
+              </span>
+            )}
+          </div>
+
+          {rewardMessage && (
+            <div className={`flex items-center gap-2 text-sm rounded-lg px-3 py-2 mb-3 ${
+              rewardMessage.ok
+                ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                : "bg-red-500/10 text-red-400 border border-red-500/20"
+            }`}>
+              {rewardMessage.ok ? <CheckIcon className="w-4 h-4 shrink-0" /> : <AlertTriangleIcon className="w-4 h-4 shrink-0" />}
+              {rewardMessage.text}
+            </div>
+          )}
+
+          {rewards.length === 0 ? (
+            <div className="text-center py-10 text-gray-600">
+              <GiftIcon className="w-8 h-8 mx-auto mb-3 opacity-30" />
+              <p className="text-sm">Aucune récompense configurée</p>
+            </div>
+          ) : (
+            <div className="space-y-2.5">
+              {rewards.map((reward) => {
+                const isAvailable = points >= reward.pointsRequired;
+                const missing = Math.max(reward.pointsRequired - points, 0);
+                return (
+                  <div
+                    key={reward.id}
+                    className={`flex items-center justify-between gap-4 rounded-xl border p-3.5 transition-colors ${
+                      isAvailable
+                        ? "bg-[#fe5502]/5 border-[#fe5502]/20"
+                        : "bg-[#0a1628]/40 border-[#1e3a5f]/40"
+                    }`}
+                  >
+                    <div className="min-w-0">
+                      <p className="text-white font-medium text-sm truncate">{reward.name}</p>
+                      {reward.description && (
+                        <p className="text-xs text-gray-500 mt-0.5 truncate">{reward.description}</p>
+                      )}
+                      <p className="text-xs text-[#fe5502]/70 font-medium mt-1">{reward.pointsRequired} pts</p>
+                    </div>
+
+                    {isAvailable ? (
+                      <button
+                        onClick={() => handleRedeemReward(reward.id, reward.pointsRequired)}
+                        disabled={rewardLoadingId === reward.id}
+                        className="shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#fe5502] hover:bg-[#e04d02] disabled:opacity-50 text-white rounded-xl text-xs font-semibold transition-colors"
+                      >
+                        {rewardLoadingId === reward.id ? (
+                          <span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        ) : (
+                          <GiftIcon className="w-3.5 h-3.5" />
+                        )}
+                        Échanger
+                      </button>
+                    ) : (
+                      <div className="shrink-0 inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#1e3a5f]/30 text-gray-500 text-xs font-medium">
+                        <LockIcon className="w-3.5 h-3.5" />
+                        +{missing} pts
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
         {/* ── Visit History ── */}
         <div className="rounded-2xl bg-gradient-to-br from-[#0d1f3c] to-[#091529] border border-[#1e3a5f]/60 p-6 mb-5 shadow-xl shadow-black/30">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-semibold text-white tracking-tight">Historique des visites</h2>
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-lg bg-[#1e3a5f]/30 border border-[#1e3a5f]/50 flex items-center justify-center">
+                <CalendarIcon className="w-4 h-4 text-gray-400" />
+              </div>
+              <h2 className="text-base font-semibold text-white tracking-tight">Historique des visites</h2>
+            </div>
             <span className="text-xs text-gray-500 bg-[#0a1628] border border-[#1e3a5f]/40 px-2.5 py-1 rounded-full">
               {visits.length} entrée{visits.length !== 1 ? "s" : ""}
             </span>
@@ -627,8 +889,12 @@ export default function CustomerDetail({
         {earnedRewards.length > 0 && (
           <div className="rounded-2xl bg-gradient-to-br from-[#0d1f3c] to-[#091529] border border-[#1e3a5f]/60 p-6 shadow-xl shadow-black/30">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-base font-semibold text-white tracking-tight">Récompenses échangées</h2>
-              <GiftIcon className="w-5 h-5 text-[#fe5502]" />
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-lg bg-[#fe5502]/10 border border-[#fe5502]/20 flex items-center justify-center">
+                  <GiftIcon className="w-4 h-4 text-[#fe5502]" />
+                </div>
+                <h2 className="text-base font-semibold text-white tracking-tight">Récompenses échangées</h2>
+              </div>
             </div>
             <ul className="space-y-2">
               {earnedRewards.map((er, i) => (
