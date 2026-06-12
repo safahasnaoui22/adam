@@ -125,7 +125,7 @@ interface Reward {
   id: string;
   name: string;
   pointsRequired: number;
-  description?: string;
+  description?: string | null;
 }
 
 interface Visit {
