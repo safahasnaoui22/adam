@@ -6,40 +6,7 @@ import Image from "next/image";
 import { QRCodeSVG } from "qrcode.react";
 import { getPatternStyle } from "@/lib/patterns";
 import SpinWheel from "@/components/SpinWheel";
-useEffect(() => {
-  async function subscribeToNotifications() {
-    if (
-      "serviceWorker" in navigator &&
-      "PushManager" in window
-    ) {
-      const registration = await navigator.serviceWorker.ready;
 
-      let subscription =
-        await registration.pushManager.getSubscription();
-
-      if (!subscription) {
-        subscription = await registration.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey:
-            process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
-        });
-
-        await fetch("/api/save-subscription", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            subscription,
-            clientId: localStorage.getItem("clientId"),
-          }),
-        });
-      }
-    }
-  }
-
-  subscribeToNotifications();
-}, []);
 // ── Icon components ───────────────────────────────────────────────────
 const IconGoogleMaps = ({ size = 18 }: { size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
