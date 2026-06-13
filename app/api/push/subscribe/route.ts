@@ -3,7 +3,8 @@
 // DELETE: remove a subscription (unsubscribe)
 
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+
+import { prisma } from "@/app/lib/prisma";
 import { cookies } from "next/headers";
 
 // ── You need this Prisma model (add to schema.prisma) ─────────────────
