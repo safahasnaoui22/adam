@@ -714,22 +714,33 @@ export default function ClientDashboard() {
     return client?.id?.slice(-4) ?? "****";
   };
 
-  const fetchClientData = async (id: string) => {
+const fetchClientData = async (id: string) => {
     try {
       const res = await fetch(`/api/client/${id}`);
       const data = await res.json();
       if (res.ok) {
         setClient((prev: any) => {
-          if (prev !== null && data.points > prev.points) {
-            const gained = data.points - prev.points;
-            setCelebration({ pointsEarned: gained, newTotal: data.points, mode: "earned" });
-            // SW notification — works even when the page tab is not focused
-            showSWNotification(
-              "🎉 Points ajoutés !",
-              `+${gained} points sur votre carte. Solde : ${data.points} pts`,
-              restaurant?.logo,
-              "adam-points"
-            );
+          if (prev !== null && data.points !== prev.points) {
+            const diff = data.points - prev.points;
+            if (diff > 0) {
+              setCelebration({ pointsEarned: diff, newTotal: data.points, mode: "earned" });
+              // SW notification — works even when the page tab is not focused
+              showSWNotification(
+                "🎉 Points ajoutés !",
+                `+${diff} points sur votre carte. Solde : ${data.points} pts`,
+                restaurant?.logo,
+                "adam-points"
+              );
+            } else {
+              const spent = Math.abs(diff);
+              setCelebration({ pointsEarned: spent, newTotal: data.points, mode: "spent", rewardName: data.lastRewardName });
+              showSWNotification(
+                "🎁 Récompense activée !",
+                `${data.lastRewardName || "Votre récompense"} est prête ! Solde restant : ${data.points} pts`,
+                restaurant?.logo,
+                "adam-reward"
+              );
+            }
           }
           return data;
         });
