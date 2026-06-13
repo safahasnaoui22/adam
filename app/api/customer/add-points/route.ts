@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/lib/auth";
 import { prisma } from "@/app/lib/prisma";
-
+import { sendPushToClient } from "@/lib/webpush";
 export async function POST(request: NextRequest) {
   try {
     // 1. Authenticate restaurant owner
@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
 
     // 2. Parse and validate request body
     const { customerId, amount } = await request.json();
-    if (!customerId || typeof amount !== 'number' || amount <= 0) {
+    if (!customerId || typeof amount !== "number" || amount <= 0) {
       return NextResponse.json(
         { error: "Invalid customerId or amount" },
         { status: 400 }
@@ -30,6 +30,9 @@ export async function POST(request: NextRequest) {
         id: customerId,
         restaurantId: session.user.restaurantId,
       },
+      include: {
+        pushSubscriptions: true, // ← load subscriptions
+      },
     });
     if (!customer) {
       return NextResponse.json(
@@ -38,10 +41,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 4. Calculate points (1 DT = 10 points)
-    const pointsToAdd = Math.floor(amount * 10);
+    // 4. Calculate points
+    const loyaltyRule = await prisma.loyaltyProgram.findFirst({
+      where: { restaurantId: session.user.restaurantId },
+    });
+    const spendThreshold = loyaltyRule?.spendThreshold ?? 1;
+    const pointsEarned   = loyaltyRule?.pointsEarned   ?? 10;
+    const pointsToAdd    = Math.floor((amount / spendThreshold) * pointsEarned);
 
-    // 5. Update customer points and record visit in a transaction
+    // 5. Update points + record visit
     const [updatedCustomer] = await prisma.$transaction([
       prisma.customerProfile.update({
         where: { id: customerId },
@@ -50,19 +58,54 @@ export async function POST(request: NextRequest) {
       prisma.visit.create({
         data: {
           customerId,
-          amount: amount,
+          amount,
           pointsEarned: pointsToAdd,
-          stampsEarned: 0, // can be customised later
+          stampsEarned: 0,
         },
       }),
     ]);
 
-    // 6. Return success response
+    // 6. Send push notification (fire and forget — never blocks the response)
+    if (customer.pushSubscriptions?.length > 0) {
+      const restaurant = await prisma.restaurant.findUnique({
+        where: { id: session.user.restaurantId },
+        select: { logo: true, name: true },
+      });
+
+      const subscriptions = customer.pushSubscriptions.map((s: any) => ({
+        endpoint: s.endpoint,
+        keys: { p256dh: s.p256dh, auth: s.auth },
+      }));
+
+      sendPushToClient(
+        customerId,
+        subscriptions,
+        {
+          title: "🎉 Points ajoutés !",
+          body: `+${pointsToAdd} points ajoutés à votre carte. Solde : ${updatedCustomer.points} pts`,
+          icon: restaurant?.logo || "/icon-192x192.png",
+          badge: "/icon-72x72.png",
+          tag: "adam-points",
+          data: {
+            url: "/client/dashboard",
+            pointsAdded: pointsToAdd,
+            newTotal: updatedCustomer.points,
+          },
+        },
+        // Auto-delete expired subscriptions
+        async (endpoint: string) => {
+          await prisma.pushSubscription.deleteMany({ where: { endpoint } });
+        }
+      ).catch(console.error); // never let push crash the route
+    }
+
+    // 7. Return success
     return NextResponse.json({
       success: true,
       pointsAdded: pointsToAdd,
       newPoints: updatedCustomer.points,
     });
+
   } catch (error) {
     console.error("Failed to add points:", error);
     return NextResponse.json(

@@ -227,17 +227,15 @@ enum SubscriptionPlan {
   ENTERPRISE
 }
 
+
 model PushSubscription {
-  id String @id @default(cuid())
-
-  clientId String
-  endpoint String @db.Text
-  p256dh   String
-  auth     String
-
-  createdAt DateTime @default(now())
-
-  customer CustomerProfile @relation(fields: [clientId], references: [id], onDelete: Cascade)
-
+  id        String          @id @default(cuid())
+  clientId  String
+  endpoint  String          @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime        @default(now())
+  customer  CustomerProfile @relation(fields: [clientId], references: [id], onDelete: Cascade)
   @@index([clientId])
 }
+

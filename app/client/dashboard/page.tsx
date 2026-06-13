@@ -208,19 +208,99 @@ const IconPointsCoin = ({ size = 36, primaryColor }: { size?: number; primaryCol
   </svg>
 );
 
-// ── Push Notification helpers ─────────────────────────────────────────
-async function requestPushPermission(): Promise<boolean> {
-  if (!("Notification" in window)) return false;
-  if (Notification.permission === "granted") return true;
-  const result = await Notification.requestPermission();
-  return result === "granted";
+// ── Push Notification helpers (full SW + Push API) ────────────────────
+
+const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "";
+
+/** Convert VAPID base64 key to Uint8Array for pushManager.subscribe */
+function urlBase64ToUint8Array(base64String: string): Uint8Array {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const rawData = window.atob(base64);
+  return Uint8Array.from([...rawData].map((c) => c.charCodeAt(0)));
 }
 
-function sendLocalNotification(title: string, body: string, icon?: string) {
-  if (Notification.permission !== "granted") return;
+/** Register SW + subscribe to Push API + send subscription to server */
+async function subscribeToPush(clientId: string): Promise<boolean> {
+  if (!("serviceWorker" in navigator) || !("PushManager" in window)) return false;
+  if (!VAPID_PUBLIC_KEY) {
+    console.warn("[push] NEXT_PUBLIC_VAPID_PUBLIC_KEY not set");
+    return false;
+  }
+
   try {
-    new Notification(title, { body, icon: icon || "/icon-192x192.png", badge: "/icon-192x192.png", vibrate: [200, 100, 200] } as any);
-  } catch { /* service worker will handle it */ }
+    // 1. Request permission
+    const permission = await Notification.requestPermission();
+    if (permission !== "granted") return false;
+
+    // 2. Get (or register) the service worker
+    const registration = await navigator.serviceWorker.ready;
+
+    // 3. Check if already subscribed
+    let subscription = await registration.pushManager.getSubscription();
+
+    // 4. Subscribe if not yet
+    if (!subscription) {
+      subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+      });
+    }
+
+    // 5. Send subscription to your server
+    const res = await fetch("/api/push/subscribe", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ subscription: subscription.toJSON(), clientId }),
+    });
+
+    return res.ok;
+  } catch (err) {
+    console.error("[push] subscribe error:", err);
+    return false;
+  }
+}
+
+/** Unsubscribe from push and remove from server */
+async function unsubscribeFromPush(): Promise<void> {
+  try {
+    const registration = await navigator.serviceWorker.ready;
+    const subscription = await registration.pushManager.getSubscription();
+    if (!subscription) return;
+
+    await fetch("/api/push/subscribe", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ endpoint: subscription.endpoint }),
+    });
+
+    await subscription.unsubscribe();
+  } catch (err) {
+    console.error("[push] unsubscribe error:", err);
+  }
+}
+
+/**
+ * Show a notification via the Service Worker (works when page is in background).
+ * Falls back gracefully if SW is not available.
+ */
+async function showSWNotification(title: string, body: string, icon?: string, tag?: string): Promise<void> {
+  if (!("serviceWorker" in navigator)) return;
+  try {
+    const registration = await navigator.serviceWorker.ready;
+    await registration.showNotification(title, {
+      body,
+      icon: icon || "/icon-192x192.png",
+      badge: "/icon-72x72.png",
+      tag: tag || "adam-local",
+      vibrate: [200, 100, 200],
+    } as any);
+  } catch {
+    // Last-resort fallback (only works if page is visible)
+    if (Notification.permission === "granted") {
+      try { new Notification(title, { body, icon }); } catch {}
+    }
+  }
 }
 
 // ── Points Celebration Overlay ────────────────────────────────────────
@@ -641,10 +721,13 @@ export default function ClientDashboard() {
           if (prev !== null && data.points > prev.points) {
             const gained = data.points - prev.points;
             setCelebration({ pointsEarned: gained, newTotal: data.points, mode: "earned" });
-            // Push notification
-            if (Notification.permission === "granted") {
-              sendLocalNotification("🎉 Points gagnés !", `+${gained} points ajoutés à votre carte !`, restaurant?.logo);
-            }
+            // SW notification — works even when the page tab is not focused
+            showSWNotification(
+              "🎉 Points ajoutés !",
+              `+${gained} points sur votre carte. Solde : ${data.points} pts`,
+              restaurant?.logo,
+              "adam-points"
+            );
           }
           return data;
         });
@@ -721,11 +804,15 @@ export default function ClientDashboard() {
     }
   };
 
-  // ── Bell click: request push permission ──────────────────────────────
+  // ── Bell click: request push permission + subscribe ──────────────────
   const handleBellClick = async () => {
-    if (notifPermission === "granted") {
-      // already active — show a test notification
-      sendLocalNotification("🔔 Notifications actives", "Vous recevrez vos points et offres ici !", restaurant?.logo);
+    if (notifActive) {
+      // Already subscribed — show confirmation via SW (works in background)
+      await showSWNotification(
+        "🔔 Notifications actives",
+        "Vous recevrez vos points et offres spéciales directement ici.",
+        restaurant?.logo
+      );
       return;
     }
     if (notifPermission === "denied") {
@@ -737,13 +824,22 @@ export default function ClientDashboard() {
 
   const handleAllowNotif = async () => {
     setShowNotifModal(false);
-    const granted = await requestPushPermission();
-    setNotifPermission(granted ? "granted" : "denied");
-    setNotifActive(granted);
-    if (granted) {
-      setTimeout(() => {
-        sendLocalNotification("🎉 Notifications activées !", "Vous recevrez vos points et offres spéciales ici.", restaurant?.logo);
-      }, 500);
+    const clientId = localStorage.getItem("clientId") || "";
+    // subscribeToPush handles: permission request + pushManager.subscribe + POST to /api/push/subscribe
+    const subscribed = await subscribeToPush(clientId);
+    const perm = Notification.permission as NotificationPermission;
+    setNotifPermission(perm);
+    setNotifActive(subscribed);
+    if (subscribed) {
+      // Confirmation notification — goes through SW, works even if tab is backgrounded
+      setTimeout(async () => {
+        await showSWNotification(
+          "🎉 Notifications activées !",
+          "Vous recevrez +points, offres et récompenses sur ce téléphone.",
+          restaurant?.logo,
+          "adam-welcome"
+        );
+      }, 600);
     }
   };
 
@@ -772,9 +868,13 @@ export default function ClientDashboard() {
         setActiveBonusModal(null);
         setTimeout(() => {
           setCelebration({ pointsEarned: gained, newTotal, mode: "earned" });
-          if (Notification.permission === "granted") {
-            sendLocalNotification("⭐ Bonus gagné !", `+${gained} points pour ${activeBonusModal.label} !`, restaurant?.logo);
-          }
+          // SW notification works even if tab goes background
+          showSWNotification(
+            "⭐ Bonus gagné !",
+            `+${gained} points pour ${activeBonusModal.label} ! Solde : ${newTotal} pts`,
+            restaurant?.logo,
+            "adam-bonus"
+          );
         }, 350);
       } else {
         alert(data.error || "Une erreur est survenue. Réessayez plus tard.");
@@ -789,14 +889,17 @@ export default function ClientDashboard() {
     }
   };
 
-  // ── Points-spent celebration trigger (call this from wherever you redeem) ──
-  // Exposed on window for easy integration from reward redemption flows
+  // ── Points-spent celebration trigger ─────────────────────────────────
   useEffect(() => {
     (window as any).__triggerSpentCelebration = (pts: number, newTotal: number, rewardName?: string) => {
       setCelebration({ pointsEarned: pts, newTotal, mode: "spent", rewardName });
-      if (Notification.permission === "granted") {
-        sendLocalNotification("🎁 Récompense activée !", `${rewardName || "Votre récompense"} est prête !`, restaurant?.logo);
-      }
+      // SW notification — fires even if the app is in background
+      showSWNotification(
+        "🎁 Récompense activée !",
+        `${rewardName || "Votre récompense"} est prête ! Solde restant : ${newTotal} pts`,
+        restaurant?.logo,
+        "adam-reward"
+      );
     };
     return () => { delete (window as any).__triggerSpentCelebration; };
   }, [restaurant]);
