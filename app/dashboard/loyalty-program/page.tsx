@@ -1,4 +1,3 @@
-// app/dashboard/loyalty-program/page.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -49,12 +48,14 @@ export default function LoyaltyProgramPage() {
    *  - First reward  → 100 – 300 pts
    *  - Every subsequent reward → (prevMax + 100) – (prevMax + 300)
    *
-   * This ensures every tier is meaningfully harder to reach than the one before
-   * it, while giving the owner flexibility to space tiers as they see fit.
+   * Only ACTIVE rewards are considered — deactivated ("soft-deleted") rewards
+   * are excluded so that removing a tier resets the range correctly.
    */
   const getNextPointsRange = (rewardsList: Reward[]): [number, number] => {
     if (rewardsList.length === 0) return [100, 300];
-    const maxPoints = Math.max(...rewardsList.map((r) => r.pointsRequired));
+    const active = rewardsList.filter((r) => r.isActive);
+    if (active.length === 0) return [100, 300];
+    const maxPoints = Math.max(...active.map((r) => r.pointsRequired));
     return [maxPoints + 100, maxPoints + 300];
   };
 
@@ -240,8 +241,11 @@ export default function LoyaltyProgramPage() {
   }
 
   // ─── Derived range for the "add" form ────────────────────────────────────────
-  const [minPts, maxPts] = getNextPointsRange(rewards);
-  const isFirstReward = rewards.length === 0;
+  // Only active rewards count — inactive (soft-deleted) ones are ignored so that
+  // "deleting" a tier properly resets the allowed range for the next reward.
+  const activeRewards = rewards.filter((r) => r.isActive);
+  const [minPts, maxPts] = getNextPointsRange(activeRewards);
+  const isFirstReward = activeRewards.length === 0;
 
   return (
     <div className="max-w-4xl mx-auto py-8 px-4">
@@ -557,7 +561,7 @@ export default function LoyaltyProgramPage() {
                       </button>
                       <button
                         onClick={() => handleDeleteReward(reward.id)}
-                        className="text-red-500 hoRécompensez les clients avec des pointser:text-red-400 transition-colors"
+                        className="text-red-500 hover:text-red-400 transition-colors"
                       >
                         Supprimer
                       </button>
