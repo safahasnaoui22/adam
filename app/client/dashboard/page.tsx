@@ -1052,9 +1052,9 @@ export default function ClientDashboard() {
         <div className="px-4 py-6 text-center border-b" style={{ borderColor: `${D.primary}20`, animation: "fadeSlideIn 0.5s ease" }}>
           {/* مرحبا بيك {name} مرحبا بيك — name in orange */}
           <h2 style={{ fontSize: 22, fontWeight: 800, color: "#111827", margin: 0, letterSpacing: "-0.3px" }}>
-            مرحبا بيك{" "}
+            Marhbe byk  {" "}
             <span style={{ color: D.primary }}>{client.name}</span>
-            {" "}مرحبا بيك
+            {" "} 
           </h2>
           <p className="text-xs mt-1.5 font-medium tracking-wider uppercase" style={{ color: `${D.text}60` }}>
             ID #{getShortId()}
