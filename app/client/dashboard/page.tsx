@@ -722,9 +722,20 @@ export default function ClientDashboard() {
           }
           return data;
         });
+        // API stores bonuses as individual boolean columns, not an array.
+        // Map them back to the string[] the UI expects.
+        const derived: string[] = [];
+        if (data.hasClaimedGoogleMapsBonus) derived.push("googleMaps");
+        if (data.hasClaimedFacebookBonus)   derived.push("facebook");
+        if (data.hasClaimedInstagramBonus)  derived.push("instagram");
+        if (data.hasClaimedTwitterBonus)    derived.push("twitter");
+        // Also support legacy array format in case the API is updated later
         if (data.completedBonuses && Array.isArray(data.completedBonuses)) {
-          setCompletedBonuses(data.completedBonuses);
+          data.completedBonuses.forEach((b: string) => {
+            if (!derived.includes(b)) derived.push(b);
+          });
         }
+        setCompletedBonuses(derived);
       }
     } catch (e) { console.error(e); }
   };
@@ -844,14 +855,17 @@ export default function ClientDashboard() {
     if (!activeBonusModal) return;
     setClaimingBonus(activeBonusModal.id);
     try {
-      const res = await fetch("/api/client/claim-bonus", {
+      const res = await fetch("/api/customer/claim-bonus", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: activeBonusModal.id, restaurantId: restaurant.id }),
+        body: JSON.stringify({
+          platform: activeBonusModal.id,          // "googleMaps" | "facebook" | "instagram" | "twitter"
+          customerId: client.customerId,           // matches session.user.customerProfile.id check
+        }),
       });
       const data = await res.json();
       if (res.ok) {
-        const gained = data.pointsEarned;
+        const gained = data.pointsAdded;           // API returns pointsAdded, not pointsEarned
         const newTotal = data.newPoints;
         setClient((prev: any) => ({ ...prev, points: newTotal }));
         setCompletedBonuses((prev) => [...prev, activeBonusModal.id]);
@@ -1052,12 +1066,12 @@ export default function ClientDashboard() {
         <div className="px-4 py-6 text-center border-b" style={{ borderColor: `${D.primary}20`, animation: "fadeSlideIn 0.5s ease" }}>
           {/* مرحبا بيك {name} مرحبا بيك — name in orange */}
           <h2 style={{ fontSize: 22, fontWeight: 800, color: "#111827", margin: 0, letterSpacing: "-0.3px" }}>
-            Marhbe byk  {" "}
+         Marhbee byk{" "}
             <span style={{ color: D.primary }}>{client.name}</span>
             {" "} 
           </h2>
           <p className="text-xs mt-1.5 font-medium tracking-wider uppercase" style={{ color: `${D.text}60` }}>
-            ID #{getShortId()}
+            ID {getShortId()}
           </p>
         </div>
 

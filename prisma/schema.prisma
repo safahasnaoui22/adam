@@ -32,7 +32,7 @@ model ActivityLog {
   createdAt DateTime @default(now())
 }
 
-model Restaurant {
+model Restaurant {prisma.config.js
   id                String            @id @default(cuid())
   name              String
   description       String?
