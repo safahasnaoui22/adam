@@ -83,6 +83,21 @@ const IconExternalLink = ({ size = 14, color = "currentColor" }: { size?: number
   </svg>
 );
 
+// ── QR Code Icon ──────────────────────────────────────────────────────
+const IconQR = ({ size = 22, color = "currentColor" }: { size?: number; color?: string }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="3" width="7" height="7" rx="1"/>
+    <rect x="14" y="3" width="7" height="7" rx="1"/>
+    <rect x="3" y="14" width="7" height="7" rx="1"/>
+    <rect x="5" y="5" width="3" height="3" fill={color} stroke="none"/>
+    <rect x="16" y="5" width="3" height="3" fill={color} stroke="none"/>
+    <rect x="5" y="16" width="3" height="3" fill={color} stroke="none"/>
+    <path d="M14 14h3v3"/>
+    <path d="M17 17v4"/>
+    <path d="M21 14v3h-4"/>
+  </svg>
+);
+
 // ── Bell Icon (with optional active dot) ─────────────────────────────
 const IconBell = ({ size = 20, color = "currentColor", active = false, pulsing = false }: { size?: number; color?: string; active?: boolean; pulsing?: boolean }) => (
   <span style={{ position: "relative", display: "inline-flex" }}>
@@ -103,48 +118,9 @@ const IconBell = ({ size = 20, color = "currentColor", active = false, pulsing =
   </span>
 );
 
-// ── Reward Icon Components (proper matching SVGs) ──────────────────────
-const IconCoffee = ({ size = 28, color = "#fe5502" }: { size?: number; color?: string }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M18 8h1a4 4 0 010 8h-1"/>
-    <path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/>
-    <line x1="6" y1="1" x2="6" y2="4"/>
-    <line x1="10" y1="1" x2="10" y2="4"/>
-    <line x1="14" y1="1" x2="14" y2="4"/>
-  </svg>
-);
-
-const IconCake = ({ size = 28, color = "#fe5502" }: { size?: number; color?: string }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M20 21v-8a2 2 0 00-2-2H6a2 2 0 00-2 2v8"/>
-    <path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2 1 2 1"/>
-    <path d="M2 21h20"/>
-    <path d="M7 8v3"/>
-    <path d="M12 8v3"/>
-    <path d="M17 8v3"/>
-    <path d="M7 8a2 2 0 01-2-2c0-1.1.9-2 2-2s2 .9 2 2a2 2 0 01-2 2z"/>
-    <path d="M12 8a2 2 0 01-2-2c0-1.1.9-2 2-2s2 .9 2 2a2 2 0 01-2 2z"/>
-    <path d="M17 8a2 2 0 01-2-2c0-1.1.9-2 2-2s2 .9 2 2a2 2 0 01-2 2z"/>
-  </svg>
-);
-
-const IconTag = ({ size = 28, color = "#fe5502" }: { size?: number; color?: string }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/>
-    <line x1="7" y1="7" x2="7.01" y2="7"/>
-  </svg>
-);
-
-const IconUtensils = ({ size = 28, color = "#fe5502" }: { size?: number; color?: string }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 002-2V2"/>
-    <line x1="7" y1="2" x2="7" y2="22"/>
-    <path d="M21 15V2a5 5 0 00-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/>
-  </svg>
-);
-
-const IconGift = ({ size = 28, color = "#fe5502" }: { size?: number; color?: string }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+// ── Gift Icon for Reward Cards ────────────────────────────────────────
+const IconGiftCard = ({ size = 26 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <polyline points="20 12 20 22 4 22 4 12"/>
     <rect x="2" y="7" width="20" height="5"/>
     <line x1="12" y1="22" x2="12" y2="7"/>
@@ -152,50 +128,6 @@ const IconGift = ({ size = 28, color = "#fe5502" }: { size?: number; color?: str
     <path d="M12 7h4.5a2.5 2.5 0 000-5C13 2 12 7 12 7z"/>
   </svg>
 );
-
-const IconCrown = ({ size = 28, color = "#fe5502" }: { size?: number; color?: string }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M2 4l3 12h14l3-12-6 7-4-7-4 7-6-7z"/>
-    <path d="M5 20h14"/>
-  </svg>
-);
-
-const IconIceCream = ({ size = 28, color = "#fe5502" }: { size?: number; color?: string }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M12 22v-4"/>
-    <path d="M8 10c0-2.2 1.8-4 4-4s4 1.8 4 4"/>
-    <path d="M6 10h12l-2 8H8L6 10z"/>
-    <path d="M7 10c0-2.8 2.2-5 5-5s5 2.2 5 5"/>
-  </svg>
-);
-
-const IconPercent = ({ size = 28, color = "#fe5502" }: { size?: number; color?: string }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    <line x1="19" y1="5" x2="5" y2="19"/>
-    <circle cx="6.5" cy="6.5" r="2.5"/>
-    <circle cx="17.5" cy="17.5" r="2.5"/>
-  </svg>
-);
-
-// ── Smart reward icon selector ────────────────────────────────────────
-function getRewardIcon(name: string, pts: number, color: string, size = 28) {
-  const n = name.toLowerCase();
-  if (n.includes("café") || n.includes("cafe") || n.includes("coffee") || n.includes("boisson") || n.includes("drink") || n.includes("thé") || n.includes("the")) return <IconCoffee size={size} color={color} />;
-  if (n.includes("dessert") || n.includes("gâteau") || n.includes("gateau") || n.includes("cake") || n.includes("pâtisserie")) return <IconCake size={size} color={color} />;
-  if (n.includes("glace") || n.includes("ice")) return <IconIceCream size={size} color={color} />;
-  if (n.includes("réduction") || n.includes("reduction") || n.includes("remise") || n.includes("%") || n.includes("promo")) return <IconPercent size={size} color={color} />;
-  if (n.includes("cadeau") || n.includes("gift") || n.includes("box")) return <IconGift size={size} color={color} />;
-  if (n.includes("plat") || n.includes("repas") || n.includes("meal") || n.includes("menu") || n.includes("déjeuner") || n.includes("diner") || n.includes("entrée")) return <IconUtensils size={size} color={color} />;
-  if (n.includes("vip") || n.includes("premium") || n.includes("gold") || n.includes("royal") || n.includes("platinum")) return <IconCrown size={size} color={color} />;
-  if (n.includes("bon") || n.includes("code") || n.includes("coupon") || n.includes("offre")) return <IconTag size={size} color={color} />;
-  // fallback by points range
-  if (pts <= 100) return <IconCoffee size={size} color={color} />;
-  if (pts <= 200) return <IconCake size={size} color={color} />;
-  if (pts <= 350) return <IconTag size={size} color={color} />;
-  if (pts <= 500) return <IconUtensils size={size} color={color} />;
-  if (pts <= 700) return <IconGift size={size} color={color} />;
-  return <IconCrown size={size} color={color} />;
-}
 
 // ── Pro Points Coin Icon ──────────────────────────────────────────────
 const IconPointsCoin = ({ size = 36, primaryColor }: { size?: number; primaryColor: string }) => (
@@ -208,11 +140,10 @@ const IconPointsCoin = ({ size = 36, primaryColor }: { size?: number; primaryCol
   </svg>
 );
 
-// ── Push Notification helpers (full SW + Push API) ────────────────────
+// ── Push Notification helpers ─────────────────────────────────────────
 
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "";
 
-/** Convert VAPID base64 key to Uint8Array for pushManager.subscribe */
 function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
@@ -222,40 +153,28 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
   return arr;
 }
 
-/** Register SW + subscribe to Push API + send subscription to server */
 async function subscribeToPush(clientId: string): Promise<boolean> {
   if (!("serviceWorker" in navigator) || !("PushManager" in window)) return false;
   if (!VAPID_PUBLIC_KEY) {
     console.warn("[push] NEXT_PUBLIC_VAPID_PUBLIC_KEY not set");
     return false;
   }
-
   try {
-    // 1. Request permission
     const permission = await Notification.requestPermission();
     if (permission !== "granted") return false;
-
-    // 2. Get (or register) the service worker
     const registration = await navigator.serviceWorker.ready;
-
-    // 3. Check if already subscribed
     let subscription = await registration.pushManager.getSubscription();
-
-    // 4. Subscribe if not yet
     if (!subscription) {
       subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
       });
     }
-
-    // 5. Send subscription to your server
     const res = await fetch("/api/push/subscribe", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ subscription: subscription.toJSON(), clientId }),
     });
-
     return res.ok;
   } catch (err) {
     console.error("[push] subscribe error:", err);
@@ -263,29 +182,22 @@ async function subscribeToPush(clientId: string): Promise<boolean> {
   }
 }
 
-/** Unsubscribe from push and remove from server */
 async function unsubscribeFromPush(): Promise<void> {
   try {
     const registration = await navigator.serviceWorker.ready;
     const subscription = await registration.pushManager.getSubscription();
     if (!subscription) return;
-
     await fetch("/api/push/subscribe", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ endpoint: subscription.endpoint }),
     });
-
     await subscription.unsubscribe();
   } catch (err) {
     console.error("[push] unsubscribe error:", err);
   }
 }
 
-/**
- * Show a notification via the Service Worker (works when page is in background).
- * Falls back gracefully if SW is not available.
- */
 async function showSWNotification(title: string, body: string, icon?: string, tag?: string): Promise<void> {
   if (!("serviceWorker" in navigator)) return;
   try {
@@ -298,7 +210,6 @@ async function showSWNotification(title: string, body: string, icon?: string, ta
       vibrate: [200, 100, 200],
     } as any);
   } catch {
-    // Last-resort fallback (only works if page is visible)
     if (Notification.permission === "granted") {
       try { new Notification(title, { body, icon }); } catch {}
     }
@@ -320,14 +231,8 @@ type PointsCelebrationProps = {
 };
 
 function PointsCelebration({
-  pointsEarned,
-  newTotal,
-  primaryColor,
-  textColor,
-  cardBg,
-  mode = "earned",
-  rewardName,
-  onClose,
+  pointsEarned, newTotal, primaryColor, textColor, cardBg,
+  mode = "earned", rewardName, onClose,
 }: PointsCelebrationProps) {
   const [displayCount, setDisplayCount] = useState(0);
   const [phase, setPhase] = useState<"enter" | "count" | "done">("enter");
@@ -401,37 +306,25 @@ function PointsCelebration({
           pointerEvents: "none",
         }}/>
       ))}
-
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
-          backgroundColor: cardBg,
-          borderRadius: 28,
-          padding: "36px 32px 28px",
-          width: "min(340px, 88vw)",
-          textAlign: "center",
-          position: "relative",
+          backgroundColor: cardBg, borderRadius: 28,
+          padding: "36px 32px 28px", width: "min(340px, 88vw)",
+          textAlign: "center", position: "relative",
           animation: "celebCardIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)",
           border: `1.5px solid ${accentColor}30`,
           boxShadow: `0 24px 60px rgba(0,0,0,0.35), 0 0 0 1px ${accentColor}10`,
           overflow: "hidden",
         }}
       >
-        {/* Background shimmer */}
-        <div style={{
-          position: "absolute", inset: 0,
-          background: `radial-gradient(ellipse at 50% 0%, ${accentColor}12 0%, transparent 70%)`,
-          pointerEvents: "none",
-        }}/>
-
-        {/* Icon area */}
+        <div style={{ position: "absolute", inset: 0, background: `radial-gradient(ellipse at 50% 0%, ${accentColor}12 0%, transparent 70%)`, pointerEvents: "none" }}/>
         <div style={{ position: "relative", display: "inline-flex", alignItems: "center", justifyContent: "center", marginBottom: 20 }}>
           <div style={{ position: "absolute", width: 90, height: 90, borderRadius: "50%", backgroundColor: `${accentColor}12`, animation: "pulseRing 1.8s ease-out 0.3s infinite" }}/>
           <div style={{ position: "absolute", width: 70, height: 70, borderRadius: "50%", backgroundColor: `${accentColor}18`, animation: "pulseRing 1.8s ease-out 0.6s infinite" }}/>
           <div style={{
             width: 58, height: 58, borderRadius: "50%",
-            backgroundColor: `${accentColor}18`,
-            border: `2.5px solid ${accentColor}`,
+            backgroundColor: `${accentColor}18`, border: `2.5px solid ${accentColor}`,
             display: "flex", alignItems: "center", justifyContent: "center",
             position: "relative", zIndex: 1,
             animation: phase === "enter" ? "coinBounce 0.55s cubic-bezier(0.34,1.56,0.64,1)" : "none",
@@ -441,57 +334,27 @@ function PointsCelebration({
               <svg width="28" height="28" viewBox="0 0 36 36" fill="none">
                 <text x="18" y="23" textAnchor="middle" fontSize="18" fontWeight="700" fontFamily="'Inter', system-ui, sans-serif" fill={accentColor}>$</text>
               </svg>
-            ) : (
-              <span>🎁</span>
-            )}
+            ) : <span>🎁</span>}
           </div>
         </div>
-
         <p style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: `${textColor}55`, margin: "0 0 8px" }}>
           {isEarned ? "Vous avez gagné" : "Vous avez utilisé"}
         </p>
-
-        <div style={{
-          fontSize: 72, fontWeight: 800, lineHeight: 1,
-          color: accentColor, margin: "0 0 4px",
-          fontVariantNumeric: "tabular-nums", letterSpacing: "-2px",
-          animation: phase === "done" ? "numberPop 0.35s cubic-bezier(0.34,1.56,0.64,1)" : "none",
-        }}>
+        <div style={{ fontSize: 72, fontWeight: 800, lineHeight: 1, color: accentColor, margin: "0 0 4px", fontVariantNumeric: "tabular-nums", letterSpacing: "-2px", animation: phase === "done" ? "numberPop 0.35s cubic-bezier(0.34,1.56,0.64,1)" : "none" }}>
           {isEarned ? "+" : "-"}{displayCount}
         </div>
-
         <p style={{ fontSize: 16, fontWeight: 600, color: `${textColor}70`, margin: "0 0 6px", letterSpacing: "0.04em" }}>points</p>
-
         {rewardName && !isEarned && (
-          <div style={{
-            display: "inline-flex", alignItems: "center", gap: 6,
-            backgroundColor: `${accentColor}12`,
-            borderRadius: 20, padding: "5px 14px", marginBottom: 8,
-          }}>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 6, backgroundColor: `${accentColor}12`, borderRadius: 20, padding: "5px 14px", marginBottom: 8 }}>
             <span style={{ fontSize: 13, fontWeight: 600, color: accentColor }}>🎉 {rewardName}</span>
           </div>
         )}
-
-        <div style={{ height: 1, backgroundColor: `${textColor}10`, margin: "16px 0" }} />
-
+        <div style={{ height: 1, backgroundColor: `${textColor}10`, margin: "16px 0" }}/>
         <p style={{ fontSize: 12, color: `${textColor}50`, margin: "0 0 4px" }}>Nouveau solde</p>
-        <p style={{ fontSize: 26, fontWeight: 700, color: textColor, margin: "0 0 22px", fontVariantNumeric: "tabular-nums" }}>
-          {newTotal} pts
-        </p>
-
-        <button
-          onClick={onClose}
-          style={{
-            width: "100%", padding: "13px",
-            backgroundColor: accentColor,
-            border: "none", borderRadius: 14,
-            color: "#fff", fontWeight: 700, fontSize: 15,
-            cursor: "pointer", letterSpacing: "0.01em",
-          }}
-        >
+        <p style={{ fontSize: 26, fontWeight: 700, color: textColor, margin: "0 0 22px", fontVariantNumeric: "tabular-nums" }}>{newTotal} pts</p>
+        <button onClick={onClose} style={{ width: "100%", padding: "13px", backgroundColor: accentColor, border: "none", borderRadius: 14, color: "#fff", fontWeight: 700, fontSize: 15, cursor: "pointer", letterSpacing: "0.01em" }}>
           {isEarned ? "Super, merci ! 🎉" : "Profitez bien ! 🎁"}
         </button>
-
         <p style={{ fontSize: 11, color: `${textColor}30`, marginTop: 10 }}>Se ferme automatiquement…</p>
       </div>
     </div>
@@ -564,15 +427,14 @@ function BonusModal({ action, pointsValue, primaryColor, textColor, cardBg, onCo
     <div style={{ position: "fixed", inset: 0, zIndex: 100, backgroundColor: "rgba(0,0,0,0.55)", display: "flex", alignItems: "flex-end", justifyContent: "center" }}
       onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}>
       <div style={{ backgroundColor: cardBg, borderRadius: "20px 20px 0 0", padding: "24px 20px 32px", width: "100%", maxWidth: "448px", animation: "slideUp 0.3s ease" }}>
-        <div style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: `${textColor}20`, margin: "0 auto 20px" }} />
-
+        <div style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: `${textColor}20`, margin: "0 auto 20px" }}/>
         {step === "intro" && (
           <div style={{ textAlign: "center" }}>
             <div style={{ width: 60, height: 60, borderRadius: 16, backgroundColor: `${primaryColor}15`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>{action.icon}</div>
             <h3 style={{ fontSize: 18, fontWeight: 700, color: textColor, margin: "0 0 8px" }}>Gagnez des points sur {action.label}</h3>
             <p style={{ fontSize: 13, color: `${textColor}80`, margin: "0 0 6px", lineHeight: 1.5 }}>{action.actionLabel} pour gagner</p>
             <div style={{ display: "inline-flex", alignItems: "center", gap: 6, backgroundColor: `${primaryColor}15`, borderRadius: 20, padding: "6px 16px", marginBottom: 24 }}>
-              <IconStar size={14} color={primaryColor} />
+              <IconStar size={14} color={primaryColor}/>
               <span style={{ fontSize: 15, fontWeight: 700, color: primaryColor }}>+{pointsValue} points</span>
             </div>
             <div style={{ backgroundColor: `${textColor}06`, borderRadius: 12, padding: "12px 16px", marginBottom: 20, textAlign: "left" }}>
@@ -584,13 +446,12 @@ function BonusModal({ action, pointsValue, primaryColor, textColor, cardBg, onCo
             </div>
             <a href="#" onClick={(e) => { e.preventDefault(); window.open((window as any).__bonusUrl, "_blank"); handleOpenLink(); }}
               style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, width: "100%", padding: "14px", backgroundColor: primaryColor, color: "#fff", borderRadius: 14, fontWeight: 700, fontSize: 15, textDecoration: "none", marginBottom: 12 }}>
-              <IconExternalLink size={16} color="#fff" />
+              <IconExternalLink size={16} color="#fff"/>
               Ouvrir {action.label}
             </a>
             <button onClick={onCancel} style={{ width: "100%", padding: "12px", backgroundColor: "transparent", border: "none", color: `${textColor}60`, fontSize: 14, cursor: "pointer" }}>Annuler</button>
           </div>
         )}
-
         {step === "waiting" && (
           <div style={{ textAlign: "center" }}>
             <div style={{ width: 72, height: 72, borderRadius: "50%", border: `3px solid ${primaryColor}30`, borderTopColor: primaryColor, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px", animation: "spin 1s linear infinite" }}>
@@ -601,7 +462,6 @@ function BonusModal({ action, pointsValue, primaryColor, textColor, cardBg, onCo
             <button onClick={() => setStep("confirm")} style={{ width: "100%", padding: "13px", backgroundColor: `${primaryColor}15`, border: `1.5px solid ${primaryColor}30`, borderRadius: 14, color: primaryColor, fontWeight: 600, fontSize: 14, cursor: "pointer" }}>J'ai déjà terminé →</button>
           </div>
         )}
-
         {step === "confirm" && (
           <div style={{ textAlign: "center" }}>
             <div style={{ fontSize: 52, marginBottom: 12 }}>🎯</div>
@@ -641,6 +501,41 @@ function NotificationPermModal({ primaryColor, textColor, cardBg, onAllow, onDen
   );
 }
 
+// ── QR Modal (full-screen overlay) ───────────────────────────────────
+function QRModal({ client, primaryColor, textColor, cardBg, onClose }: {
+  client: any; primaryColor: string; textColor: string; cardBg: string; onClose: () => void;
+}) {
+  return (
+    <div
+      style={{ position: "fixed", inset: 0, zIndex: 110, backgroundColor: "rgba(0,0,0,0.65)", backdropFilter: "blur(6px)", display: "flex", alignItems: "flex-end", justifyContent: "center" }}
+      onClick={onClose}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{ backgroundColor: cardBg, borderRadius: "24px 24px 0 0", padding: "28px 24px 40px", width: "100%", maxWidth: "448px", animation: "slideUp 0.35s ease", textAlign: "center" }}
+      >
+        <div style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: `${textColor}20`, margin: "0 auto 20px" }}/>
+        <h3 style={{ fontSize: 18, fontWeight: 700, color: textColor, margin: "0 0 6px" }}>Mon Code QR</h3>
+        <p style={{ fontSize: 13, color: `${textColor}60`, margin: "0 0 24px" }}>Présentez ce code au staff pour scanner vos points</p>
+        <div style={{ display: "inline-block", padding: 16, borderRadius: 20, backgroundColor: "#fff", border: `2px solid ${primaryColor}25`, boxShadow: `0 8px 32px ${primaryColor}20` }}>
+          <QRCodeSVG value={`${window.location.origin}/scan/${client.customerId}`} size={200} bgColor="#ffffff" fgColor={primaryColor} level="H"/>
+        </div>
+        <div style={{ marginTop: 20, display: "inline-flex", alignItems: "center", gap: 8, backgroundColor: `${primaryColor}12`, borderRadius: 20, padding: "8px 20px" }}>
+          <span style={{ fontSize: 13, fontWeight: 700, color: primaryColor }}>{client.name}</span>
+          <span style={{ width: 4, height: 4, borderRadius: "50%", backgroundColor: `${primaryColor}50` }}/>
+          <span style={{ fontSize: 13, fontWeight: 600, color: `${textColor}60` }}>#{client.customerId?.slice(-4)}</span>
+        </div>
+        <button
+          onClick={onClose}
+          style={{ display: "block", width: "100%", marginTop: 20, padding: "13px", backgroundColor: `${primaryColor}12`, border: `1.5px solid ${primaryColor}30`, borderRadius: 14, color: primaryColor, fontWeight: 700, fontSize: 15, cursor: "pointer" }}
+        >
+          Fermer
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ── AnimSection: scroll-triggered fade-in wrapper ─────────────────────
 function AnimSection({ children, delay = 0, style = {} }: { children: React.ReactNode; delay?: number; style?: React.CSSProperties }) {
   const { ref, visible } = useScrollReveal();
@@ -652,6 +547,104 @@ function AnimSection({ children, delay = 0, style = {} }: { children: React.Reac
       ...style,
     }}>
       {children}
+    </div>
+  );
+}
+
+// ── Reward Card Component ─────────────────────────────────────────────
+function RewardCard({ reward, clientPts, primaryColor, cardBg, textColor, index }: {
+  reward: any; clientPts: number; primaryColor: string; cardBg: string; textColor: string; index: number;
+}) {
+  const unlocked = clientPts >= reward.pts;
+
+  return (
+    <div
+      style={{
+        minWidth: "140px",
+        flexShrink: 0,
+        borderRadius: 20,
+        overflow: "hidden",
+        position: "relative",
+        animation: `popIn 0.4s ease ${index * 0.07}s both`,
+        boxShadow: unlocked
+          ? `0 8px 24px ${primaryColor}30`
+          : "0 2px 8px rgba(0,0,0,0.08)",
+        border: unlocked ? `1.5px solid ${primaryColor}` : `1.5px solid ${textColor}12`,
+      }}
+    >
+      {/* Top orange band */}
+      <div
+        style={{
+          background: unlocked
+            ? `linear-gradient(135deg, ${primaryColor}, ${primaryColor}cc)`
+            : `linear-gradient(135deg, #9ca3af, #6b7280)`,
+          padding: "14px 12px 18px",
+          position: "relative",
+          minHeight: 90,
+        }}
+      >
+        {/* Gift icon top-left */}
+        <div style={{ position: "absolute", top: 12, left: 12, opacity: 0.9 }}>
+          <IconGiftCard size={22}/>
+        </div>
+
+        {/* Unlocked badge top-right */}
+        {unlocked && (
+          <div style={{
+            position: "absolute", top: 10, right: 10,
+            backgroundColor: "rgba(255,255,255,0.25)",
+            borderRadius: 20, padding: "2px 8px",
+            display: "flex", alignItems: "center", gap: 3,
+          }}>
+            <IconCheck size={9} color="white"/>
+            <span style={{ fontSize: 9, fontWeight: 700, color: "white", letterSpacing: "0.04em" }}>DISPO</span>
+          </div>
+        )}
+
+        {/* Reward name — centered, white */}
+        <div style={{ marginTop: 28, textAlign: "center" }}>
+          <p style={{
+            fontSize: 13, fontWeight: 700, color: "white",
+            lineHeight: 1.3, margin: 0,
+            textShadow: "0 1px 4px rgba(0,0,0,0.25)",
+          }}>
+            {reward.name}
+          </p>
+        </div>
+      </div>
+
+      {/* Bottom white / card section */}
+      <div style={{ backgroundColor: cardBg, padding: "10px 12px 12px", textAlign: "center" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
+          <IconStar size={11} color={unlocked ? primaryColor : "#9ca3af"}/>
+          <span style={{
+            fontSize: 13, fontWeight: 800,
+            color: unlocked ? primaryColor : "#9ca3af",
+            fontVariantNumeric: "tabular-nums",
+          }}>
+            {reward.pts} pts
+          </span>
+        </div>
+        {unlocked ? (
+          <div style={{
+            marginTop: 6,
+            backgroundColor: primaryColor,
+            borderRadius: 8, padding: "4px 0",
+          }}>
+            <span style={{ fontSize: 10, fontWeight: 700, color: "white", letterSpacing: "0.05em" }}>DISPONIBLE</span>
+          </div>
+        ) : (
+          <div style={{
+            marginTop: 6,
+            backgroundColor: `${textColor}08`,
+            borderRadius: 8, padding: "4px 0",
+          }}>
+            <span style={{ fontSize: 10, fontWeight: 600, color: `${textColor}40`, letterSpacing: "0.04em" }}>
+              🔒 {reward.pts - clientPts} pts
+            </span>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -669,7 +662,6 @@ export default function ClientDashboard() {
   const [showQR, setShowQR] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const [activeTab, setActiveTab] = useState("rewards");
-  const [typedGreeting, setTypedGreeting] = useState("");
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [patternStyle, setPatternStyle] = useState<React.CSSProperties>({});
   const [completedBonuses, setCompletedBonuses] = useState<string[]>([]);
@@ -683,19 +675,13 @@ export default function ClientDashboard() {
   // Swiper state
   const [swiperOffset, setSwiperOffset] = useState(0);
   const touchStartX = useRef<number | null>(null);
-  const VISIBLE_CARDS = 3;
+  const VISIBLE_CARDS = 2; // show 2 cards partially so user knows there's more
+  const CARD_WIDTH = 140;
+  const CARD_GAP = 12;
 
-  const fullGreeting = "comment allez-vous aujourd'hui ?";
-
-  // Typing animation
-  useEffect(() => {
-    let i = 0;
-    const interval = setInterval(() => {
-      if (i <= fullGreeting.length) { setTypedGreeting(fullGreeting.slice(0, i)); i++; }
-      else clearInterval(interval);
-    }, 50);
-    return () => clearInterval(interval);
-  }, []);
+  // We keep restaurant in a ref too, so notification callbacks always have the latest value
+  const restaurantRef = useRef<any>(null);
+  useEffect(() => { restaurantRef.current = restaurant; }, [restaurant]);
 
   // Check notification permission on mount
   useEffect(() => {
@@ -706,15 +692,7 @@ export default function ClientDashboard() {
     }
   }, []);
 
-  const getShortId = () => {
-    if (client?.customerId?.includes("-")) {
-      const parts = client.customerId.split("-");
-      return parts[parts.length - 1].slice(-4);
-    }
-    return client?.id?.slice(-4) ?? "****";
-  };
-
-const fetchClientData = async (id: string) => {
+  const fetchClientData = async (id: string) => {
     try {
       const res = await fetch(`/api/client/${id}`);
       const data = await res.json();
@@ -722,13 +700,13 @@ const fetchClientData = async (id: string) => {
         setClient((prev: any) => {
           if (prev !== null && data.points !== prev.points) {
             const diff = data.points - prev.points;
+            const logo = restaurantRef.current?.logo;
             if (diff > 0) {
               setCelebration({ pointsEarned: diff, newTotal: data.points, mode: "earned" });
-              // SW notification — works even when the page tab is not focused
               showSWNotification(
                 "🎉 Points ajoutés !",
                 `+${diff} points sur votre carte. Solde : ${data.points} pts`,
-                restaurant?.logo,
+                logo,
                 "adam-points"
               );
             } else {
@@ -737,7 +715,7 @@ const fetchClientData = async (id: string) => {
               showSWNotification(
                 "🎁 Récompense activée !",
                 `${data.lastRewardName || "Votre récompense"} est prête ! Solde restant : ${data.points} pts`,
-                restaurant?.logo,
+                logo,
                 "adam-reward"
               );
             }
@@ -772,6 +750,7 @@ const fetchClientData = async (id: string) => {
     }
   }, [restaurantId, router]);
 
+  // Re-fetch when tab becomes visible again (handles background → foreground)
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") {
@@ -785,6 +764,7 @@ const fetchClientData = async (id: string) => {
     return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
   }, []);
 
+  // SW registration — MUST happen before push subscribe
   useEffect(() => {
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.register("/sw.js").catch(console.error);
@@ -817,14 +797,13 @@ const fetchClientData = async (id: string) => {
     }
   };
 
-  // ── Bell click: request push permission + subscribe ──────────────────
+  // ── Bell click ────────────────────────────────────────────────────────
   const handleBellClick = async () => {
     if (notifActive) {
-      // Already subscribed — show confirmation via SW (works in background)
       await showSWNotification(
         "🔔 Notifications actives",
         "Vous recevrez vos points et offres spéciales directement ici.",
-        restaurant?.logo
+        restaurantRef.current?.logo
       );
       return;
     }
@@ -838,18 +817,16 @@ const fetchClientData = async (id: string) => {
   const handleAllowNotif = async () => {
     setShowNotifModal(false);
     const clientId = localStorage.getItem("clientId") || "";
-    // subscribeToPush handles: permission request + pushManager.subscribe + POST to /api/push/subscribe
     const subscribed = await subscribeToPush(clientId);
     const perm = Notification.permission as NotificationPermission;
     setNotifPermission(perm);
     setNotifActive(subscribed);
     if (subscribed) {
-      // Confirmation notification — goes through SW, works even if tab is backgrounded
       setTimeout(async () => {
         await showSWNotification(
           "🎉 Notifications activées !",
           "Vous recevrez +points, offres et récompenses sur ce téléphone.",
-          restaurant?.logo,
+          restaurantRef.current?.logo,
           "adam-welcome"
         );
       }, 600);
@@ -881,11 +858,10 @@ const fetchClientData = async (id: string) => {
         setActiveBonusModal(null);
         setTimeout(() => {
           setCelebration({ pointsEarned: gained, newTotal, mode: "earned" });
-          // SW notification works even if tab goes background
           showSWNotification(
             "⭐ Bonus gagné !",
             `+${gained} points pour ${activeBonusModal.label} ! Solde : ${newTotal} pts`,
-            restaurant?.logo,
+            restaurantRef.current?.logo,
             "adam-bonus"
           );
         }, 350);
@@ -906,16 +882,15 @@ const fetchClientData = async (id: string) => {
   useEffect(() => {
     (window as any).__triggerSpentCelebration = (pts: number, newTotal: number, rewardName?: string) => {
       setCelebration({ pointsEarned: pts, newTotal, mode: "spent", rewardName });
-      // SW notification — fires even if the app is in background
       showSWNotification(
         "🎁 Récompense activée !",
         `${rewardName || "Votre récompense"} est prête ! Solde restant : ${newTotal} pts`,
-        restaurant?.logo,
+        restaurantRef.current?.logo,
         "adam-reward"
       );
     };
     return () => { delete (window as any).__triggerSpentCelebration; };
-  }, [restaurant]);
+  }, []);
 
   useEffect(() => {
     if (restaurant) {
@@ -928,7 +903,7 @@ const fetchClientData = async (id: string) => {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#f9fafb" }}>
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#fe5502] mb-4" />
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#fe5502] mb-4"/>
           <p style={{ color: "#6b7280", fontFamily: "'Inter', sans-serif" }}>Chargement de votre carte...</p>
         </div>
       </div>
@@ -972,15 +947,23 @@ const fetchClientData = async (id: string) => {
   const progress = nextReward ? Math.min((clientPts / nextReward.pts) * 100, 100) : 100;
   const pointsToNext = nextReward ? nextReward.pts - clientPts : 0;
   const showAlert = nextReward && pointsToNext <= 50;
-  const maxOffset = Math.max(0, rewards.length - VISIBLE_CARDS);
+  const maxOffset = Math.max(0, rewards.length - 2);
 
   const availableBonuses = BONUS_ACTIONS.filter((action) => restaurant[action.urlKey]);
   const completedCount = availableBonuses.filter((a) => completedBonuses.includes(a.id)).length;
   const totalBonusPoints = availableBonuses.reduce((sum, a) => sum + (restaurant[a.starsKey] || 0), 0);
   const earnedBonusPoints = availableBonuses.filter((a) => completedBonuses.includes(a.id)).reduce((sum, a) => sum + (restaurant[a.starsKey] || 0), 0);
 
+  const getShortId = () => {
+    if (client?.customerId?.includes("-")) {
+      const parts = client.customerId.split("-");
+      return parts[parts.length - 1].slice(-4);
+    }
+    return client?.id?.slice(-4) ?? "****";
+  };
+
   return (
-    <div className="min-h-screen" style={{ backgroundColor: D.background, fontFamily: "'Inter', sans-serif" }}>
+    <div className="min-h-screen" style={{ backgroundColor: D.background, fontFamily: "'Inter', sans-serif", paddingBottom: 88 }}>
       <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
 
       {/* ── Modals ── */}
@@ -1009,6 +992,13 @@ const fetchClientData = async (id: string) => {
           mode={celebration.mode}
           rewardName={celebration.rewardName}
           onClose={() => setCelebration(null)}
+        />
+      )}
+      {showQR && client && (
+        <QRModal
+          client={client}
+          primaryColor={D.primary} textColor={D.text} cardBg={D.cardBg}
+          onClose={() => setShowQR(false)}
         />
       )}
 
@@ -1046,25 +1036,28 @@ const fetchClientData = async (id: string) => {
               )}
             </div>
 
-            {/* ── Active notification bell ── */}
+            {/* Bell */}
             <button
               onClick={handleBellClick}
               className="p-2 rounded-full transition-all active:scale-90"
               style={{ background: notifActive ? `${D.primary}15` : "none", border: "none", cursor: "pointer", borderRadius: 10 }}
               aria-label="Notifications"
             >
-              <IconBell size={20} color={D.text} active={notifActive} pulsing={notifActive} />
+              <IconBell size={20} color={D.text} active={notifActive} pulsing={notifActive}/>
             </button>
           </div>
         </div>
 
         {/* ── Client info ── */}
         <div className="px-4 py-6 text-center border-b" style={{ borderColor: `${D.primary}20`, animation: "fadeSlideIn 0.5s ease" }}>
-          <h2 className="text-2xl font-bold tracking-tight" style={{ color: D.text }}>{client.name}</h2>
-          <p className="text-xs mt-1 font-medium tracking-wider uppercase" style={{ color: `${D.text}70` }}>ID #{getShortId()}</p>
-          <p className="mt-3 text-sm italic" style={{ color: `${D.text}cc` }}>
-            Bonjour {client.name},{" "}
-            <span className="inline-block min-w-[200px]">{typedGreeting}<span style={{ animation: "blink 1s step-end infinite" }}>|</span></span>
+          {/* مرحبا بيك {name} مرحبا بيك — name in orange */}
+          <h2 style={{ fontSize: 22, fontWeight: 800, color: "#111827", margin: 0, letterSpacing: "-0.3px" }}>
+            مرحبا بيك{" "}
+            <span style={{ color: D.primary }}>{client.name}</span>
+            {" "}مرحبا بيك
+          </h2>
+          <p className="text-xs mt-1.5 font-medium tracking-wider uppercase" style={{ color: `${D.text}60` }}>
+            ID #{getShortId()}
           </p>
         </div>
 
@@ -1135,29 +1128,8 @@ const fetchClientData = async (id: string) => {
           </div>
         </AnimSection>
 
-        {/* ── QR ── */}
+        {/* ── Rewards Swiper — new card design ── */}
         <AnimSection delay={100}>
-          <div className="px-4 py-4 border-b" style={{ borderColor: `${D.primary}20` }}>
-            <button
-              onClick={() => setShowQR(!showQR)}
-              className="w-full py-4 rounded-2xl font-semibold flex items-center justify-center space-x-2 transition-all active:scale-95 text-sm"
-              style={{ backgroundColor: D.primary, color: "#fff", letterSpacing: "0.01em", boxShadow: `0 4px 16px ${D.primary}40` }}
-            >
-              <span>📱</span><span>Mon Code QR</span>
-            </button>
-            {showQR && (
-              <div className="mt-4 p-5 rounded-2xl text-center border" style={{ backgroundColor: D.background, borderColor: `${D.primary}20`, animation: "fadeSlideIn 0.35s ease" }}>
-                <div className="flex justify-center">
-                  <QRCodeSVG value={`${window.location.origin}/scan/${client.customerId}`} size={180} bgColor="#ffffff" fgColor={D.primary} level="H"/>
-                </div>
-                <p className="text-xs mt-3 font-medium" style={{ color: `${D.text}70` }}>Présentez ce code au staff</p>
-              </div>
-            )}
-          </div>
-        </AnimSection>
-
-        {/* ── Rewards Swiper ── */}
-        <AnimSection delay={140}>
           <div className="px-4 py-5 border-b" style={{ borderColor: `${D.primary}20` }}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-base font-semibold tracking-tight" style={{ color: D.text }}>Vos récompenses</h3>
@@ -1195,56 +1167,25 @@ const fetchClientData = async (id: string) => {
                     touchStartX.current = null;
                   }}
                 >
-                  <div className="flex gap-3 pb-2 pt-1" style={{ transform: `translateX(-${swiperOffset * (110 + 12)}px)`, transition: "transform 0.4s cubic-bezier(.4,0,.2,1)" }}>
-                    {rewards.map((reward, i) => {
-                      const unlocked = clientPts >= reward.pts;
-                      const iconColor = unlocked ? D.primary : `${D.text}55`;
-                      return (
-                        <div
-                          key={reward.id}
-                          className="flex-shrink-0 flex flex-col items-center gap-2 rounded-2xl p-3 transition-all"
-                          style={{
-                            minWidth: "110px",
-                            backgroundColor: unlocked ? `${D.primary}12` : D.cardBg,
-                            border: `1.5px solid ${unlocked ? D.primary : `${D.text}15`}`,
-                            animation: `popIn 0.4s ease ${i * 0.07}s both`,
-                            transform: unlocked ? "scale(1)" : "scale(0.97)",
-                            transition: "transform 0.3s ease",
-                          }}
-                        >
-                          {/* Icon area with proper SVG icon */}
-                          <div
-                            className="w-14 h-14 rounded-2xl flex items-center justify-center relative"
-                            style={{
-                              backgroundColor: unlocked ? `${D.primary}18` : `${D.text}08`,
-                              boxShadow: unlocked ? `0 2px 12px ${D.primary}25` : "none",
-                              transition: "all 0.3s ease",
-                            }}
-                          >
-                            {getRewardIcon(reward.name, reward.pts, iconColor, 26)}
-                            {/* Lock / unlock badge */}
-                            <div
-                              className="absolute -bottom-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center"
-                              style={{ backgroundColor: unlocked ? D.primary : "#9ca3af", border: `2px solid ${D.cardBg}` }}
-                            >
-                              {unlocked ? (
-                                <IconCheck size={10} color="#fff"/>
-                              ) : (
-                                <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5">
-                                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                                  <path d="M7 11V7a5 5 0 0110 0v4"/>
-                                </svg>
-                              )}
-                            </div>
-                          </div>
-                          <p className="text-xs font-semibold text-center leading-tight" style={{ color: unlocked ? D.primary : D.text }}>{reward.name}</p>
-                          <p className="text-xs font-medium" style={{ color: unlocked ? `${D.primary}90` : `${D.text}50` }}>{reward.pts} pts</p>
-                          {unlocked && (
-                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: D.primary, color: "#fff" }}>Disponible</span>
-                          )}
-                        </div>
-                      );
-                    })}
+                  <div
+                    className="flex pb-2 pt-1"
+                    style={{
+                      gap: `${CARD_GAP}px`,
+                      transform: `translateX(-${swiperOffset * (CARD_WIDTH + CARD_GAP)}px)`,
+                      transition: "transform 0.4s cubic-bezier(.4,0,.2,1)",
+                    }}
+                  >
+                    {rewards.map((reward, i) => (
+                      <RewardCard
+                        key={reward.id}
+                        reward={reward}
+                        clientPts={clientPts}
+                        primaryColor={D.primary}
+                        cardBg={D.cardBg}
+                        textColor={D.text}
+                        index={i}
+                      />
+                    ))}
                   </div>
                 </div>
                 {maxOffset > 0 && (
@@ -1265,7 +1206,7 @@ const fetchClientData = async (id: string) => {
 
         {/* ── Points à gagner ── */}
         {availableBonuses.length > 0 && (
-          <AnimSection delay={180}>
+          <AnimSection delay={140}>
             <div className="px-4 py-5 border-b" style={{ borderColor: `${D.primary}20` }}>
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
@@ -1338,7 +1279,7 @@ const fetchClientData = async (id: string) => {
 
         {/* ── Coupons tab ── */}
         {coupons.length > 0 && (
-          <AnimSection delay={220}>
+          <AnimSection delay={180}>
             <>
               <div className="px-4 py-2 border-b" style={{ borderColor: `${D.primary}20` }}>
                 <div className="flex space-x-4">
@@ -1373,7 +1314,7 @@ const fetchClientData = async (id: string) => {
         )}
 
         {/* ── About ── */}
-        <AnimSection delay={260}>
+        <AnimSection delay={220}>
           <div className="px-4 py-3 border-t" style={{ borderColor: `${D.primary}20` }}>
             <button
               onClick={() => setShowAbout(!showAbout)}
@@ -1414,7 +1355,7 @@ const fetchClientData = async (id: string) => {
         </AnimSection>
 
         {/* ── How to earn ── */}
-        <AnimSection delay={300}>
+        <AnimSection delay={260}>
           <div className="px-4 pt-4 pb-2 border-t" style={{ borderColor: `${D.primary}20` }}>
             <p className="text-xs font-semibold uppercase tracking-widest mb-4 text-center" style={{ color: `${D.text}50` }}>Kiféch nerba7 ? 🤔</p>
             <div className="rounded-2xl overflow-hidden border" style={{ borderColor: `${D.primary}18` }}>
@@ -1439,7 +1380,7 @@ const fetchClientData = async (id: string) => {
         </AnimSection>
 
         {/* ── Add to home screen ── */}
-        <AnimSection delay={340}>
+        <AnimSection delay={300}>
           <div className="px-4 py-5 border-t" style={{ borderColor: `${D.primary}20`, backgroundColor: D.background }}>
             <button
               onClick={handleAddToHomeScreen}
@@ -1455,6 +1396,52 @@ const fetchClientData = async (id: string) => {
           </div>
         </AnimSection>
       </div>
+
+      {/* ── Fixed bottom QR button ── */}
+      {client && (
+        <div
+          style={{
+            position: "fixed",
+            bottom: 0,
+            left: 0,
+            right: 0,
+            zIndex: 30,
+            display: "flex",
+            justifyContent: "center",
+            padding: "12px 16px 20px",
+            background: "linear-gradient(to top, rgba(255,255,255,0.98) 60%, rgba(255,255,255,0))",
+            pointerEvents: "none",
+          }}
+        >
+          <button
+            onClick={() => setShowQR(true)}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              padding: "15px 36px",
+              backgroundColor: D.primary,
+              color: "#fff",
+              border: "none",
+              borderRadius: 20,
+              fontWeight: 700,
+              fontSize: 16,
+              letterSpacing: "0.01em",
+              cursor: "pointer",
+              pointerEvents: "all",
+              boxShadow: `0 8px 28px ${D.primary}55, 0 2px 8px rgba(0,0,0,0.12)`,
+              animation: "floatPulse 3s ease-in-out infinite",
+              maxWidth: "448px",
+              width: "calc(100% - 48px)",
+              justifyContent: "center",
+            }}
+            aria-label="Afficher mon code QR"
+          >
+            <IconQR size={22} color="white"/>
+            <span>Mon Code QR</span>
+          </button>
+        </div>
+      )}
 
       <style jsx>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
@@ -1491,6 +1478,10 @@ const fetchClientData = async (id: string) => {
         @keyframes progressGlow {
           from { box-shadow: 0 0 6px rgba(254,85,2,0.4); }
           to   { box-shadow: 0 0 14px rgba(254,85,2,0.7); }
+        }
+        @keyframes floatPulse {
+          0%, 100% { transform: translateY(0); box-shadow: 0 8px 28px rgba(254,85,2,0.45), 0 2px 8px rgba(0,0,0,0.12); }
+          50%       { transform: translateY(-3px); box-shadow: 0 14px 36px rgba(254,85,2,0.55), 0 4px 12px rgba(0,0,0,0.14); }
         }
 
         /* ── Celebration keyframes ── */
