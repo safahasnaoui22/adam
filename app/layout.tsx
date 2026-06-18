@@ -23,10 +23,10 @@ export const metadata: Metadata = {
     capable: true,
     statusBarStyle: "black-translucent",
     title: "Adam Fidélité",
-    startupImage: "/icons/icon-512x512.png",
+    startupImage: "/icons/star.jpg",
   },
   icons: {
-    icon: "/icons/icon-192x192.png",
+    icon: "/icons/star.jpg",
     apple: [
       { url: "/icons/apple-touch-icon.png", sizes: "180x180" },
     ],
