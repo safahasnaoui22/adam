@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import { QRCodeSVG } from "qrcode.react";
@@ -14,7 +14,9 @@ function useScrollReveal(options?: IntersectionObserverInit) {
     const el = ref.current;
     if (!el) return;
     const observer = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) { setVisible(true); observer.disconnect(); } },
+      ([entry]) => {
+        if (entry.isIntersecting) { setVisible(true); observer.disconnect(); }
+      },
       { threshold: 0.12, ...options }
     );
     observer.observe(el);
@@ -83,7 +85,6 @@ const IconExternalLink = ({ size = 14, color = "currentColor" }: { size?: number
   </svg>
 );
 
-// ── QR Code Icon ──────────────────────────────────────────────────────
 const IconQR = ({ size = 22, color = "currentColor" }: { size?: number; color?: string }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <rect x="3" y="3" width="7" height="7" rx="1"/>
@@ -98,27 +99,32 @@ const IconQR = ({ size = 22, color = "currentColor" }: { size?: number; color?: 
   </svg>
 );
 
-// ── Bell Icon (with optional active dot) ─────────────────────────────
-const IconBell = ({ size = 20, color = "currentColor", active = false, pulsing = false }: { size?: number; color?: string; active?: boolean; pulsing?: boolean }) => (
+const IconBell = ({
+  size = 20,
+  color = "currentColor",
+  active = false,
+  pulsing = false,
+}: {
+  size?: number;
+  color?: string;
+  active?: boolean;
+  pulsing?: boolean;
+}) => (
   <span style={{ position: "relative", display: "inline-flex" }}>
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
     </svg>
     {active && (
       <span style={{
-        position: "absolute",
-        top: 0, right: 0,
-        width: 8, height: 8,
-        borderRadius: "50%",
-        backgroundColor: "#22c55e",
-        border: "1.5px solid white",
+        position: "absolute", top: 0, right: 0,
+        width: 8, height: 8, borderRadius: "50%",
+        backgroundColor: "#22c55e", border: "1.5px solid white",
         animation: pulsing ? "bellDot 1.8s ease-in-out infinite" : "none",
       }}/>
     )}
   </span>
 );
 
-// ── Gift Icon for Reward Cards ────────────────────────────────────────
 const IconGiftCard = ({ size = 26 }: { size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <polyline points="20 12 20 22 4 22 4 12"/>
@@ -129,7 +135,6 @@ const IconGiftCard = ({ size = 26 }: { size?: number }) => (
   </svg>
 );
 
-// ── Pro Points Coin Icon ──────────────────────────────────────────────
 const IconPointsCoin = ({ size = 36, primaryColor }: { size?: number; primaryColor: string }) => (
   <svg width={size} height={size} viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
     <circle cx="18" cy="18" r="17" fill={primaryColor} opacity="0.15"/>
@@ -141,7 +146,6 @@ const IconPointsCoin = ({ size = 36, primaryColor }: { size?: number; primaryCol
 );
 
 // ── Push Notification helpers ─────────────────────────────────────────
-
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "";
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
@@ -204,11 +208,11 @@ async function showSWNotification(title: string, body: string, icon?: string, ta
     const registration = await navigator.serviceWorker.ready;
     await registration.showNotification(title, {
       body,
-      icon: icon || "/icon-192x192.png",
-      badge: "/icon-72x72.png",
+      icon: icon || "/icons/icon-192x192.png",
+      badge: "/icons/icon-72x72.png",
       tag: tag || "adam-local",
       vibrate: [200, 100, 200],
-    } as any);
+    } as NotificationOptions);
   } catch {
     if (Notification.permission === "granted") {
       try { new Notification(title, { body, icon }); } catch {}
@@ -216,7 +220,53 @@ async function showSWNotification(title: string, body: string, icon?: string, ta
   }
 }
 
-// ── Points Celebration Overlay ────────────────────────────────────────
+// ── iOS detection helpers (module-level, not inside component) ────────
+function isIOS(): boolean {
+  if (typeof navigator === "undefined") return false;
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+}
+
+function isInStandaloneMode(): boolean {
+  if (typeof window === "undefined") return false;
+  return (
+    (window.navigator as any).standalone === true ||
+    window.matchMedia("(display-mode: standalone)").matches
+  );
+}
+
+// ── Types ─────────────────────────────────────────────────────────────
+type BonusAction = {
+  id: string;
+  label: string;
+  urlKey: keyof RestaurantBonusUrls;
+  starsKey: keyof RestaurantBonusStars;
+  icon: React.ReactNode;
+  hint: string;
+  actionLabel: string;
+};
+
+interface RestaurantBonusUrls {
+  googleMapsUrl: string;
+  facebookUrl: string;
+  instagramUrl: string;
+  twitterUrl: string;
+}
+
+interface RestaurantBonusStars {
+  googleMapsBonusStars: number;
+  facebookBonusStars: number;
+  instagramBonusStars: number;
+  twitterBonusStars: number;
+}
+
+const BONUS_ACTIONS: BonusAction[] = [
+  { id: "googleMaps", label: "Google Maps", urlKey: "googleMapsUrl", starsKey: "googleMapsBonusStars", icon: <IconGoogleMaps size={20}/>, hint: "Laissez un avis 5⭐ sur Google Maps", actionLabel: "Laisser un avis 5 étoiles" },
+  { id: "facebook", label: "Facebook", urlKey: "facebookUrl", starsKey: "facebookBonusStars", icon: <IconFacebook size={20}/>, hint: "Likez & suivez notre page", actionLabel: "Liker et suivre la page" },
+  { id: "instagram", label: "Instagram", urlKey: "instagramUrl", starsKey: "instagramBonusStars", icon: <IconInstagram size={20}/>, hint: "Suivez-nous sur Instagram", actionLabel: "Suivre le compte" },
+  { id: "twitter", label: "X (Twitter)", urlKey: "twitterUrl", starsKey: "twitterBonusStars", icon: <IconX size={20}/>, hint: "Suivez notre compte X", actionLabel: "Suivre le compte X" },
+];
+
+// ── Celebration types ─────────────────────────────────────────────────
 type CelebrationMode = "earned" | "spent";
 
 type PointsCelebrationProps = {
@@ -230,13 +280,17 @@ type PointsCelebrationProps = {
   onClose: () => void;
 };
 
+// ── PointsCelebration ─────────────────────────────────────────────────
+// (defined OUTSIDE main component — correct React pattern)
 function PointsCelebration({
   pointsEarned, newTotal, primaryColor, textColor, cardBg,
   mode = "earned", rewardName, onClose,
 }: PointsCelebrationProps) {
   const [displayCount, setDisplayCount] = useState(0);
   const [phase, setPhase] = useState<"enter" | "count" | "done">("enter");
-  const [particles, setParticles] = useState<{ x: number; y: number; delay: number; size: number; color: string; shape: string }[]>([]);
+  const [particles, setParticles] = useState<{
+    x: number; y: number; delay: number; size: number; color: string; shape: string;
+  }[]>([]);
 
   const isEarned = mode === "earned";
   const accentColor = isEarned ? primaryColor : "#6366f1";
@@ -299,7 +353,7 @@ function PointsCelebration({
           position: "absolute",
           left: `${p.x}%`, top: `${p.y}%`,
           width: p.size, height: p.size,
-          borderRadius: p.shape === "circle" ? "50%" : p.shape === "diamond" ? "2px" : "2px",
+          borderRadius: p.shape === "circle" ? "50%" : "2px",
           transform: p.shape === "diamond" ? "rotate(45deg)" : "none",
           backgroundColor: p.color,
           animation: `confettiFall 2.4s ${p.delay}s ease-in both`,
@@ -361,39 +415,7 @@ function PointsCelebration({
   );
 }
 
-// ── Types ─────────────────────────────────────────────────────────────
-type BonusAction = {
-  id: string;
-  label: string;
-  urlKey: keyof RestaurantBonusUrls;
-  starsKey: keyof RestaurantBonusStars;
-  icon: React.ReactNode;
-  hint: string;
-  actionLabel: string;
-};
-
-interface RestaurantBonusUrls {
-  googleMapsUrl: string;
-  facebookUrl: string;
-  instagramUrl: string;
-  twitterUrl: string;
-}
-
-interface RestaurantBonusStars {
-  googleMapsBonusStars: number;
-  facebookBonusStars: number;
-  instagramBonusStars: number;
-  twitterBonusStars: number;
-}
-
-const BONUS_ACTIONS: BonusAction[] = [
-  { id: "googleMaps", label: "Google Maps", urlKey: "googleMapsUrl", starsKey: "googleMapsBonusStars", icon: <IconGoogleMaps size={20} />, hint: "Laissez un avis 5⭐ sur Google Maps", actionLabel: "Laisser un avis 5 étoiles" },
-  { id: "facebook", label: "Facebook", urlKey: "facebookUrl", starsKey: "facebookBonusStars", icon: <IconFacebook size={20} />, hint: "Likez & suivez notre page", actionLabel: "Liker et suivre la page" },
-  { id: "instagram", label: "Instagram", urlKey: "instagramUrl", starsKey: "instagramBonusStars", icon: <IconInstagram size={20} />, hint: "Suivez-nous sur Instagram", actionLabel: "Suivre le compte" },
-  { id: "twitter", label: "X (Twitter)", urlKey: "twitterUrl", starsKey: "twitterBonusStars", icon: <IconX size={20} />, hint: "Suivez notre compte X", actionLabel: "Suivre le compte X" },
-];
-
-// ── Bonus Modal Component ─────────────────────────────────────────────
+// ── BonusModal ────────────────────────────────────────────────────────
 type BonusModalProps = {
   action: BonusAction;
   pointsValue: number;
@@ -424,8 +446,10 @@ function BonusModal({ action, pointsValue, primaryColor, textColor, cardBg, onCo
   useEffect(() => { return () => { if (timerRef.current) clearInterval(timerRef.current); }; }, []);
 
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 100, backgroundColor: "rgba(0,0,0,0.55)", display: "flex", alignItems: "flex-end", justifyContent: "center" }}
-      onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}>
+    <div
+      style={{ position: "fixed", inset: 0, zIndex: 100, backgroundColor: "rgba(0,0,0,0.55)", display: "flex", alignItems: "flex-end", justifyContent: "center" }}
+      onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}
+    >
       <div style={{ backgroundColor: cardBg, borderRadius: "20px 20px 0 0", padding: "24px 20px 32px", width: "100%", maxWidth: "448px", animation: "slideUp 0.3s ease" }}>
         <div style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: `${textColor}20`, margin: "0 auto 20px" }}/>
         {step === "intro" && (
@@ -444,8 +468,11 @@ function BonusModal({ action, pointsValue, primaryColor, textColor, cardBg, onCo
                 3. Revenez ici et confirmez
               </p>
             </div>
-            <a href="#" onClick={(e) => { e.preventDefault(); window.open((window as any).__bonusUrl, "_blank"); handleOpenLink(); }}
-              style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, width: "100%", padding: "14px", backgroundColor: primaryColor, color: "#fff", borderRadius: 14, fontWeight: 700, fontSize: 15, textDecoration: "none", marginBottom: 12 }}>
+            <a
+              href="#"
+              onClick={(e) => { e.preventDefault(); window.open((window as any).__bonusUrl, "_blank"); handleOpenLink(); }}
+              style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, width: "100%", padding: "14px", backgroundColor: primaryColor, color: "#fff", borderRadius: 14, fontWeight: 700, fontSize: 15, textDecoration: "none", marginBottom: 12 }}
+            >
               <IconExternalLink size={16} color="#fff"/>
               Ouvrir {action.label}
             </a>
@@ -458,14 +485,14 @@ function BonusModal({ action, pointsValue, primaryColor, textColor, cardBg, onCo
               <span style={{ fontSize: 24, fontWeight: 700, color: primaryColor }}>{countdown}</span>
             </div>
             <h3 style={{ fontSize: 16, fontWeight: 700, color: textColor, margin: "0 0 8px" }}>En cours…</h3>
-            <p style={{ fontSize: 13, color: `${textColor}70`, margin: "0 0 20px" }}>Effectuez l'action sur {action.label},<br/>puis revenez ici.</p>
-            <button onClick={() => setStep("confirm")} style={{ width: "100%", padding: "13px", backgroundColor: `${primaryColor}15`, border: `1.5px solid ${primaryColor}30`, borderRadius: 14, color: primaryColor, fontWeight: 600, fontSize: 14, cursor: "pointer" }}>J'ai déjà terminé →</button>
+            <p style={{ fontSize: 13, color: `${textColor}70`, margin: "0 0 20px" }}>Effectuez l&apos;action sur {action.label},<br/>puis revenez ici.</p>
+            <button onClick={() => setStep("confirm")} style={{ width: "100%", padding: "13px", backgroundColor: `${primaryColor}15`, border: `1.5px solid ${primaryColor}30`, borderRadius: 14, color: primaryColor, fontWeight: 600, fontSize: 14, cursor: "pointer" }}>J&apos;ai déjà terminé →</button>
           </div>
         )}
         {step === "confirm" && (
           <div style={{ textAlign: "center" }}>
             <div style={{ fontSize: 52, marginBottom: 12 }}>🎯</div>
-            <h3 style={{ fontSize: 18, fontWeight: 700, color: textColor, margin: "0 0 8px" }}>Avez-vous bien effectué l'action ?</h3>
+            <h3 style={{ fontSize: 18, fontWeight: 700, color: textColor, margin: "0 0 8px" }}>Avez-vous bien effectué l&apos;action ?</h3>
             <p style={{ fontSize: 13, color: `${textColor}70`, margin: "0 0 24px", lineHeight: 1.5 }}>Confirmez que vous avez <strong>{action.actionLabel.toLowerCase()}</strong> sur {action.label}.</p>
             <button onClick={onConfirm} disabled={loading} style={{ width: "100%", padding: "14px", backgroundColor: primaryColor, border: "none", borderRadius: 14, color: "#fff", fontWeight: 700, fontSize: 15, cursor: loading ? "not-allowed" : "pointer", opacity: loading ? 0.7 : 1, marginBottom: 10 }}>
               {loading ? "Enregistrement…" : `✅ Oui, j'ai ${action.actionLabel.toLowerCase()} !`}
@@ -478,11 +505,17 @@ function BonusModal({ action, pointsValue, primaryColor, textColor, cardBg, onCo
   );
 }
 
-// ── Notification Permission Modal ─────────────────────────────────────
-function NotificationPermModal({ primaryColor, textColor, cardBg, onAllow, onDeny }: { primaryColor: string; textColor: string; cardBg: string; onAllow: () => void; onDeny: () => void }) {
+// ── NotificationPermModal ─────────────────────────────────────────────
+function NotificationPermModal({
+  primaryColor, textColor, cardBg, onAllow, onDeny,
+}: {
+  primaryColor: string; textColor: string; cardBg: string; onAllow: () => void; onDeny: () => void;
+}) {
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 150, backgroundColor: "rgba(0,0,0,0.55)", display: "flex", alignItems: "flex-end", justifyContent: "center" }}
-      onClick={onDeny}>
+    <div
+      style={{ position: "fixed", inset: 0, zIndex: 150, backgroundColor: "rgba(0,0,0,0.55)", display: "flex", alignItems: "flex-end", justifyContent: "center" }}
+      onClick={onDeny}
+    >
       <div onClick={(e) => e.stopPropagation()} style={{ backgroundColor: cardBg, borderRadius: "24px 24px 0 0", padding: "28px 24px 36px", width: "100%", maxWidth: "448px", animation: "slideUp 0.35s ease" }}>
         <div style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: `${textColor}20`, margin: "0 auto 24px" }}/>
         <div style={{ textAlign: "center" }}>
@@ -501,8 +534,88 @@ function NotificationPermModal({ primaryColor, textColor, cardBg, onAllow, onDen
   );
 }
 
-// ── QR Modal (full-screen overlay) ───────────────────────────────────
-function QRModal({ client, primaryColor, textColor, cardBg, onClose }: {
+// ── IOSInstallModal ───────────────────────────────────────────────────
+// FIXED: now a proper top-level component, not nested inside another function
+function IOSInstallModal({
+  primaryColor, textColor, cardBg, onClose,
+}: {
+  primaryColor: string; textColor: string; cardBg: string; onClose: () => void;
+}) {
+  const steps = [
+    {
+      icon: "⬆️",
+      title: 'Appuyez sur "Partager"',
+      desc: "Appuyez sur l'icône Partager en bas de Safari (le carré avec une flèche vers le haut)",
+    },
+    {
+      icon: "➕",
+      title: '"Sur l\'écran d\'accueil"',
+      desc: 'Faites défiler et appuyez sur "Sur l\'écran d\'accueil"',
+    },
+    {
+      icon: "✅",
+      title: 'Appuyez sur "Ajouter"',
+      desc: "Confirmez en haut à droite et c'est fait !",
+    },
+  ];
+
+  return (
+    <div
+      style={{ position: "fixed", inset: 0, zIndex: 150, backgroundColor: "rgba(0,0,0,0.60)", display: "flex", alignItems: "flex-end", justifyContent: "center" }}
+      onClick={onClose}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{ backgroundColor: cardBg, borderRadius: "24px 24px 0 0", padding: "28px 24px 44px", width: "100%", maxWidth: "448px", animation: "slideUp 0.35s ease" }}
+      >
+        <div style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: `${textColor}20`, margin: "0 auto 24px" }}/>
+        <h3 style={{ fontSize: 19, fontWeight: 700, color: textColor, margin: "0 0 6px", textAlign: "center" }}>
+          Ajouter à l&apos;écran d&apos;accueil
+        </h3>
+        <p style={{ fontSize: 13, color: `${textColor}60`, textAlign: "center", margin: "0 0 28px" }}>
+          Suivez ces 3 étapes dans Safari
+        </p>
+        {steps.map((item, i) => (
+          <div key={i}>
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 14, padding: "12px 0" }}>
+              <div style={{
+                width: 36, height: 36, borderRadius: "50%", flexShrink: 0,
+                backgroundColor: `${primaryColor}15`,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 18,
+              }}>
+                {item.icon}
+              </div>
+              <div>
+                <p style={{ fontSize: 14, fontWeight: 700, color: textColor, margin: "0 0 3px" }}>{item.title}</p>
+                <p style={{ fontSize: 12, color: `${textColor}65`, margin: 0, lineHeight: 1.5 }}>{item.desc}</p>
+              </div>
+            </div>
+            {i < steps.length - 1 && (
+              <div style={{ height: 1, backgroundColor: `${textColor}10`, marginLeft: 50 }}/>
+            )}
+          </div>
+        ))}
+        <div style={{ marginTop: 16, padding: "10px 14px", backgroundColor: `${primaryColor}10`, borderRadius: 12, border: `1px solid ${primaryColor}25` }}>
+          <p style={{ fontSize: 11, color: primaryColor, margin: 0, textAlign: "center", fontWeight: 600 }}>
+            ⚠️ Cela fonctionne uniquement dans Safari (pas Chrome ni Firefox)
+          </p>
+        </div>
+        <button
+          onClick={onClose}
+          style={{ display: "block", width: "100%", marginTop: 16, padding: "13px", backgroundColor: primaryColor, border: "none", borderRadius: 14, color: "#fff", fontWeight: 700, fontSize: 15, cursor: "pointer" }}
+        >
+          Compris !
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── QRModal ───────────────────────────────────────────────────────────
+function QRModal({
+  client, primaryColor, textColor, cardBg, onClose,
+}: {
   client: any; primaryColor: string; textColor: string; cardBg: string; onClose: () => void;
 }) {
   return (
@@ -518,7 +631,13 @@ function QRModal({ client, primaryColor, textColor, cardBg, onClose }: {
         <h3 style={{ fontSize: 18, fontWeight: 700, color: textColor, margin: "0 0 6px" }}>Mon Code QR</h3>
         <p style={{ fontSize: 13, color: `${textColor}60`, margin: "0 0 24px" }}>Présentez ce code au staff pour scanner vos points</p>
         <div style={{ display: "inline-block", padding: 16, borderRadius: 20, backgroundColor: "#fff", border: `2px solid ${primaryColor}25`, boxShadow: `0 8px 32px ${primaryColor}20` }}>
-          <QRCodeSVG value={`${window.location.origin}/scan/${client.customerId}`} size={200} bgColor="#ffffff" fgColor={primaryColor} level="H"/>
+          <QRCodeSVG
+            value={`${window.location.origin}/scan/${client.customerId}`}
+            size={200}
+            bgColor="#ffffff"
+            fgColor={primaryColor}
+            level="H"
+          />
         </div>
         <div style={{ marginTop: 20, display: "inline-flex", alignItems: "center", gap: 8, backgroundColor: `${primaryColor}12`, borderRadius: 20, padding: "8px 20px" }}>
           <span style={{ fontSize: 13, fontWeight: 700, color: primaryColor }}>{client.name}</span>
@@ -536,8 +655,12 @@ function QRModal({ client, primaryColor, textColor, cardBg, onClose }: {
   );
 }
 
-// ── AnimSection: scroll-triggered fade-in wrapper ─────────────────────
-function AnimSection({ children, delay = 0, style = {} }: { children: React.ReactNode; delay?: number; style?: React.CSSProperties }) {
+// ── AnimSection ───────────────────────────────────────────────────────
+function AnimSection({
+  children, delay = 0, style = {},
+}: {
+  children: React.ReactNode; delay?: number; style?: React.CSSProperties;
+}) {
   const { ref, visible } = useScrollReveal();
   return (
     <div ref={ref} style={{
@@ -551,94 +674,55 @@ function AnimSection({ children, delay = 0, style = {} }: { children: React.Reac
   );
 }
 
-// ── Reward Card Component ─────────────────────────────────────────────
-function RewardCard({ reward, clientPts, primaryColor, cardBg, textColor, index }: {
+// ── RewardCard ────────────────────────────────────────────────────────
+function RewardCard({
+  reward, clientPts, primaryColor, cardBg, textColor, index,
+}: {
   reward: any; clientPts: number; primaryColor: string; cardBg: string; textColor: string; index: number;
 }) {
   const unlocked = clientPts >= reward.pts;
 
   return (
-    <div
-      style={{
-        minWidth: "140px",
-        flexShrink: 0,
-        borderRadius: 20,
-        overflow: "hidden",
-        position: "relative",
-        animation: `popIn 0.4s ease ${index * 0.07}s both`,
-        boxShadow: unlocked
-          ? `0 8px 24px ${primaryColor}30`
-          : "0 2px 8px rgba(0,0,0,0.08)",
-        border: unlocked ? `1.5px solid ${primaryColor}` : `1.5px solid ${textColor}12`,
-      }}
-    >
-      {/* Top orange band */}
-      <div
-        style={{
-          background: unlocked
-            ? `linear-gradient(135deg, ${primaryColor}, ${primaryColor}cc)`
-            : `linear-gradient(135deg, #9ca3af, #6b7280)`,
-          padding: "14px 12px 18px",
-          position: "relative",
-          minHeight: 90,
-        }}
-      >
-        {/* Gift icon top-left */}
+    <div style={{
+      minWidth: "140px", flexShrink: 0, borderRadius: 20, overflow: "hidden", position: "relative",
+      animation: `popIn 0.4s ease ${index * 0.07}s both`,
+      boxShadow: unlocked ? `0 8px 24px ${primaryColor}30` : "0 2px 8px rgba(0,0,0,0.08)",
+      border: unlocked ? `1.5px solid ${primaryColor}` : `1.5px solid ${textColor}12`,
+    }}>
+      <div style={{
+        background: unlocked
+          ? `linear-gradient(135deg, ${primaryColor}, ${primaryColor}cc)`
+          : `linear-gradient(135deg, #9ca3af, #6b7280)`,
+        padding: "14px 12px 18px", position: "relative", minHeight: 90,
+      }}>
         <div style={{ position: "absolute", top: 12, left: 12, opacity: 0.9 }}>
           <IconGiftCard size={22}/>
         </div>
-
-        {/* Unlocked badge top-right */}
         {unlocked && (
-          <div style={{
-            position: "absolute", top: 10, right: 10,
-            backgroundColor: "rgba(255,255,255,0.25)",
-            borderRadius: 20, padding: "2px 8px",
-            display: "flex", alignItems: "center", gap: 3,
-          }}>
+          <div style={{ position: "absolute", top: 10, right: 10, backgroundColor: "rgba(255,255,255,0.25)", borderRadius: 20, padding: "2px 8px", display: "flex", alignItems: "center", gap: 3 }}>
             <IconCheck size={9} color="white"/>
             <span style={{ fontSize: 9, fontWeight: 700, color: "white", letterSpacing: "0.04em" }}>DISPO</span>
           </div>
         )}
-
-        {/* Reward name — centered, white */}
         <div style={{ marginTop: 28, textAlign: "center" }}>
-          <p style={{
-            fontSize: 13, fontWeight: 700, color: "white",
-            lineHeight: 1.3, margin: 0,
-            textShadow: "0 1px 4px rgba(0,0,0,0.25)",
-          }}>
+          <p style={{ fontSize: 13, fontWeight: 700, color: "white", lineHeight: 1.3, margin: 0, textShadow: "0 1px 4px rgba(0,0,0,0.25)" }}>
             {reward.name}
           </p>
         </div>
       </div>
-
-      {/* Bottom white / card section */}
       <div style={{ backgroundColor: cardBg, padding: "10px 12px 12px", textAlign: "center" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
           <IconStar size={11} color={unlocked ? primaryColor : "#9ca3af"}/>
-          <span style={{
-            fontSize: 13, fontWeight: 800,
-            color: unlocked ? primaryColor : "#9ca3af",
-            fontVariantNumeric: "tabular-nums",
-          }}>
+          <span style={{ fontSize: 13, fontWeight: 800, color: unlocked ? primaryColor : "#9ca3af", fontVariantNumeric: "tabular-nums" }}>
             {reward.pts} pts
           </span>
         </div>
         {unlocked ? (
-          <div style={{
-            marginTop: 6,
-            backgroundColor: primaryColor,
-            borderRadius: 8, padding: "4px 0",
-          }}>
+          <div style={{ marginTop: 6, backgroundColor: primaryColor, borderRadius: 8, padding: "4px 0" }}>
             <span style={{ fontSize: 10, fontWeight: 700, color: "white", letterSpacing: "0.05em" }}>DISPONIBLE</span>
           </div>
         ) : (
-          <div style={{
-            marginTop: 6,
-            backgroundColor: `${textColor}08`,
-            borderRadius: 8, padding: "4px 0",
-          }}>
+          <div style={{ marginTop: 6, backgroundColor: `${textColor}08`, borderRadius: 8, padding: "4px 0" }}>
             <span style={{ fontSize: 10, fontWeight: 600, color: `${textColor}40`, letterSpacing: "0.04em" }}>
               🔒 {reward.pts - clientPts} pts
             </span>
@@ -667,19 +751,21 @@ export default function ClientDashboard() {
   const [completedBonuses, setCompletedBonuses] = useState<string[]>([]);
   const [claimingBonus, setClaimingBonus] = useState<string | null>(null);
   const [activeBonusModal, setActiveBonusModal] = useState<BonusAction | null>(null);
-  const [celebration, setCelebration] = useState<{ pointsEarned: number; newTotal: number; mode?: "earned" | "spent"; rewardName?: string } | null>(null);
+  const [celebration, setCelebration] = useState<{
+    pointsEarned: number; newTotal: number; mode?: CelebrationMode; rewardName?: string;
+  } | null>(null);
   const [notifPermission, setNotifPermission] = useState<NotificationPermission | "unknown">("unknown");
   const [showNotifModal, setShowNotifModal] = useState(false);
   const [notifActive, setNotifActive] = useState(false);
+  // ── NEW: iOS install modal state ──────────────────────────────────
+  const [showIOSInstall, setShowIOSInstall] = useState(false);
 
   // Swiper state
   const [swiperOffset, setSwiperOffset] = useState(0);
   const touchStartX = useRef<number | null>(null);
-  const VISIBLE_CARDS = 2; // show 2 cards partially so user knows there's more
   const CARD_WIDTH = 140;
   const CARD_GAP = 12;
 
-  // We keep restaurant in a ref too, so notification callbacks always have the latest value
   const restaurantRef = useRef<any>(null);
   useEffect(() => { restaurantRef.current = restaurant; }, [restaurant]);
 
@@ -703,37 +789,22 @@ export default function ClientDashboard() {
             const logo = restaurantRef.current?.logo;
             if (diff > 0) {
               setCelebration({ pointsEarned: diff, newTotal: data.points, mode: "earned" });
-              showSWNotification(
-                "🎉 Points ajoutés !",
-                `+${diff} points sur votre carte. Solde : ${data.points} pts`,
-                logo,
-                "adam-points"
-              );
+              showSWNotification("🎉 Points ajoutés !", `+${diff} points sur votre carte. Solde : ${data.points} pts`, logo, "adam-points");
             } else {
               const spent = Math.abs(diff);
               setCelebration({ pointsEarned: spent, newTotal: data.points, mode: "spent", rewardName: data.lastRewardName });
-              showSWNotification(
-                "🎁 Récompense activée !",
-                `${data.lastRewardName || "Votre récompense"} est prête ! Solde restant : ${data.points} pts`,
-                logo,
-                "adam-reward"
-              );
+              showSWNotification("🎁 Récompense activée !", `${data.lastRewardName || "Votre récompense"} est prête ! Solde restant : ${data.points} pts`, logo, "adam-reward");
             }
           }
           return data;
         });
-        // API stores bonuses as individual boolean columns, not an array.
-        // Map them back to the string[] the UI expects.
         const derived: string[] = [];
         if (data.hasClaimedGoogleMapsBonus) derived.push("googleMaps");
         if (data.hasClaimedFacebookBonus)   derived.push("facebook");
         if (data.hasClaimedInstagramBonus)  derived.push("instagram");
         if (data.hasClaimedTwitterBonus)    derived.push("twitter");
-        // Also support legacy array format in case the API is updated later
         if (data.completedBonuses && Array.isArray(data.completedBonuses)) {
-          data.completedBonuses.forEach((b: string) => {
-            if (!derived.includes(b)) derived.push(b);
-          });
+          data.completedBonuses.forEach((b: string) => { if (!derived.includes(b)) derived.push(b); });
         }
         setCompletedBonuses(derived);
       }
@@ -761,7 +832,7 @@ export default function ClientDashboard() {
     }
   }, [restaurantId, router]);
 
-  // Re-fetch when tab becomes visible again (handles background → foreground)
+  // Re-fetch on tab focus
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") {
@@ -775,13 +846,14 @@ export default function ClientDashboard() {
     return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
   }, []);
 
-  // SW registration — MUST happen before push subscribe
+  // Service Worker registration
   useEffect(() => {
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.register("/sw.js").catch(console.error);
     }
   }, []);
 
+  // Android install prompt listener
   useEffect(() => {
     const handler = (e: Event) => { e.preventDefault(); setDeferredPrompt(e); };
     window.addEventListener("beforeinstallprompt", handler);
@@ -797,25 +869,31 @@ export default function ClientDashboard() {
     setTimeout(() => setRefreshing(false), 800);
   };
 
+  // ── Add to home screen — handles Android, iOS, and already-installed ─
   const handleAddToHomeScreen = () => {
+    // Android Chrome: native prompt available
     if (deferredPrompt) {
       deferredPrompt.prompt();
       deferredPrompt.userChoice.then(() => setDeferredPrompt(null));
-    } else if (navigator.userAgent.includes("iPhone") || navigator.userAgent.includes("iPad")) {
-      alert("Pour ajouter à l'écran d'accueil :\n1. Appuyez sur le bouton Partager\n2. Appuyez sur 'Sur l'écran d'accueil'");
-    } else {
-      alert("Utilisez 'Ajouter à l'écran d'accueil' dans le menu du navigateur");
+      return;
     }
+    // Already installed as PWA
+    if (isInStandaloneMode()) {
+      alert("L'application est déjà installée sur votre écran d'accueil !");
+      return;
+    }
+    // iOS Safari: show step-by-step guide
+    if (isIOS()) {
+      setShowIOSInstall(true);
+      return;
+    }
+    // Other desktop/browser fallback
+    alert("Utilisez 'Ajouter à l'écran d'accueil' dans le menu de votre navigateur.");
   };
 
-  // ── Bell click ────────────────────────────────────────────────────────
   const handleBellClick = async () => {
     if (notifActive) {
-      await showSWNotification(
-        "🔔 Notifications actives",
-        "Vous recevrez vos points et offres spéciales directement ici.",
-        restaurantRef.current?.logo
-      );
+      await showSWNotification("🔔 Notifications actives", "Vous recevrez vos points et offres spéciales directement ici.", restaurantRef.current?.logo);
       return;
     }
     if (notifPermission === "denied") {
@@ -834,12 +912,7 @@ export default function ClientDashboard() {
     setNotifActive(subscribed);
     if (subscribed) {
       setTimeout(async () => {
-        await showSWNotification(
-          "🎉 Notifications activées !",
-          "Vous recevrez +points, offres et récompenses sur ce téléphone.",
-          restaurantRef.current?.logo,
-          "adam-welcome"
-        );
+        await showSWNotification("🎉 Notifications activées !", "Vous recevrez +points, offres et récompenses sur ce téléphone.", restaurantRef.current?.logo, "adam-welcome");
       }, 600);
     }
   };
@@ -858,26 +931,18 @@ export default function ClientDashboard() {
       const res = await fetch("/api/customer/claim-bonus", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          platform: activeBonusModal.id,          // "googleMaps" | "facebook" | "instagram" | "twitter"
-          customerId: client.customerId,           // matches session.user.customerProfile.id check
-        }),
+        body: JSON.stringify({ platform: activeBonusModal.id, customerId: client.customerId }),
       });
       const data = await res.json();
       if (res.ok) {
-        const gained = data.pointsAdded;           // API returns pointsAdded, not pointsEarned
+        const gained = data.pointsAdded;
         const newTotal = data.newPoints;
         setClient((prev: any) => ({ ...prev, points: newTotal }));
         setCompletedBonuses((prev) => [...prev, activeBonusModal.id]);
         setActiveBonusModal(null);
         setTimeout(() => {
           setCelebration({ pointsEarned: gained, newTotal, mode: "earned" });
-          showSWNotification(
-            "⭐ Bonus gagné !",
-            `+${gained} points pour ${activeBonusModal.label} ! Solde : ${newTotal} pts`,
-            restaurantRef.current?.logo,
-            "adam-bonus"
-          );
+          showSWNotification("⭐ Bonus gagné !", `+${gained} points pour ${activeBonusModal.label} ! Solde : ${newTotal} pts`, restaurantRef.current?.logo, "adam-bonus");
         }, 350);
       } else {
         alert(data.error || "Une erreur est survenue. Réessayez plus tard.");
@@ -892,16 +957,10 @@ export default function ClientDashboard() {
     }
   };
 
-  // ── Points-spent celebration trigger ─────────────────────────────────
   useEffect(() => {
     (window as any).__triggerSpentCelebration = (pts: number, newTotal: number, rewardName?: string) => {
       setCelebration({ pointsEarned: pts, newTotal, mode: "spent", rewardName });
-      showSWNotification(
-        "🎁 Récompense activée !",
-        `${rewardName || "Votre récompense"} est prête ! Solde restant : ${newTotal} pts`,
-        restaurantRef.current?.logo,
-        "adam-reward"
-      );
+      showSWNotification("🎁 Récompense activée !", `${rewardName || "Votre récompense"} est prête ! Solde restant : ${newTotal} pts`, restaurantRef.current?.logo, "adam-reward");
     };
     return () => { delete (window as any).__triggerSpentCelebration; };
   }, []);
@@ -913,6 +972,7 @@ export default function ClientDashboard() {
     }
   }, [restaurant]);
 
+  // ── Loading / error states ─────────────────────────────────────────
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#f9fafb" }}>
@@ -935,15 +995,16 @@ export default function ClientDashboard() {
     );
   }
 
+  // ── Theme / data derivations ───────────────────────────────────────
   const theme = restaurant?.theme || {};
-  const primaryColor = theme.colors?.primary || "#fe5502";
-  const secondaryColor = theme.colors?.secondary || "#e0682e";
-  const bgColor = theme.colors?.background || "#ffffff";
-  const cardBgColor = theme.colors?.cardBackground || "#ffffff";
-  const textColor = theme.colors?.text || "#1f2937";
-  const loyaltyRule = restaurant.loyaltyProgram;
-  const spendThreshold = loyaltyRule?.spendThreshold ?? 1;
-  const pointsEarned = loyaltyRule?.pointsEarned ?? 10;
+  const primaryColor   = theme.colors?.primary        || "#fe5502";
+  const secondaryColor = theme.colors?.secondary       || "#e0682e";
+  const bgColor        = theme.colors?.background      || "#ffffff";
+  const cardBgColor    = theme.colors?.cardBackground  || "#ffffff";
+  const textColor      = theme.colors?.text            || "#1f2937";
+  const loyaltyRule    = restaurant.loyaltyProgram;
+  const spendThreshold = loyaltyRule?.spendThreshold   ?? 1;
+  const pointsEarned   = loyaltyRule?.pointsEarned     ?? 10;
 
   const D = { primary: primaryColor, secondary: secondaryColor, background: bgColor, cardBg: cardBgColor, text: textColor };
 
@@ -955,18 +1016,18 @@ export default function ClientDashboard() {
       ?.sort((a: any, b: any) => a.pts - b.pts) || [];
   } catch { rewards = []; }
 
-  const coupons = restaurant.coupons || [];
-  const clientPts = client.points || 0;
-  const nextReward = rewards.find((r) => r.pts > clientPts);
-  const progress = nextReward ? Math.min((clientPts / nextReward.pts) * 100, 100) : 100;
-  const pointsToNext = nextReward ? nextReward.pts - clientPts : 0;
-  const showAlert = nextReward && pointsToNext <= 50;
-  const maxOffset = Math.max(0, rewards.length - 2);
+  const coupons        = restaurant.coupons || [];
+  const clientPts      = client.points || 0;
+  const nextReward     = rewards.find((r) => r.pts > clientPts);
+  const progress       = nextReward ? Math.min((clientPts / nextReward.pts) * 100, 100) : 100;
+  const pointsToNext   = nextReward ? nextReward.pts - clientPts : 0;
+  const showAlert      = nextReward && pointsToNext <= 50;
+  const maxOffset      = Math.max(0, rewards.length - 2);
 
-  const availableBonuses = BONUS_ACTIONS.filter((action) => restaurant[action.urlKey]);
-  const completedCount = availableBonuses.filter((a) => completedBonuses.includes(a.id)).length;
-  const totalBonusPoints = availableBonuses.reduce((sum, a) => sum + (restaurant[a.starsKey] || 0), 0);
-  const earnedBonusPoints = availableBonuses.filter((a) => completedBonuses.includes(a.id)).reduce((sum, a) => sum + (restaurant[a.starsKey] || 0), 0);
+  const availableBonuses   = BONUS_ACTIONS.filter((action) => restaurant[action.urlKey]);
+  const completedCount     = availableBonuses.filter((a) => completedBonuses.includes(a.id)).length;
+  const totalBonusPoints   = availableBonuses.reduce((sum, a) => sum + (restaurant[a.starsKey] || 0), 0);
+  const earnedBonusPoints  = availableBonuses.filter((a) => completedBonuses.includes(a.id)).reduce((sum, a) => sum + (restaurant[a.starsKey] || 0), 0);
 
   const getShortId = () => {
     if (client?.customerId?.includes("-")) {
@@ -976,16 +1037,23 @@ export default function ClientDashboard() {
     return client?.id?.slice(-4) ?? "****";
   };
 
+  // ── Render ────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen" style={{ backgroundColor: D.background, fontFamily: "'Inter', sans-serif", paddingBottom: 88 }}>
       <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
 
-      {/* ── Modals ── */}
+      {/* ── All modals rendered at top level ── */}
       {showNotifModal && (
         <NotificationPermModal
           primaryColor={D.primary} textColor={D.text} cardBg={D.cardBg}
           onAllow={handleAllowNotif}
           onDeny={() => setShowNotifModal(false)}
+        />
+      )}
+      {showIOSInstall && (
+        <IOSInstallModal
+          primaryColor={D.primary} textColor={D.text} cardBg={D.cardBg}
+          onClose={() => setShowIOSInstall(false)}
         />
       )}
       {activeBonusModal && (
@@ -1039,7 +1107,6 @@ export default function ClientDashboard() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
               </svg>
             </button>
-
             <div className="flex-1 flex justify-center">
               {restaurant.logo ? (
                 <Image src={restaurant.logo} alt={restaurant.name} width={40} height={40} className="rounded-full border" style={{ borderColor: D.primary }}/>
@@ -1049,8 +1116,6 @@ export default function ClientDashboard() {
                 </div>
               )}
             </div>
-
-            {/* Bell */}
             <button
               onClick={handleBellClick}
               className="p-2 rounded-full transition-all active:scale-90"
@@ -1064,11 +1129,10 @@ export default function ClientDashboard() {
 
         {/* ── Client info ── */}
         <div className="px-4 py-6 text-center border-b" style={{ borderColor: `${D.primary}20`, animation: "fadeSlideIn 0.5s ease" }}>
-          {/* مرحبا بيك {name} مرحبا بيك — name in orange */}
           <h2 style={{ fontSize: 22, fontWeight: 800, color: "#111827", margin: 0, letterSpacing: "-0.3px" }}>
-         Marhbee byk{" "}
+            Marhbee byk{" "}
             <span style={{ color: D.primary }}>{client.name}</span>
-            {" "} 
+            {" "}👋
           </h2>
           <p className="text-xs mt-1.5 font-medium tracking-wider uppercase" style={{ color: `${D.text}60` }}>
             ID {getShortId()}
@@ -1142,7 +1206,7 @@ export default function ClientDashboard() {
           </div>
         </AnimSection>
 
-        {/* ── Rewards Swiper — new card design ── */}
+        {/* ── Rewards Swiper ── */}
         <AnimSection delay={100}>
           <div className="px-4 py-5 border-b" style={{ borderColor: `${D.primary}20` }}>
             <div className="flex items-center justify-between mb-4">
@@ -1151,7 +1215,6 @@ export default function ClientDashboard() {
                 {clientPts} pts
               </span>
             </div>
-
             {nextReward && (
               <div className="mb-5">
                 <div className="flex justify-between items-center mb-2">
@@ -1165,7 +1228,6 @@ export default function ClientDashboard() {
                 </div>
               </div>
             )}
-
             {rewards.length === 0 ? (
               <p className="text-sm text-center py-4" style={{ color: `${D.text}60` }}>Aucune récompense configurée.</p>
             ) : (
@@ -1218,7 +1280,7 @@ export default function ClientDashboard() {
           </div>
         </AnimSection>
 
-        {/* ── Points à gagner ── */}
+        {/* ── Points à gagner (bonuses) ── */}
         {availableBonuses.length > 0 && (
           <AnimSection delay={140}>
             <div className="px-4 py-5 border-b" style={{ borderColor: `${D.primary}20` }}>
@@ -1286,7 +1348,7 @@ export default function ClientDashboard() {
                   );
                 })}
               </div>
-              <p className="text-[10px] text-center mt-3" style={{ color: `${D.text}40` }}>✨ Chaque action n'est récompensée qu'une seule fois.</p>
+              <p className="text-[10px] text-center mt-3" style={{ color: `${D.text}40` }}>✨ Chaque action n&apos;est récompensée qu&apos;une seule fois.</p>
             </div>
           </AnimSection>
         )}
@@ -1316,7 +1378,7 @@ export default function ClientDashboard() {
                       <div>
                         <p className="font-semibold text-sm" style={{ color: D.primary }}>{coupon.name}</p>
                         <p className="text-xs mt-0.5" style={{ color: `${D.text}80` }}>{coupon.description}</p>
-                        <p className="text-xs mt-1" style={{ color: `${D.text}60` }}>Valable jusqu'au {coupon.validUntil}</p>
+                        <p className="text-xs mt-1" style={{ color: `${D.text}60` }}>Valable jusqu&apos;au {coupon.validUntil}</p>
                       </div>
                       <button className="px-3 py-1.5 text-white text-xs font-semibold rounded-xl" style={{ backgroundColor: D.primary, cursor: "pointer", border: "none" }}>Activer</button>
                     </div>
@@ -1393,7 +1455,7 @@ export default function ClientDashboard() {
           </div>
         </AnimSection>
 
-        {/* ── Add to home screen ── */}
+        {/* ── Add to home screen button ── */}
         <AnimSection delay={300}>
           <div className="px-4 py-5 border-t" style={{ borderColor: `${D.primary}20`, backgroundColor: D.background }}>
             <button
@@ -1404,7 +1466,7 @@ export default function ClientDashboard() {
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
               </svg>
-              Ajouter à l'écran d'accueil
+              Ajouter à l&apos;écran d&apos;accueil
             </button>
             <p className="text-xs text-center mt-3" style={{ color: `${D.text}50` }}>Powered by adam · Mentions légales</p>
           </div>
@@ -1413,41 +1475,24 @@ export default function ClientDashboard() {
 
       {/* ── Fixed bottom QR button ── */}
       {client && (
-        <div
-          style={{
-            position: "fixed",
-            bottom: 0,
-            left: 0,
-            right: 0,
-            zIndex: 30,
-            display: "flex",
-            justifyContent: "center",
-            padding: "12px 16px 20px",
-            background: "linear-gradient(to top, rgba(255,255,255,0.98) 60%, rgba(255,255,255,0))",
-            pointerEvents: "none",
-          }}
-        >
+        <div style={{
+          position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 30,
+          display: "flex", justifyContent: "center",
+          padding: "12px 16px 20px",
+          background: "linear-gradient(to top, rgba(255,255,255,0.98) 60%, rgba(255,255,255,0))",
+          pointerEvents: "none",
+        }}>
           <button
             onClick={() => setShowQR(true)}
             style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              padding: "15px 36px",
-              backgroundColor: D.primary,
-              color: "#fff",
-              border: "none",
-              borderRadius: 20,
-              fontWeight: 700,
-              fontSize: 16,
-              letterSpacing: "0.01em",
-              cursor: "pointer",
-              pointerEvents: "all",
+              display: "flex", alignItems: "center", gap: 10,
+              padding: "15px 36px", backgroundColor: D.primary,
+              color: "#fff", border: "none", borderRadius: 20,
+              fontWeight: 700, fontSize: 16, letterSpacing: "0.01em",
+              cursor: "pointer", pointerEvents: "all",
               boxShadow: `0 8px 28px ${D.primary}55, 0 2px 8px rgba(0,0,0,0.12)`,
               animation: "floatPulse 3s ease-in-out infinite",
-              maxWidth: "448px",
-              width: "calc(100% - 48px)",
-              justifyContent: "center",
+              maxWidth: "448px", width: "calc(100% - 48px)", justifyContent: "center",
             }}
             aria-label="Afficher mon code QR"
           >
@@ -1477,10 +1522,6 @@ export default function ClientDashboard() {
           to   { opacity: 1; transform: translateY(0); }
         }
         @keyframes spin { to { transform: rotate(360deg); } }
-        @keyframes blink {
-          0%, 100% { opacity: 1; }
-          50%       { opacity: 0; }
-        }
         @keyframes bellDot {
           0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(34,197,94,0.5); }
           50%       { transform: scale(1.15); box-shadow: 0 0 0 5px rgba(34,197,94,0); }
@@ -1497,8 +1538,6 @@ export default function ClientDashboard() {
           0%, 100% { transform: translateY(0); box-shadow: 0 8px 28px rgba(254,85,2,0.45), 0 2px 8px rgba(0,0,0,0.12); }
           50%       { transform: translateY(-3px); box-shadow: 0 14px 36px rgba(254,85,2,0.55), 0 4px 12px rgba(0,0,0,0.14); }
         }
-
-        /* ── Celebration keyframes ── */
         @keyframes celebFadeIn {
           from { opacity: 0; }
           to   { opacity: 1; }
