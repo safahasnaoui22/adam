@@ -28,7 +28,7 @@ export const metadata: Metadata = {
   icons: {
     icon: "/icons/star.jpg",
     apple: [
-      { url: "/icons/apple-touch-icon.png", sizes: "180x180" },
+      { url: "/icons/star.jpg", sizes: "180x180" },
     ],
   },
 };
@@ -42,7 +42,7 @@ export default function RootLayout({
     <html lang="fr">
       <head>
         {/* These are critical for iOS PWA — Next.js doesn't always inject them */}
-        <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+        <link rel="apple-touch-icon" href="/icons/star.jpg" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="Adam Fidélité" />
