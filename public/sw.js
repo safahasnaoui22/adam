@@ -1,76 +1,62 @@
-// sw.js — Adam Loyalty Service Worker
-// Handles: background push notifications, offline caching, PWA installability
+// sw.js — Adam Loyalty Service Worker v3
+// Fixed: "Failed to convert value to Response" error
 
-const CACHE_NAME = "adam-v2";
-const OFFLINE_URLS = ["/client/dashboard", "/"];
+const CACHE_NAME = "adam-v3";
 
-// ── Install: cache essential pages ───────────────────────────────────
+// ── Install ───────────────────────────────────────────────────────────
 self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(OFFLINE_URLS).catch(() => {
-        // Don't fail install if caching fails
-      });
-    })
-  );
+  // Skip waiting immediately — don't let old SW block new one
   self.skipWaiting();
 });
 
-// ── Activate: clean old caches ────────────────────────────────────────
+// ── Activate ──────────────────────────────────────────────────────────
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(
-        keys
-          .filter((key) => key !== CACHE_NAME)
-          .map((key) => caches.delete(key))
-      )
-    ).then(() => self.clients.claim())
+    caches.keys()
+      .then((keys) => Promise.all(keys.map((key) => caches.delete(key))))
+      .then(() => self.clients.claim())
   );
 });
 
-// ── FETCH HANDLER — REQUIRED for Android Chrome installability ─────────
-// Without this, beforeinstallprompt never fires on Android.
+// ── FETCH — fixed, no undefined Response bug ──────────────────────────
 self.addEventListener("fetch", (event) => {
-  // Only handle GET requests
-  if (event.request.method !== "GET") return;
+  const { request } = event;
 
-  // Skip chrome-extension and non-http requests
-  if (!event.request.url.startsWith("http")) return;
+  // Only handle GET requests over http/https
+  if (request.method !== "GET") return;
+  if (!request.url.startsWith("http")) return;
 
-  // Skip API calls — always fetch fresh from network
-  if (event.request.url.includes("/api/")) {
-    event.respondWith(fetch(event.request));
-    return;
-  }
+  // Never intercept API calls — always go to network
+  if (request.url.includes("/api/")) return;
 
-  // For everything else: network first, fall back to cache
+  // For everything else: try network, fall back to cache
+  // IMPORTANT: always return a valid Response, never undefined
   event.respondWith(
-    fetch(event.request)
-      .then((response) => {
-        // Cache successful responses
-        if (response && response.status === 200) {
-          const responseClone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseClone);
-          });
+    fetch(request)
+      .then((networkResponse) => {
+        // Cache a clone of successful responses
+        if (networkResponse && networkResponse.ok) {
+          const clone = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
         }
-        return response;
+        return networkResponse;
       })
       .catch(() => {
-        // Network failed → try cache
-        return caches.match(event.request).then((cached) => {
+        // Network failed — try cache
+        return caches.match(request).then((cached) => {
           if (cached) return cached;
-          // For navigation requests, return the dashboard
-          if (event.request.mode === "navigate") {
-            return caches.match("/client/dashboard");
-          }
+          // Must return a valid Response — never undefined
+          return new Response("Offline - content not available", {
+            status: 503,
+            statusText: "Service Unavailable",
+            headers: { "Content-Type": "text/plain" },
+          });
         });
       })
   );
 });
 
-// ── Push event: fires when server sends a push ────────────────────────
+// ── Push notifications ────────────────────────────────────────────────
 self.addEventListener("push", (event) => {
   let data = {
     title: "Adam Fidélité",
@@ -82,31 +68,28 @@ self.addEventListener("push", (event) => {
   };
 
   if (event.data) {
-    try {
-      data = { ...data, ...event.data.json() };
-    } catch {
-      data.body = event.data.text();
-    }
+    try { data = { ...data, ...event.data.json() }; }
+    catch { data.body = event.data.text(); }
   }
 
-  const options = {
-    body: data.body,
-    icon: data.icon || "/icons/icon-192x192.png",
-    badge: data.badge || "/icons/icon-192x192.png",
-    tag: data.tag || "adam-points",
-    renotify: true,
-    vibrate: [200, 100, 200, 100, 200],
-    data: data.data || {},
-    actions: [
-      { action: "open", title: "Voir mon solde" },
-      { action: "dismiss", title: "Fermer" },
-    ],
-  };
-
-  event.waitUntil(self.registration.showNotification(data.title, options));
+  event.waitUntil(
+    self.registration.showNotification(data.title, {
+      body: data.body,
+      icon: data.icon || "/icons/icon-192x192.png",
+      badge: data.badge || "/icons/icon-192x192.png",
+      tag: data.tag || "adam-points",
+      renotify: true,
+      vibrate: [200, 100, 200, 100, 200],
+      data: data.data || {},
+      actions: [
+        { action: "open", title: "Voir mon solde" },
+        { action: "dismiss", title: "Fermer" },
+      ],
+    })
+  );
 });
 
-// ── Notification click: open the app ─────────────────────────────────
+// ── Notification click ────────────────────────────────────────────────
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
   if (event.action === "dismiss") return;
@@ -122,14 +105,12 @@ self.addEventListener("notificationclick", (event) => {
             return client.focus();
           }
         }
-        if (self.clients.openWindow) {
-          return self.clients.openWindow(urlToOpen);
-        }
+        if (self.clients.openWindow) return self.clients.openWindow(urlToOpen);
       })
   );
 });
 
-// ── Message from page: show local notification ────────────────────────
+// ── Local notification from page ──────────────────────────────────────
 self.addEventListener("message", (event) => {
   if (event.data?.type === "SHOW_NOTIFICATION") {
     const { title, body, icon, tag } = event.data;
