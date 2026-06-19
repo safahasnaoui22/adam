@@ -634,33 +634,41 @@ export default function ClientDashboard() {
   };
 
   // ── Add to home screen — works on Android, iOS, and desktop ──────────
-  const handleAddToHomeScreen = () => {
-    // Already installed
-    if (isInStandaloneMode()) {
-      alert("L'application est déjà installée sur votre écran d'accueil !");
-      return;
-    }
-    // Android Chrome: native prompt captured → trigger it directly
-    if (deferredPrompt) {
-      deferredPrompt.prompt();
-      deferredPrompt.userChoice.then(() => setDeferredPrompt(null));
-      return;
-    }
-    // iOS Safari: show step-by-step share sheet guide
-    if (isIOS()) {
-      setShowIOSInstall(true);
-      return;
-    }
-    // Android but prompt not captured (manifest/SW issue, or user already dismissed)
-    // → show manual instructions
-    if (isAndroid()) {
-      setShowAndroidInstall(true);
-      return;
-    }
-    // Desktop fallback
-    alert("Utilisez 'Ajouter à l'écran d'accueil' dans le menu de votre navigateur.");
-  };
+const handleAddToHomeScreen = () => {
+  // Already installed as PWA
+  if (isInStandaloneMode()) {
+    alert("L'application est déjà installée sur votre écran d'accueil !");
+    return;
+  }
 
+  // Android Chrome — native prompt available → install directly, 1 tap
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then((choice: { outcome: string }) => {
+      if (choice.outcome === "accepted") {
+        console.log("[PWA] User accepted install");
+      }
+      setDeferredPrompt(null);
+    });
+    return;
+  }
+
+  // iOS Safari — only option is Share sheet (Apple doesn't allow direct install)
+  if (isIOS()) {
+    setShowIOSInstall(true);
+    return;
+  }
+
+  // Android but prompt not captured yet — tell user to use Chrome's menu
+  // This only happens if: SW not registered, manifest invalid, or already installed
+  if (isAndroid()) {
+    setShowAndroidInstall(true);
+    return;
+  }
+
+  // Desktop
+  alert("Utilisez 'Ajouter à l'écran d'accueil' dans le menu de votre navigateur.");
+};
   const handleBellClick = async () => {
     if (notifActive) {
       await showSWNotification("🔔 Notifications actives", "Vous recevrez vos points et offres spéciales directement ici.", restaurantRef.current?.logo);
@@ -1084,17 +1092,30 @@ export default function ClientDashboard() {
         </AnimSection>
 
         {/* ── Add to home screen button ── */}
-        <AnimSection delay={300}>
-          <div className="px-4 py-5 border-t" style={{ borderColor: `${D.primary}20`, backgroundColor: D.background }}>
-            <button onClick={handleAddToHomeScreen} className="w-full py-4 border-2 rounded-2xl font-semibold text-sm flex items-center justify-center gap-2 transition-all active:scale-95" style={{ borderColor: D.primary, color: D.primary, backgroundColor: `${D.primary}0d`, cursor: "pointer" }}>
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
-              </svg>
-              Ajouter à l&apos;écran d&apos;accueil
-            </button>
-            <p className="text-xs text-center mt-3" style={{ color: `${D.text}50` }}>Powered by adam · Mentions légales</p>
-          </div>
-        </AnimSection>
+      {/* ── Add to home screen button ── */}
+<AnimSection delay={300}>
+  <div className="px-4 py-5 border-t" style={{ borderColor: `${D.primary}20`, backgroundColor: D.background }}>
+    <button
+      onClick={handleAddToHomeScreen}
+      className="w-full py-4 border-2 rounded-2xl font-semibold text-sm flex items-center justify-center gap-2 transition-all active:scale-95"
+      style={{ borderColor: D.primary, color: D.primary, backgroundColor: `${D.primary}0d`, cursor: "pointer" }}
+    >
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+      </svg>
+      {/* Show different text depending on platform */}
+      {deferredPrompt
+        ? "📲 Installer l'application"
+        : "Ajouter à l'écran d'accueil"}
+    </button>
+    {deferredPrompt && (
+      <p className="text-xs text-center mt-2" style={{ color: D.primary, fontWeight: 600 }}>
+        ✅ Prêt à installer — appuyez pour ajouter l&apos;icône sur votre téléphone
+      </p>
+    )}
+    <p className="text-xs text-center mt-3" style={{ color: `${D.text}50` }}>Powered by adam · Mentions légales</p>
+  </div>
+</AnimSection>
       </div>
 
       {/* ── Fixed bottom QR button ── */}
