@@ -83,7 +83,6 @@ const IconExternalLink = ({ size = 14, color = "currentColor" }: { size?: number
   </svg>
 );
 
-// ── QR Code Icon ──────────────────────────────────────────────────────
 const IconQR = ({ size = 22, color = "currentColor" }: { size?: number; color?: string }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <rect x="3" y="3" width="7" height="7" rx="1"/>
@@ -98,7 +97,6 @@ const IconQR = ({ size = 22, color = "currentColor" }: { size?: number; color?: 
   </svg>
 );
 
-// ── Bell Icon (with optional active dot) ─────────────────────────────
 const IconBell = ({ size = 20, color = "currentColor", active = false, pulsing = false }: { size?: number; color?: string; active?: boolean; pulsing?: boolean }) => (
   <span style={{ position: "relative", display: "inline-flex" }}>
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -118,7 +116,6 @@ const IconBell = ({ size = 20, color = "currentColor", active = false, pulsing =
   </span>
 );
 
-// ── Gift Icon for Reward Cards ────────────────────────────────────────
 const IconGiftCard = ({ size = 26 }: { size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <polyline points="20 12 20 22 4 22 4 12"/>
@@ -129,7 +126,6 @@ const IconGiftCard = ({ size = 26 }: { size?: number }) => (
   </svg>
 );
 
-// ── Pro Points Coin Icon ──────────────────────────────────────────────
 const IconPointsCoin = ({ size = 36, primaryColor }: { size?: number; primaryColor: string }) => (
   <svg width={size} height={size} viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
     <circle cx="18" cy="18" r="17" fill={primaryColor} opacity="0.15"/>
@@ -140,15 +136,158 @@ const IconPointsCoin = ({ size = 36, primaryColor }: { size?: number; primaryCol
   </svg>
 );
 
-// ── Push Notification helpers ─────────────────────────────────────────
+// ── iOS/Android detection ─────────────────────────────────────────────
+function isIOS(): boolean {
+  if (typeof navigator === "undefined") return false;
+  return /iphone|ipad|ipod/i.test(navigator.userAgent) || 
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+}
 
+function isInStandaloneMode(): boolean {
+  if (typeof window === "undefined") return false;
+  return (window.navigator as any).standalone === true || 
+    window.matchMedia("(display-mode: standalone)").matches;
+}
+
+// ── iOS Install Guide Modal ───────────────────────────────────────────
+function IOSInstallModal({ primaryColor, textColor, cardBg, onClose }: {
+  primaryColor: string; textColor: string; cardBg: string; onClose: () => void;
+}) {
+  return (
+    <div
+      style={{
+        position: "fixed", inset: 0, zIndex: 200,
+        backgroundColor: "rgba(0,0,0,0.6)",
+        backdropFilter: "blur(8px)",
+        display: "flex", alignItems: "flex-end", justifyContent: "center",
+      }}
+      onClick={onClose}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          backgroundColor: cardBg,
+          borderRadius: "24px 24px 0 0",
+          padding: "28px 24px 44px",
+          width: "100%", maxWidth: "448px",
+          animation: "slideUp 0.35s cubic-bezier(0.22,1,0.36,1)",
+        }}
+      >
+        <div style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: `${textColor}20`, margin: "0 auto 24px" }}/>
+        
+        <div style={{ textAlign: "center", marginBottom: 28 }}>
+          <div style={{
+            width: 64, height: 64, borderRadius: 16,
+            backgroundColor: `${primaryColor}15`,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            margin: "0 auto 16px", fontSize: 32,
+          }}>📲</div>
+          <h3 style={{ fontSize: 20, fontWeight: 700, color: textColor, margin: "0 0 8px" }}>
+            Ajouter à l'écran d'accueil
+          </h3>
+          <p style={{ fontSize: 13, color: `${textColor}70`, margin: 0, lineHeight: 1.5 }}>
+            Suivez ces 2 étapes dans Safari pour accéder à votre carte fidélité en un clic.
+          </p>
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 24 }}>
+          {/* Step 1 */}
+          <div style={{
+            display: "flex", alignItems: "center", gap: 16,
+            backgroundColor: `${primaryColor}08`,
+            borderRadius: 16, padding: "14px 16px",
+            border: `1px solid ${primaryColor}18`,
+          }}>
+            <div style={{
+              width: 36, height: 36, borderRadius: 10,
+              backgroundColor: primaryColor,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              flexShrink: 0,
+            }}>
+              <span style={{ fontSize: 18 }}>1</span>
+            </div>
+            <div style={{ flex: 1 }}>
+              <p style={{ fontSize: 13, fontWeight: 600, color: textColor, margin: "0 0 3px" }}>
+                Appuyez sur le bouton Partager
+              </p>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <span style={{ fontSize: 11, color: `${textColor}60` }}>En bas de l'écran Safari :</span>
+                {/* Safari share icon */}
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={primaryColor} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/>
+                  <polyline points="16 6 12 2 8 6"/>
+                  <line x1="12" y1="2" x2="12" y2="15"/>
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          {/* Step 2 */}
+          <div style={{
+            display: "flex", alignItems: "center", gap: 16,
+            backgroundColor: `${primaryColor}08`,
+            borderRadius: 16, padding: "14px 16px",
+            border: `1px solid ${primaryColor}18`,
+          }}>
+            <div style={{
+              width: 36, height: 36, borderRadius: 10,
+              backgroundColor: primaryColor,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              flexShrink: 0,
+            }}>
+              <span style={{ fontSize: 18 }}>2</span>
+            </div>
+            <div style={{ flex: 1 }}>
+              <p style={{ fontSize: 13, fontWeight: 600, color: textColor, margin: "0 0 3px" }}>
+                "Sur l'écran d'accueil"
+              </p>
+              <p style={{ fontSize: 11, color: `${textColor}60`, margin: 0 }}>
+                Faites défiler et appuyez sur ce bouton
+              </p>
+            </div>
+            <div style={{
+              width: 32, height: 32, borderRadius: 8,
+              backgroundColor: "#f3f4f6",
+              display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+              border: "1px solid #e5e7eb",
+            }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="3" width="7" height="7" rx="1"/>
+                <rect x="14" y="3" width="7" height="7" rx="1"/>
+                <rect x="3" y="14" width="7" height="7" rx="1"/>
+                <line x1="14" y1="14" x2="21" y2="14"/>
+                <line x1="14" y1="17.5" x2="21" y2="17.5"/>
+                <line x1="14" y1="21" x2="21" y2="21"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <button
+          onClick={onClose}
+          style={{
+            width: "100%", padding: "15px",
+            backgroundColor: primaryColor,
+            border: "none", borderRadius: 16,
+            color: "#fff", fontWeight: 700, fontSize: 16,
+            cursor: "pointer",
+          }}
+        >
+          J'ai compris !
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── Push Notification helpers ─────────────────────────────────────────
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "";
 
-function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
+function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
   const rawData = window.atob(base64);
-  const arr = new Uint8Array(new ArrayBuffer(rawData.length));
+  const arr = new Uint8Array(rawData.length);
   for (let i = 0; i < rawData.length; i++) arr[i] = rawData.charCodeAt(i);
   return arr;
 }
@@ -162,20 +301,30 @@ async function subscribeToPush(clientId: string): Promise<boolean> {
   try {
     const permission = await Notification.requestPermission();
     if (permission !== "granted") return false;
+
+    // Wait for SW to be fully ready
     const registration = await navigator.serviceWorker.ready;
-    let subscription = await registration.pushManager.getSubscription();
-    if (!subscription) {
-      subscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
-      });
-    }
+
+    // Unsubscribe any stale subscription first
+    const existing = await registration.pushManager.getSubscription();
+    if (existing) await existing.unsubscribe();
+
+    const subscription = await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+    });
+
     const res = await fetch("/api/push/subscribe", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ subscription: subscription.toJSON(), clientId }),
     });
-    return res.ok;
+
+    if (!res.ok) {
+      console.error("[push] subscribe API failed:", await res.text());
+      return false;
+    }
+    return true;
   } catch (err) {
     console.error("[push] subscribe error:", err);
     return false;
@@ -198,25 +347,26 @@ async function unsubscribeFromPush(): Promise<void> {
   }
 }
 
+// Show notification via SW (works when app is open; push API handles background)
 async function showSWNotification(title: string, body: string, icon?: string, tag?: string): Promise<void> {
   if (!("serviceWorker" in navigator)) return;
   try {
     const registration = await navigator.serviceWorker.ready;
-    await registration.showNotification(title, {
-      body,
-      icon: icon || "/icon-192x192.png",
-      badge: "/icon-72x72.png",
-      tag: tag || "adam-local",
-      vibrate: [200, 100, 200],
-    } as any);
-  } catch {
     if (Notification.permission === "granted") {
-      try { new Notification(title, { body, icon }); } catch {}
+      await registration.showNotification(title, {
+        body,
+        icon: icon || "/icons/icon-192x192.png",
+        badge: "/icons/icon-72x72.png",
+        tag: tag || "adam-local",
+        vibrate: [200, 100, 200],
+      } as NotificationOptions);
     }
+  } catch (err) {
+    console.warn("[notif] showNotification failed:", err);
   }
 }
 
-// ── Points Celebration Overlay ────────────────────────────────────────
+// ── Redesigned Points Celebration Overlay ─────────────────────────────
 type CelebrationMode = "earned" | "spent";
 
 type PointsCelebrationProps = {
@@ -236,126 +386,203 @@ function PointsCelebration({
 }: PointsCelebrationProps) {
   const [displayCount, setDisplayCount] = useState(0);
   const [phase, setPhase] = useState<"enter" | "count" | "done">("enter");
-  const [particles, setParticles] = useState<{ x: number; y: number; delay: number; size: number; color: string; shape: string }[]>([]);
+  const [particles, setParticles] = useState<Array<{
+    x: number; y: number; delay: number; size: number; color: string; vx: number;
+  }>>([]);
 
   const isEarned = mode === "earned";
-  const accentColor = isEarned ? primaryColor : "#6366f1";
 
   useEffect(() => {
     const colors = isEarned
-      ? [primaryColor, "#FFD700", "#FF6B6B", "#4ECDC4", "#45B7D1", "#FFA07A"]
-      : ["#6366f1", "#8b5cf6", "#ec4899", "#f43f5e", "#fb923c", "#facc15"];
-    const ps = Array.from({ length: 30 }, (_, i) => ({
-      x: Math.random() * 100,
-      y: -10 - Math.random() * 20,
-      delay: Math.random() * 0.7,
-      size: 5 + Math.random() * 8,
+      ? [primaryColor, "#FFD700", "#FF6B6B", "#4ECDC4", "#45B7D1"]
+      : ["#6366f1", "#8b5cf6", "#ec4899", "#f43f5e", "#fb923c"];
+    const ps = Array.from({ length: 24 }, (_, i) => ({
+      x: 30 + Math.random() * 40,
+      y: 20 + Math.random() * 30,
+      delay: Math.random() * 0.5,
+      size: 4 + Math.random() * 6,
       color: colors[i % colors.length],
-      shape: i % 4 === 0 ? "circle" : i % 4 === 1 ? "square" : i % 4 === 2 ? "diamond" : "circle",
+      vx: (Math.random() - 0.5) * 80,
     }));
     setParticles(ps);
   }, [isEarned, primaryColor]);
 
   useEffect(() => {
-    const enterTimer = setTimeout(() => {
+    const t0 = setTimeout(() => {
       setPhase("count");
-      const duration = 1300;
-      const steps = 45;
-      const stepTime = duration / steps;
+      const steps = 40;
+      const stepTime = 1200 / steps;
       let current = 0;
-      const interval = setInterval(() => {
+      const iv = setInterval(() => {
         current++;
         const eased = Math.round((1 - Math.pow(1 - current / steps, 3)) * pointsEarned);
         setDisplayCount(eased);
         if (current >= steps) {
-          clearInterval(interval);
+          clearInterval(iv);
           setDisplayCount(pointsEarned);
           setPhase("done");
         }
       }, stepTime);
-      return () => clearInterval(interval);
-    }, 400);
-    return () => clearTimeout(enterTimer);
+      return () => clearInterval(iv);
+    }, 300);
+    return () => clearTimeout(t0);
   }, [pointsEarned]);
 
   useEffect(() => {
-    const t = setTimeout(onClose, 5000);
+    const t = setTimeout(onClose, 5500);
     return () => clearTimeout(t);
   }, [onClose]);
+
+  const accentColor = isEarned ? primaryColor : "#7c3aed";
+  const emoji = isEarned ? "✦" : "🎁";
 
   return (
     <div
       style={{
         position: "fixed", inset: 0, zIndex: 200,
         display: "flex", alignItems: "center", justifyContent: "center",
-        backgroundColor: "rgba(0,0,0,0.70)",
-        backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
-        animation: "celebFadeIn 0.25s ease",
+        backgroundColor: "rgba(0,0,0,0.75)",
+        backdropFilter: "blur(12px)",
+        animation: "celebFadeIn 0.2s ease",
       }}
       onClick={onClose}
     >
-      {particles.map((p, i) => (
-        <div key={i} style={{
-          position: "absolute",
-          left: `${p.x}%`, top: `${p.y}%`,
-          width: p.size, height: p.size,
-          borderRadius: p.shape === "circle" ? "50%" : p.shape === "diamond" ? "2px" : "2px",
-          transform: p.shape === "diamond" ? "rotate(45deg)" : "none",
-          backgroundColor: p.color,
-          animation: `confettiFall 2.4s ${p.delay}s ease-in both`,
-          pointerEvents: "none",
-        }}/>
-      ))}
+      {/* Confetti particles */}
+      <div style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none" }}>
+        {particles.map((p, i) => (
+          <div key={i} style={{
+            position: "absolute",
+            left: `${p.x}%`,
+            top: `${p.y}%`,
+            width: p.size,
+            height: p.size,
+            borderRadius: i % 3 === 0 ? "50%" : "2px",
+            backgroundColor: p.color,
+            animation: `particleBurst 1.8s ${p.delay}s cubic-bezier(0.25,0.46,0.45,0.94) both`,
+            "--vx": `${p.vx}px`,
+          } as React.CSSProperties}/>
+        ))}
+      </div>
+
+      {/* Card */}
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
-          backgroundColor: cardBg, borderRadius: 28,
-          padding: "36px 32px 28px", width: "min(340px, 88vw)",
-          textAlign: "center", position: "relative",
-          animation: "celebCardIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)",
-          border: `1.5px solid ${accentColor}30`,
-          boxShadow: `0 24px 60px rgba(0,0,0,0.35), 0 0 0 1px ${accentColor}10`,
+          width: "min(320px, 86vw)",
+          borderRadius: 28,
           overflow: "hidden",
+          animation: "celebCardIn 0.45s cubic-bezier(0.34,1.56,0.64,1)",
+          position: "relative",
         }}
       >
-        <div style={{ position: "absolute", inset: 0, background: `radial-gradient(ellipse at 50% 0%, ${accentColor}12 0%, transparent 70%)`, pointerEvents: "none" }}/>
-        <div style={{ position: "relative", display: "inline-flex", alignItems: "center", justifyContent: "center", marginBottom: 20 }}>
-          <div style={{ position: "absolute", width: 90, height: 90, borderRadius: "50%", backgroundColor: `${accentColor}12`, animation: "pulseRing 1.8s ease-out 0.3s infinite" }}/>
-          <div style={{ position: "absolute", width: 70, height: 70, borderRadius: "50%", backgroundColor: `${accentColor}18`, animation: "pulseRing 1.8s ease-out 0.6s infinite" }}/>
+        {/* Top band */}
+        <div style={{
+          backgroundColor: accentColor,
+          padding: "32px 28px 40px",
+          textAlign: "center",
+          position: "relative",
+          overflow: "hidden",
+        }}>
+          {/* Decorative circles */}
+          <div style={{ position: "absolute", top: -20, right: -20, width: 100, height: 100, borderRadius: "50%", backgroundColor: "rgba(255,255,255,0.08)" }}/>
+          <div style={{ position: "absolute", bottom: -30, left: -15, width: 80, height: 80, borderRadius: "50%", backgroundColor: "rgba(255,255,255,0.06)" }}/>
+
+          <div style={{ position: "relative", zIndex: 1 }}>
+            {/* Icon circle */}
+            <div style={{
+              width: 64, height: 64, borderRadius: "50%",
+              backgroundColor: "rgba(255,255,255,0.2)",
+              border: "2px solid rgba(255,255,255,0.35)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              margin: "0 auto 16px",
+              fontSize: 28,
+              animation: phase === "enter" ? "iconPop 0.5s cubic-bezier(0.34,1.56,0.64,1)" : "none",
+            }}>
+              {isEarned ? (
+                <span style={{ color: "white", fontWeight: 800, fontSize: 22 }}>+</span>
+              ) : (
+                <span>🎁</span>
+              )}
+            </div>
+
+            {/* Label */}
+            <p style={{
+              fontSize: 11, fontWeight: 700, letterSpacing: "0.12em",
+              textTransform: "uppercase", color: "rgba(255,255,255,0.7)",
+              margin: "0 0 10px",
+            }}>
+              {isEarned ? "Points gagnés" : "Récompense utilisée"}
+            </p>
+
+            {/* Big number */}
+            <div style={{
+              display: "flex", alignItems: "baseline", justifyContent: "center", gap: 4,
+            }}>
+              <span style={{
+                fontSize: 68, fontWeight: 800, lineHeight: 1,
+                color: "white",
+                fontVariantNumeric: "tabular-nums",
+                letterSpacing: "-3px",
+                animation: phase === "done" ? "numberPop 0.3s cubic-bezier(0.34,1.56,0.64,1)" : "none",
+              }}>
+                {isEarned ? "+" : "-"}{displayCount}
+              </span>
+              <span style={{ fontSize: 20, fontWeight: 600, color: "rgba(255,255,255,0.75)", marginBottom: 4 }}>pts</span>
+            </div>
+
+            {rewardName && !isEarned && (
+              <div style={{
+                display: "inline-block",
+                backgroundColor: "rgba(255,255,255,0.2)",
+                borderRadius: 20, padding: "5px 14px", marginTop: 10,
+              }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: "white" }}>{rewardName}</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Bottom section */}
+        <div style={{
+          backgroundColor: cardBg,
+          padding: "20px 24px 24px",
+          textAlign: "center",
+        }}>
+          {/* New balance */}
           <div style={{
-            width: 58, height: 58, borderRadius: "50%",
-            backgroundColor: `${accentColor}18`, border: `2.5px solid ${accentColor}`,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            position: "relative", zIndex: 1,
-            animation: phase === "enter" ? "coinBounce 0.55s cubic-bezier(0.34,1.56,0.64,1)" : "none",
-            fontSize: 26,
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            backgroundColor: `${accentColor}08`,
+            borderRadius: 14, padding: "12px 16px",
+            marginBottom: 16,
+            border: `1px solid ${accentColor}18`,
           }}>
-            {isEarned ? (
-              <svg width="28" height="28" viewBox="0 0 36 36" fill="none">
-                <text x="18" y="23" textAnchor="middle" fontSize="18" fontWeight="700" fontFamily="'Inter', system-ui, sans-serif" fill={accentColor}>$</text>
-              </svg>
-            ) : <span>🎁</span>}
+            <span style={{ fontSize: 13, color: `${textColor}60`, fontWeight: 500 }}>Nouveau solde</span>
+            <span style={{
+              fontSize: 22, fontWeight: 800, color: accentColor,
+              fontVariantNumeric: "tabular-nums",
+            }}>
+              {newTotal} pts
+            </span>
           </div>
+
+          <button
+            onClick={onClose}
+            style={{
+              width: "100%", padding: "14px",
+              backgroundColor: accentColor,
+              border: "none", borderRadius: 14,
+              color: "#fff", fontWeight: 700, fontSize: 15,
+              cursor: "pointer",
+              letterSpacing: "0.01em",
+            }}
+          >
+            {isEarned ? "Super, merci ! 🎉" : "Profitez bien ! 🎁"}
+          </button>
+
+          <p style={{ fontSize: 11, color: `${textColor}30`, marginTop: 10, margin: "10px 0 0" }}>
+            Se ferme automatiquement…
+          </p>
         </div>
-        <p style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: `${textColor}55`, margin: "0 0 8px" }}>
-          {isEarned ? "Vous avez gagné" : "Vous avez utilisé"}
-        </p>
-        <div style={{ fontSize: 72, fontWeight: 800, lineHeight: 1, color: accentColor, margin: "0 0 4px", fontVariantNumeric: "tabular-nums", letterSpacing: "-2px", animation: phase === "done" ? "numberPop 0.35s cubic-bezier(0.34,1.56,0.64,1)" : "none" }}>
-          {isEarned ? "+" : "-"}{displayCount}
-        </div>
-        <p style={{ fontSize: 16, fontWeight: 600, color: `${textColor}70`, margin: "0 0 6px", letterSpacing: "0.04em" }}>points</p>
-        {rewardName && !isEarned && (
-          <div style={{ display: "inline-flex", alignItems: "center", gap: 6, backgroundColor: `${accentColor}12`, borderRadius: 20, padding: "5px 14px", marginBottom: 8 }}>
-            <span style={{ fontSize: 13, fontWeight: 600, color: accentColor }}>🎉 {rewardName}</span>
-          </div>
-        )}
-        <div style={{ height: 1, backgroundColor: `${textColor}10`, margin: "16px 0" }}/>
-        <p style={{ fontSize: 12, color: `${textColor}50`, margin: "0 0 4px" }}>Nouveau solde</p>
-        <p style={{ fontSize: 26, fontWeight: 700, color: textColor, margin: "0 0 22px", fontVariantNumeric: "tabular-nums" }}>{newTotal} pts</p>
-        <button onClick={onClose} style={{ width: "100%", padding: "13px", backgroundColor: accentColor, border: "none", borderRadius: 14, color: "#fff", fontWeight: 700, fontSize: 15, cursor: "pointer", letterSpacing: "0.01em" }}>
-          {isEarned ? "Super, merci ! 🎉" : "Profitez bien ! 🎁"}
-        </button>
-        <p style={{ fontSize: 11, color: `${textColor}30`, marginTop: 10 }}>Se ferme automatiquement…</p>
       </div>
     </div>
   );
@@ -424,8 +651,10 @@ function BonusModal({ action, pointsValue, primaryColor, textColor, cardBg, onCo
   useEffect(() => { return () => { if (timerRef.current) clearInterval(timerRef.current); }; }, []);
 
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 100, backgroundColor: "rgba(0,0,0,0.55)", display: "flex", alignItems: "flex-end", justifyContent: "center" }}
-      onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}>
+    <div
+      style={{ position: "fixed", inset: 0, zIndex: 100, backgroundColor: "rgba(0,0,0,0.55)", display: "flex", alignItems: "flex-end", justifyContent: "center" }}
+      onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}
+    >
       <div style={{ backgroundColor: cardBg, borderRadius: "20px 20px 0 0", padding: "24px 20px 32px", width: "100%", maxWidth: "448px", animation: "slideUp 0.3s ease" }}>
         <div style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: `${textColor}20`, margin: "0 auto 20px" }}/>
         {step === "intro" && (
@@ -444,8 +673,11 @@ function BonusModal({ action, pointsValue, primaryColor, textColor, cardBg, onCo
                 3. Revenez ici et confirmez
               </p>
             </div>
-            <a href="#" onClick={(e) => { e.preventDefault(); window.open((window as any).__bonusUrl, "_blank"); handleOpenLink(); }}
-              style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, width: "100%", padding: "14px", backgroundColor: primaryColor, color: "#fff", borderRadius: 14, fontWeight: 700, fontSize: 15, textDecoration: "none", marginBottom: 12 }}>
+            <a
+              href="#"
+              onClick={(e) => { e.preventDefault(); window.open((window as any).__bonusUrl, "_blank"); handleOpenLink(); }}
+              style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, width: "100%", padding: "14px", backgroundColor: primaryColor, color: "#fff", borderRadius: 14, fontWeight: 700, fontSize: 15, textDecoration: "none", marginBottom: 12 }}
+            >
               <IconExternalLink size={16} color="#fff"/>
               Ouvrir {action.label}
             </a>
@@ -479,11 +711,18 @@ function BonusModal({ action, pointsValue, primaryColor, textColor, cardBg, onCo
 }
 
 // ── Notification Permission Modal ─────────────────────────────────────
-function NotificationPermModal({ primaryColor, textColor, cardBg, onAllow, onDeny }: { primaryColor: string; textColor: string; cardBg: string; onAllow: () => void; onDeny: () => void }) {
+function NotificationPermModal({ primaryColor, textColor, cardBg, onAllow, onDeny }: {
+  primaryColor: string; textColor: string; cardBg: string; onAllow: () => void; onDeny: () => void;
+}) {
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 150, backgroundColor: "rgba(0,0,0,0.55)", display: "flex", alignItems: "flex-end", justifyContent: "center" }}
-      onClick={onDeny}>
-      <div onClick={(e) => e.stopPropagation()} style={{ backgroundColor: cardBg, borderRadius: "24px 24px 0 0", padding: "28px 24px 36px", width: "100%", maxWidth: "448px", animation: "slideUp 0.35s ease" }}>
+    <div
+      style={{ position: "fixed", inset: 0, zIndex: 150, backgroundColor: "rgba(0,0,0,0.55)", display: "flex", alignItems: "flex-end", justifyContent: "center" }}
+      onClick={onDeny}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{ backgroundColor: cardBg, borderRadius: "24px 24px 0 0", padding: "28px 24px 36px", width: "100%", maxWidth: "448px", animation: "slideUp 0.35s ease" }}
+      >
         <div style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: `${textColor}20`, margin: "0 auto 24px" }}/>
         <div style={{ textAlign: "center" }}>
           <div style={{ width: 68, height: 68, borderRadius: "50%", backgroundColor: `${primaryColor}15`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px", fontSize: 32 }}>🔔</div>
@@ -501,7 +740,7 @@ function NotificationPermModal({ primaryColor, textColor, cardBg, onAllow, onDen
   );
 }
 
-// ── QR Modal (full-screen overlay) ───────────────────────────────────
+// ── QR Modal ──────────────────────────────────────────────────────────
 function QRModal({ client, primaryColor, textColor, cardBg, onClose }: {
   client: any; primaryColor: string; textColor: string; cardBg: string; onClose: () => void;
 }) {
@@ -536,7 +775,7 @@ function QRModal({ client, primaryColor, textColor, cardBg, onClose }: {
   );
 }
 
-// ── AnimSection: scroll-triggered fade-in wrapper ─────────────────────
+// ── AnimSection ───────────────────────────────────────────────────────
 function AnimSection({ children, delay = 0, style = {} }: { children: React.ReactNode; delay?: number; style?: React.CSSProperties }) {
   const { ref, visible } = useScrollReveal();
   return (
@@ -551,97 +790,50 @@ function AnimSection({ children, delay = 0, style = {} }: { children: React.Reac
   );
 }
 
-// ── Reward Card Component ─────────────────────────────────────────────
+// ── Reward Card ───────────────────────────────────────────────────────
 function RewardCard({ reward, clientPts, primaryColor, cardBg, textColor, index }: {
   reward: any; clientPts: number; primaryColor: string; cardBg: string; textColor: string; index: number;
 }) {
   const unlocked = clientPts >= reward.pts;
-
   return (
-    <div
-      style={{
-        minWidth: "140px",
-        flexShrink: 0,
-        borderRadius: 20,
-        overflow: "hidden",
-        position: "relative",
-        animation: `popIn 0.4s ease ${index * 0.07}s both`,
-        boxShadow: unlocked
-          ? `0 8px 24px ${primaryColor}30`
-          : "0 2px 8px rgba(0,0,0,0.08)",
-        border: unlocked ? `1.5px solid ${primaryColor}` : `1.5px solid ${textColor}12`,
-      }}
-    >
-      {/* Top orange band */}
-      <div
-        style={{
-          background: unlocked
-            ? `linear-gradient(135deg, ${primaryColor}, ${primaryColor}cc)`
-            : `linear-gradient(135deg, #9ca3af, #6b7280)`,
-          padding: "14px 12px 18px",
-          position: "relative",
-          minHeight: 90,
-        }}
-      >
-        {/* Gift icon top-left */}
+    <div style={{
+      minWidth: "140px", flexShrink: 0,
+      borderRadius: 20, overflow: "hidden", position: "relative",
+      animation: `popIn 0.4s ease ${index * 0.07}s both`,
+      boxShadow: unlocked ? `0 8px 24px ${primaryColor}30` : "0 2px 8px rgba(0,0,0,0.08)",
+      border: unlocked ? `1.5px solid ${primaryColor}` : `1.5px solid ${textColor}12`,
+    }}>
+      <div style={{
+        background: unlocked
+          ? `linear-gradient(135deg, ${primaryColor}, ${primaryColor}cc)`
+          : `linear-gradient(135deg, #9ca3af, #6b7280)`,
+        padding: "14px 12px 18px", position: "relative", minHeight: 90,
+      }}>
         <div style={{ position: "absolute", top: 12, left: 12, opacity: 0.9 }}>
           <IconGiftCard size={22}/>
         </div>
-
-        {/* Unlocked badge top-right */}
         {unlocked && (
-          <div style={{
-            position: "absolute", top: 10, right: 10,
-            backgroundColor: "rgba(255,255,255,0.25)",
-            borderRadius: 20, padding: "2px 8px",
-            display: "flex", alignItems: "center", gap: 3,
-          }}>
+          <div style={{ position: "absolute", top: 10, right: 10, backgroundColor: "rgba(255,255,255,0.25)", borderRadius: 20, padding: "2px 8px", display: "flex", alignItems: "center", gap: 3 }}>
             <IconCheck size={9} color="white"/>
             <span style={{ fontSize: 9, fontWeight: 700, color: "white", letterSpacing: "0.04em" }}>DISPO</span>
           </div>
         )}
-
-        {/* Reward name — centered, white */}
         <div style={{ marginTop: 28, textAlign: "center" }}>
-          <p style={{
-            fontSize: 13, fontWeight: 700, color: "white",
-            lineHeight: 1.3, margin: 0,
-            textShadow: "0 1px 4px rgba(0,0,0,0.25)",
-          }}>
-            {reward.name}
-          </p>
+          <p style={{ fontSize: 13, fontWeight: 700, color: "white", lineHeight: 1.3, margin: 0, textShadow: "0 1px 4px rgba(0,0,0,0.25)" }}>{reward.name}</p>
         </div>
       </div>
-
-      {/* Bottom white / card section */}
       <div style={{ backgroundColor: cardBg, padding: "10px 12px 12px", textAlign: "center" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
           <IconStar size={11} color={unlocked ? primaryColor : "#9ca3af"}/>
-          <span style={{
-            fontSize: 13, fontWeight: 800,
-            color: unlocked ? primaryColor : "#9ca3af",
-            fontVariantNumeric: "tabular-nums",
-          }}>
-            {reward.pts} pts
-          </span>
+          <span style={{ fontSize: 13, fontWeight: 800, color: unlocked ? primaryColor : "#9ca3af", fontVariantNumeric: "tabular-nums" }}>{reward.pts} pts</span>
         </div>
         {unlocked ? (
-          <div style={{
-            marginTop: 6,
-            backgroundColor: primaryColor,
-            borderRadius: 8, padding: "4px 0",
-          }}>
+          <div style={{ marginTop: 6, backgroundColor: primaryColor, borderRadius: 8, padding: "4px 0" }}>
             <span style={{ fontSize: 10, fontWeight: 700, color: "white", letterSpacing: "0.05em" }}>DISPONIBLE</span>
           </div>
         ) : (
-          <div style={{
-            marginTop: 6,
-            backgroundColor: `${textColor}08`,
-            borderRadius: 8, padding: "4px 0",
-          }}>
-            <span style={{ fontSize: 10, fontWeight: 600, color: `${textColor}40`, letterSpacing: "0.04em" }}>
-              🔒 {reward.pts - clientPts} pts
-            </span>
+          <div style={{ marginTop: 6, backgroundColor: `${textColor}08`, borderRadius: 8, padding: "4px 0" }}>
+            <span style={{ fontSize: 10, fontWeight: 600, color: `${textColor}40`, letterSpacing: "0.04em" }}>🔒 {reward.pts - clientPts} pts</span>
           </div>
         )}
       </div>
@@ -661,6 +853,7 @@ export default function ClientDashboard() {
   const [refreshing, setRefreshing] = useState(false);
   const [showQR, setShowQR] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
+  const [showIOSInstall, setShowIOSInstall] = useState(false);
   const [activeTab, setActiveTab] = useState("rewards");
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [patternStyle, setPatternStyle] = useState<React.CSSProperties>({});
@@ -671,20 +864,19 @@ export default function ClientDashboard() {
   const [notifPermission, setNotifPermission] = useState<NotificationPermission | "unknown">("unknown");
   const [showNotifModal, setShowNotifModal] = useState(false);
   const [notifActive, setNotifActive] = useState(false);
+  const [pwaInstalled, setPwaInstalled] = useState(false);
 
-  // Swiper state
   const [swiperOffset, setSwiperOffset] = useState(0);
   const touchStartX = useRef<number | null>(null);
-  const VISIBLE_CARDS = 2; // show 2 cards partially so user knows there's more
   const CARD_WIDTH = 140;
   const CARD_GAP = 12;
 
-  // We keep restaurant in a ref too, so notification callbacks always have the latest value
   const restaurantRef = useRef<any>(null);
   useEffect(() => { restaurantRef.current = restaurant; }, [restaurant]);
 
-  // Check notification permission on mount
+  // Check if already installed as PWA
   useEffect(() => {
+    if (isInStandaloneMode()) setPwaInstalled(true);
     if ("Notification" in window) {
       const perm = Notification.permission;
       setNotifPermission(perm);
@@ -703,37 +895,22 @@ export default function ClientDashboard() {
             const logo = restaurantRef.current?.logo;
             if (diff > 0) {
               setCelebration({ pointsEarned: diff, newTotal: data.points, mode: "earned" });
-              showSWNotification(
-                "🎉 Points ajoutés !",
-                `+${diff} points sur votre carte. Solde : ${data.points} pts`,
-                logo,
-                "adam-points"
-              );
+              showSWNotification("🎉 Points ajoutés !", `+${diff} points sur votre carte. Solde : ${data.points} pts`, logo, "adam-points");
             } else {
               const spent = Math.abs(diff);
               setCelebration({ pointsEarned: spent, newTotal: data.points, mode: "spent", rewardName: data.lastRewardName });
-              showSWNotification(
-                "🎁 Récompense activée !",
-                `${data.lastRewardName || "Votre récompense"} est prête ! Solde restant : ${data.points} pts`,
-                logo,
-                "adam-reward"
-              );
+              showSWNotification("🎁 Récompense activée !", `${data.lastRewardName || "Votre récompense"} est prête ! Solde restant : ${data.points} pts`, logo, "adam-reward");
             }
           }
           return data;
         });
-        // API stores bonuses as individual boolean columns, not an array.
-        // Map them back to the string[] the UI expects.
         const derived: string[] = [];
         if (data.hasClaimedGoogleMapsBonus) derived.push("googleMaps");
-        if (data.hasClaimedFacebookBonus)   derived.push("facebook");
-        if (data.hasClaimedInstagramBonus)  derived.push("instagram");
-        if (data.hasClaimedTwitterBonus)    derived.push("twitter");
-        // Also support legacy array format in case the API is updated later
+        if (data.hasClaimedFacebookBonus) derived.push("facebook");
+        if (data.hasClaimedInstagramBonus) derived.push("instagram");
+        if (data.hasClaimedTwitterBonus) derived.push("twitter");
         if (data.completedBonuses && Array.isArray(data.completedBonuses)) {
-          data.completedBonuses.forEach((b: string) => {
-            if (!derived.includes(b)) derived.push(b);
-          });
+          data.completedBonuses.forEach((b: string) => { if (!derived.includes(b)) derived.push(b); });
         }
         setCompletedBonuses(derived);
       }
@@ -761,7 +938,6 @@ export default function ClientDashboard() {
     }
   }, [restaurantId, router]);
 
-  // Re-fetch when tab becomes visible again (handles background → foreground)
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") {
@@ -775,17 +951,27 @@ export default function ClientDashboard() {
     return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
   }, []);
 
-  // SW registration — MUST happen before push subscribe
+  // Register SW
   useEffect(() => {
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.register("/sw.js").catch(console.error);
     }
   }, []);
 
+  // Capture beforeinstallprompt for Android
   useEffect(() => {
-    const handler = (e: Event) => { e.preventDefault(); setDeferredPrompt(e); };
+    const handler = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
     window.addEventListener("beforeinstallprompt", handler);
-    return () => window.removeEventListener("beforeinstallprompt", handler);
+    window.addEventListener("appinstalled", () => {
+      setPwaInstalled(true);
+      setDeferredPrompt(null);
+    });
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handler);
+    };
   }, []);
 
   const handleRefresh = async () => {
@@ -797,18 +983,37 @@ export default function ClientDashboard() {
     setTimeout(() => setRefreshing(false), 800);
   };
 
-  const handleAddToHomeScreen = () => {
-    if (deferredPrompt) {
-      deferredPrompt.prompt();
-      deferredPrompt.userChoice.then(() => setDeferredPrompt(null));
-    } else if (navigator.userAgent.includes("iPhone") || navigator.userAgent.includes("iPad")) {
-      alert("Pour ajouter à l'écran d'accueil :\n1. Appuyez sur le bouton Partager\n2. Appuyez sur 'Sur l'écran d'accueil'");
-    } else {
-      alert("Utilisez 'Ajouter à l'écran d'accueil' dans le menu du navigateur");
+  // ── Add to Home Screen — smart per-platform ───────────────────────
+  const handleAddToHomeScreen = async () => {
+    if (pwaInstalled || isInStandaloneMode()) {
+      // Already installed — nothing to do
+      return;
     }
+
+    const iOS = isIOS();
+
+    if (iOS) {
+      // iOS Safari: show native guide
+      setShowIOSInstall(true);
+      return;
+    }
+
+    if (deferredPrompt) {
+      // Android/Chrome: trigger native install prompt
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === "accepted") {
+        setPwaInstalled(true);
+      }
+      setDeferredPrompt(null);
+      return;
+    }
+
+    // Fallback for Android browsers without beforeinstallprompt (e.g. Firefox)
+    setShowIOSInstall(true);
   };
 
-  // ── Bell click ────────────────────────────────────────────────────────
+  // ── Bell click ─────────────────────────────────────────────────────
   const handleBellClick = async () => {
     if (notifActive) {
       await showSWNotification(
@@ -858,26 +1063,18 @@ export default function ClientDashboard() {
       const res = await fetch("/api/customer/claim-bonus", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          platform: activeBonusModal.id,          // "googleMaps" | "facebook" | "instagram" | "twitter"
-          customerId: client.customerId,           // matches session.user.customerProfile.id check
-        }),
+        body: JSON.stringify({ platform: activeBonusModal.id, customerId: client.customerId }),
       });
       const data = await res.json();
       if (res.ok) {
-        const gained = data.pointsAdded;           // API returns pointsAdded, not pointsEarned
+        const gained = data.pointsAdded;
         const newTotal = data.newPoints;
         setClient((prev: any) => ({ ...prev, points: newTotal }));
         setCompletedBonuses((prev) => [...prev, activeBonusModal.id]);
         setActiveBonusModal(null);
         setTimeout(() => {
           setCelebration({ pointsEarned: gained, newTotal, mode: "earned" });
-          showSWNotification(
-            "⭐ Bonus gagné !",
-            `+${gained} points pour ${activeBonusModal.label} ! Solde : ${newTotal} pts`,
-            restaurantRef.current?.logo,
-            "adam-bonus"
-          );
+          showSWNotification("⭐ Bonus gagné !", `+${gained} points pour ${activeBonusModal.label} ! Solde : ${newTotal} pts`, restaurantRef.current?.logo, "adam-bonus");
         }, 350);
       } else {
         alert(data.error || "Une erreur est survenue. Réessayez plus tard.");
@@ -892,16 +1089,10 @@ export default function ClientDashboard() {
     }
   };
 
-  // ── Points-spent celebration trigger ─────────────────────────────────
   useEffect(() => {
     (window as any).__triggerSpentCelebration = (pts: number, newTotal: number, rewardName?: string) => {
       setCelebration({ pointsEarned: pts, newTotal, mode: "spent", rewardName });
-      showSWNotification(
-        "🎁 Récompense activée !",
-        `${rewardName || "Votre récompense"} est prête ! Solde restant : ${newTotal} pts`,
-        restaurantRef.current?.logo,
-        "adam-reward"
-      );
+      showSWNotification("🎁 Récompense activée !", `${rewardName || "Votre récompense"} est prête ! Solde restant : ${newTotal} pts`, restaurantRef.current?.logo, "adam-reward");
     };
     return () => { delete (window as any).__triggerSpentCelebration; };
   }, []);
@@ -976,11 +1167,28 @@ export default function ClientDashboard() {
     return client?.id?.slice(-4) ?? "****";
   };
 
+  // Install button label
+  const installButtonLabel = pwaInstalled || isInStandaloneMode()
+    ? "✓ Application installée"
+    : isIOS()
+    ? "📲 Ajouter à l'écran d'accueil"
+    : deferredPrompt
+    ? "📲 Installer l'application"
+    : "📲 Ajouter à l'écran d'accueil";
+
+  const installButtonDisabled = pwaInstalled || isInStandaloneMode();
+
   return (
     <div className="min-h-screen" style={{ backgroundColor: D.background, fontFamily: "'Inter', sans-serif", paddingBottom: 88 }}>
       <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
 
       {/* ── Modals ── */}
+      {showIOSInstall && (
+        <IOSInstallModal
+          primaryColor={D.primary} textColor={D.text} cardBg={D.cardBg}
+          onClose={() => setShowIOSInstall(false)}
+        />
+      )}
       {showNotifModal && (
         <NotificationPermModal
           primaryColor={D.primary} textColor={D.text} cardBg={D.cardBg}
@@ -1039,7 +1247,6 @@ export default function ClientDashboard() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
               </svg>
             </button>
-
             <div className="flex-1 flex justify-center">
               {restaurant.logo ? (
                 <Image src={restaurant.logo} alt={restaurant.name} width={40} height={40} className="rounded-full border" style={{ borderColor: D.primary }}/>
@@ -1049,8 +1256,6 @@ export default function ClientDashboard() {
                 </div>
               )}
             </div>
-
-            {/* Bell */}
             <button
               onClick={handleBellClick}
               className="p-2 rounded-full transition-all active:scale-90"
@@ -1064,18 +1269,16 @@ export default function ClientDashboard() {
 
         {/* ── Client info ── */}
         <div className="px-4 py-6 text-center border-b" style={{ borderColor: `${D.primary}20`, animation: "fadeSlideIn 0.5s ease" }}>
-          {/* مرحبا بيك {name} مرحبا بيك — name in orange */}
           <h2 style={{ fontSize: 22, fontWeight: 800, color: "#111827", margin: 0, letterSpacing: "-0.3px" }}>
-         Marhbee byk{" "}
+            Marhbee byk{" "}
             <span style={{ color: D.primary }}>{client.name}</span>
-            {" "} 
           </h2>
           <p className="text-xs mt-1.5 font-medium tracking-wider uppercase" style={{ color: `${D.text}60` }}>
             ID {getShortId()}
           </p>
         </div>
 
-        {/* ── Progress bar toward next reward ── */}
+        {/* ── Progress bar ── */}
         {nextReward && (
           <AnimSection>
             <div className="px-4 py-3 border-b" style={{ borderColor: `${D.primary}20` }}>
@@ -1142,16 +1345,13 @@ export default function ClientDashboard() {
           </div>
         </AnimSection>
 
-        {/* ── Rewards Swiper — new card design ── */}
+        {/* ── Rewards Swiper ── */}
         <AnimSection delay={100}>
           <div className="px-4 py-5 border-b" style={{ borderColor: `${D.primary}20` }}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-base font-semibold tracking-tight" style={{ color: D.text }}>Vos récompenses</h3>
-              <span className="text-xs font-semibold px-3 py-1 rounded-full" style={{ backgroundColor: `${D.primary}15`, color: D.primary }}>
-                {clientPts} pts
-              </span>
+              <span className="text-xs font-semibold px-3 py-1 rounded-full" style={{ backgroundColor: `${D.primary}15`, color: D.primary }}>{clientPts} pts</span>
             </div>
-
             {nextReward && (
               <div className="mb-5">
                 <div className="flex justify-between items-center mb-2">
@@ -1165,7 +1365,6 @@ export default function ClientDashboard() {
                 </div>
               </div>
             )}
-
             {rewards.length === 0 ? (
               <p className="text-sm text-center py-4" style={{ color: `${D.text}60` }}>Aucune récompense configurée.</p>
             ) : (
@@ -1190,15 +1389,7 @@ export default function ClientDashboard() {
                     }}
                   >
                     {rewards.map((reward, i) => (
-                      <RewardCard
-                        key={reward.id}
-                        reward={reward}
-                        clientPts={clientPts}
-                        primaryColor={D.primary}
-                        cardBg={D.cardBg}
-                        textColor={D.text}
-                        index={i}
-                      />
+                      <RewardCard key={reward.id} reward={reward} clientPts={clientPts} primaryColor={D.primary} cardBg={D.cardBg} textColor={D.text} index={i}/>
                     ))}
                   </div>
                 </div>
@@ -1398,13 +1589,17 @@ export default function ClientDashboard() {
           <div className="px-4 py-5 border-t" style={{ borderColor: `${D.primary}20`, backgroundColor: D.background }}>
             <button
               onClick={handleAddToHomeScreen}
+              disabled={installButtonDisabled}
               className="w-full py-4 border-2 rounded-2xl font-semibold text-sm flex items-center justify-center gap-2 transition-all active:scale-95"
-              style={{ borderColor: D.primary, color: D.primary, backgroundColor: `${D.primary}0d`, cursor: "pointer" }}
+              style={{
+                borderColor: installButtonDisabled ? `${D.primary}40` : D.primary,
+                color: installButtonDisabled ? `${D.primary}70` : D.primary,
+                backgroundColor: installButtonDisabled ? `${D.primary}06` : `${D.primary}0d`,
+                cursor: installButtonDisabled ? "default" : "pointer",
+                opacity: installButtonDisabled ? 0.7 : 1,
+              }}
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
-              </svg>
-              Ajouter à l'écran d'accueil
+              {installButtonLabel}
             </button>
             <p className="text-xs text-center mt-3" style={{ color: `${D.text}50` }}>Powered by adam · Mentions légales</p>
           </div>
@@ -1413,40 +1608,26 @@ export default function ClientDashboard() {
 
       {/* ── Fixed bottom QR button ── */}
       {client && (
-        <div
-          style={{
-            position: "fixed",
-            bottom: 0,
-            left: 0,
-            right: 0,
-            zIndex: 30,
-            display: "flex",
-            justifyContent: "center",
-            padding: "12px 16px 20px",
-            background: "linear-gradient(to top, rgba(255,255,255,0.98) 60%, rgba(255,255,255,0))",
-            pointerEvents: "none",
-          }}
-        >
+        <div style={{
+          position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 30,
+          display: "flex", justifyContent: "center",
+          padding: "12px 16px 20px",
+          background: "linear-gradient(to top, rgba(255,255,255,0.98) 60%, rgba(255,255,255,0))",
+          pointerEvents: "none",
+        }}>
           <button
             onClick={() => setShowQR(true)}
             style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
+              display: "flex", alignItems: "center", gap: 10,
               padding: "15px 36px",
-              backgroundColor: D.primary,
-              color: "#fff",
-              border: "none",
-              borderRadius: 20,
-              fontWeight: 700,
-              fontSize: 16,
-              letterSpacing: "0.01em",
-              cursor: "pointer",
+              backgroundColor: D.primary, color: "#fff",
+              border: "none", borderRadius: 20,
+              fontWeight: 700, fontSize: 16,
+              letterSpacing: "0.01em", cursor: "pointer",
               pointerEvents: "all",
               boxShadow: `0 8px 28px ${D.primary}55, 0 2px 8px rgba(0,0,0,0.12)`,
               animation: "floatPulse 3s ease-in-out infinite",
-              maxWidth: "448px",
-              width: "calc(100% - 48px)",
+              maxWidth: "448px", width: "calc(100% - 48px)",
               justifyContent: "center",
             }}
             aria-label="Afficher mon code QR"
@@ -1477,10 +1658,6 @@ export default function ClientDashboard() {
           to   { opacity: 1; transform: translateY(0); }
         }
         @keyframes spin { to { transform: rotate(360deg); } }
-        @keyframes blink {
-          0%, 100% { opacity: 1; }
-          50%       { opacity: 0; }
-        }
         @keyframes bellDot {
           0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(34,197,94,0.5); }
           50%       { transform: scale(1.15); box-shadow: 0 0 0 5px rgba(34,197,94,0); }
@@ -1494,38 +1671,32 @@ export default function ClientDashboard() {
           to   { box-shadow: 0 0 14px rgba(254,85,2,0.7); }
         }
         @keyframes floatPulse {
-          0%, 100% { transform: translateY(0); box-shadow: 0 8px 28px rgba(254,85,2,0.45), 0 2px 8px rgba(0,0,0,0.12); }
-          50%       { transform: translateY(-3px); box-shadow: 0 14px 36px rgba(254,85,2,0.55), 0 4px 12px rgba(0,0,0,0.14); }
+          0%, 100% { transform: translateY(0); }
+          50%       { transform: translateY(-3px); }
         }
 
-        /* ── Celebration keyframes ── */
+        /* ── Celebration ── */
         @keyframes celebFadeIn {
           from { opacity: 0; }
           to   { opacity: 1; }
         }
         @keyframes celebCardIn {
-          from { opacity: 0; transform: scale(0.72) translateY(28px); }
+          from { opacity: 0; transform: scale(0.75) translateY(32px); }
           to   { opacity: 1; transform: scale(1) translateY(0); }
         }
-        @keyframes confettiFall {
-          0%   { transform: translateY(0) rotate(0deg) scale(1); opacity: 1; }
-          80%  { opacity: 1; }
-          100% { transform: translateY(110vh) rotate(720deg) scale(0.4); opacity: 0; }
-        }
-        @keyframes pulseRing {
-          0%   { transform: scale(0.82); opacity: 0.6; }
-          70%  { transform: scale(1.35); opacity: 0; }
-          100% { transform: scale(0.82); opacity: 0; }
-        }
-        @keyframes coinBounce {
-          0%   { transform: scale(0.35) rotate(-18deg); opacity: 0; }
-          70%  { transform: scale(1.18) rotate(4deg); opacity: 1; }
-          100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        @keyframes iconPop {
+          from { transform: scale(0) rotate(-20deg); opacity: 0; }
+          60%  { transform: scale(1.15) rotate(5deg); opacity: 1; }
+          to   { transform: scale(1) rotate(0deg); opacity: 1; }
         }
         @keyframes numberPop {
           0%   { transform: scale(1); }
-          50%  { transform: scale(1.1); }
+          50%  { transform: scale(1.08); }
           100% { transform: scale(1); }
+        }
+        @keyframes particleBurst {
+          0%   { transform: translate(0, 0) scale(1); opacity: 1; }
+          100% { transform: translate(var(--vx, 0px), 120px) scale(0); opacity: 0; }
         }
       `}</style>
     </div>

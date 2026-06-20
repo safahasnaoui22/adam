@@ -1,24 +1,37 @@
-// sw.js — Adam Loyalty Service Worker v3
-// Fixed: "Failed to convert value to Response" error
+// sw.js — Adam Loyalty Service Worker v4
+// Robust push notifications + background delivery
 
-const CACHE_NAME = "adam-v3";
+const CACHE_NAME = "adam-v4";
+const OFFLINE_URL = "/offline";
 
 // ── Install ───────────────────────────────────────────────────────────
 self.addEventListener("install", (event) => {
-  // Skip waiting immediately — don't let old SW block new one
   self.skipWaiting();
+  // Pre-cache the offline fallback page if it exists
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) =>
+      cache.addAll(["/icons/icon-192x192.png", "/icons/icon-72x72.png"]).catch(() => {})
+    )
+  );
 });
 
 // ── Activate ──────────────────────────────────────────────────────────
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys()
-      .then((keys) => Promise.all(keys.map((key) => caches.delete(key))))
+    caches
+      .keys()
+      .then((keys) =>
+        Promise.all(
+          keys
+            .filter((key) => key !== CACHE_NAME)
+            .map((key) => caches.delete(key))
+        )
+      )
       .then(() => self.clients.claim())
   );
 });
 
-// ── FETCH — fixed, no undefined Response bug ──────────────────────────
+// ── FETCH — network-first, cache fallback ─────────────────────────────
 self.addEventListener("fetch", (event) => {
   const { request } = event;
 
@@ -29,97 +42,160 @@ self.addEventListener("fetch", (event) => {
   // Never intercept API calls — always go to network
   if (request.url.includes("/api/")) return;
 
-  // For everything else: try network, fall back to cache
-  // IMPORTANT: always return a valid Response, never undefined
+  // Chrome DevTools: skip extension requests
+  if (request.url.startsWith("chrome-extension://")) return;
+
   event.respondWith(
     fetch(request)
       .then((networkResponse) => {
-        // Cache a clone of successful responses
-        if (networkResponse && networkResponse.ok) {
+        // Only cache successful same-origin or CORS responses
+        if (
+          networkResponse &&
+          networkResponse.ok &&
+          (networkResponse.type === "basic" || networkResponse.type === "cors")
+        ) {
           const clone = networkResponse.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+          caches
+            .open(CACHE_NAME)
+            .then((cache) => cache.put(request, clone))
+            .catch(() => {});
         }
         return networkResponse;
       })
-      .catch(() => {
-        // Network failed — try cache
-        return caches.match(request).then((cached) => {
-          if (cached) return cached;
-          // Must return a valid Response — never undefined
-          return new Response("Offline - content not available", {
-            status: 503,
-            statusText: "Service Unavailable",
-            headers: { "Content-Type": "text/plain" },
-          });
-        });
-      })
+      .catch(() =>
+        caches.match(request).then(
+          (cached) =>
+            cached ||
+            new Response("Offline - content not available", {
+              status: 503,
+              statusText: "Service Unavailable",
+              headers: { "Content-Type": "text/plain" },
+            })
+        )
+      )
   );
 });
 
 // ── Push notifications ────────────────────────────────────────────────
+// This fires when a push event arrives from the server (even when app is closed).
 self.addEventListener("push", (event) => {
-  let data = {
+  let payload = {
     title: "Adam Fidélité",
     body: "Vous avez reçu des points !",
     icon: "/icons/icon-192x192.png",
-    badge: "/icons/icon-192x192.png",
+    badge: "/icons/icon-72x72.png",
     tag: "adam-points",
+    url: "/client/dashboard",
     data: {},
   };
 
   if (event.data) {
-    try { data = { ...data, ...event.data.json() }; }
-    catch { data.body = event.data.text(); }
+    try {
+      const incoming = event.data.json();
+      payload = { ...payload, ...incoming };
+    } catch {
+      payload.body = event.data.text();
+    }
   }
 
+  // IMPORTANT: event.waitUntil keeps the SW alive until the notification is shown.
+  // Without this, the SW may be killed before showNotification completes.
   event.waitUntil(
-    self.registration.showNotification(data.title, {
-      body: data.body,
-      icon: data.icon || "/icons/icon-192x192.png",
-      badge: data.badge || "/icons/icon-192x192.png",
-      tag: data.tag || "adam-points",
-      renotify: true,
-      vibrate: [200, 100, 200, 100, 200],
-      data: data.data || {},
-      actions: [
-        { action: "open", title: "Voir mon solde" },
-        { action: "dismiss", title: "Fermer" },
-      ],
-    })
+    self.registration
+      .showNotification(payload.title, {
+        body: payload.body,
+        icon: payload.icon,
+        badge: payload.badge,
+        tag: payload.tag,
+        renotify: true,
+        requireInteraction: false,
+        vibrate: [200, 100, 200, 100, 200],
+        // Store URL in notification data so we can open it on click
+        data: { url: payload.url, ...payload.data },
+        actions: [
+          { action: "open", title: "Voir mon solde" },
+          { action: "dismiss", title: "Fermer" },
+        ],
+      })
+      .catch((err) => {
+        // Log but don't let errors break the push handler
+        console.error("[SW push] showNotification failed:", err);
+      })
   );
 });
 
 // ── Notification click ────────────────────────────────────────────────
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
+
   if (event.action === "dismiss") return;
 
-  const urlToOpen = event.notification.data?.url || "/client/dashboard";
+  // Determine the URL to open
+  const targetUrl =
+    event.notification.data?.url ||
+    "/client/dashboard";
 
   event.waitUntil(
     self.clients
       .matchAll({ type: "window", includeUncontrolled: true })
-      .then((clients) => {
-        for (const client of clients) {
-          if (client.url.includes("/client/dashboard") && "focus" in client) {
+      .then((clientList) => {
+        // Try to focus an existing window that already has the dashboard open
+        for (const client of clientList) {
+          const clientUrl = new URL(client.url);
+          if (
+            clientUrl.pathname.includes("/client/dashboard") &&
+            "focus" in client
+          ) {
             return client.focus();
           }
         }
-        if (self.clients.openWindow) return self.clients.openWindow(urlToOpen);
+        // No matching window found — open a new one
+        if (self.clients.openWindow) {
+          return self.clients.openWindow(targetUrl);
+        }
       })
   );
 });
 
-// ── Local notification from page ──────────────────────────────────────
+// ── Notification close (user swiped away) ────────────────────────────
+self.addEventListener("notificationclose", (_event) => {
+  // Optional: send analytics ping here
+});
+
+// ── Message from page: show local notification ────────────────────────
+// Called by showSWNotification() in the dashboard when the app IS open.
 self.addEventListener("message", (event) => {
-  if (event.data?.type === "SHOW_NOTIFICATION") {
+  if (!event.data) return;
+
+  if (event.data.type === "SHOW_NOTIFICATION") {
     const { title, body, icon, tag } = event.data;
-    self.registration.showNotification(title || "Adam Fidélité", {
-      body: body || "",
-      icon: icon || "/icons/icon-192x192.png",
-      badge: "/icons/icon-192x192.png",
-      tag: tag || "adam-local",
-      vibrate: [150, 80, 150],
-    });
+
+    // Only show if permission granted; the page already checks this,
+    // but guard here too to avoid unhandled promise rejections.
+    if (self.Notification && self.Notification.permission !== "granted") return;
+
+    event.waitUntil(
+      self.registration
+        .showNotification(title || "Adam Fidélité", {
+          body: body || "",
+          icon: icon || "/icons/icon-192x192.png",
+          badge: "/icons/icon-72x72.png",
+          tag: tag || "adam-local",
+          vibrate: [150, 80, 150],
+          data: { url: "/client/dashboard" },
+        })
+        .catch((err) => console.warn("[SW message] showNotification failed:", err))
+    );
   }
 });
+
+// ── Background Sync (optional: retry failed point claims) ────────────
+self.addEventListener("sync", (event) => {
+  if (event.tag === "retry-claim") {
+    event.waitUntil(retrySyncQueue());
+  }
+});
+
+async function retrySyncQueue() {
+  // Implement if you store failed API calls in IndexedDB for retry
+}
