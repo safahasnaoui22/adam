@@ -1,10 +1,27 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import { QRCodeSVG } from "qrcode.react";
 import { getPatternStyle } from "@/lib/patterns";
+
+// ── FIX 1: Capture beforeinstallprompt at MODULE LEVEL (outside React) ──
+// This fires very early, before React hydrates. Storing it in useState
+// causes a race condition — the event fires and the listener isn't attached yet.
+let _deferredInstallPrompt: any = null;
+
+if (typeof window !== "undefined") {
+  window.addEventListener("beforeinstallprompt", (e: Event) => {
+    e.preventDefault();
+    _deferredInstallPrompt = e;
+  });
+
+  window.addEventListener("appinstalled", () => {
+    _deferredInstallPrompt = null;
+    // isInStandaloneMode() will return true on next interaction
+  });
+}
 
 // ── useScrollReveal hook ───────────────────────────────────────────────
 function useScrollReveal(options?: IntersectionObserverInit) {
@@ -14,7 +31,9 @@ function useScrollReveal(options?: IntersectionObserverInit) {
     const el = ref.current;
     if (!el) return;
     const observer = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) { setVisible(true); observer.disconnect(); } },
+      ([entry]) => {
+        if (entry.isIntersecting) { setVisible(true); observer.disconnect(); }
+      },
       { threshold: 0.12, ...options }
     );
     observer.observe(el);
@@ -97,7 +116,17 @@ const IconQR = ({ size = 22, color = "currentColor" }: { size?: number; color?: 
   </svg>
 );
 
-const IconBell = ({ size = 20, color = "currentColor", active = false, pulsing = false }: { size?: number; color?: string; active?: boolean; pulsing?: boolean }) => (
+const IconBell = ({
+  size = 20,
+  color = "currentColor",
+  active = false,
+  pulsing = false,
+}: {
+  size?: number;
+  color?: string;
+  active?: boolean;
+  pulsing?: boolean;
+}) => (
   <span style={{ position: "relative", display: "inline-flex" }}>
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
@@ -139,19 +168,31 @@ const IconPointsCoin = ({ size = 36, primaryColor }: { size?: number; primaryCol
 // ── iOS/Android detection ─────────────────────────────────────────────
 function isIOS(): boolean {
   if (typeof navigator === "undefined") return false;
-  return /iphone|ipad|ipod/i.test(navigator.userAgent) || 
-    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  return (
+    /iphone|ipad|ipod/i.test(navigator.userAgent) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
+  );
 }
 
 function isInStandaloneMode(): boolean {
   if (typeof window === "undefined") return false;
-  return (window.navigator as any).standalone === true || 
-    window.matchMedia("(display-mode: standalone)").matches;
+  return (
+    (window.navigator as any).standalone === true ||
+    window.matchMedia("(display-mode: standalone)").matches
+  );
 }
 
 // ── iOS Install Guide Modal ───────────────────────────────────────────
-function IOSInstallModal({ primaryColor, textColor, cardBg, onClose }: {
-  primaryColor: string; textColor: string; cardBg: string; onClose: () => void;
+function IOSInstallModal({
+  primaryColor,
+  textColor,
+  cardBg,
+  onClose,
+}: {
+  primaryColor: string;
+  textColor: string;
+  cardBg: string;
+  onClose: () => void;
 }) {
   return (
     <div
@@ -174,14 +215,16 @@ function IOSInstallModal({ primaryColor, textColor, cardBg, onClose }: {
         }}
       >
         <div style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: `${textColor}20`, margin: "0 auto 24px" }}/>
-        
+
         <div style={{ textAlign: "center", marginBottom: 28 }}>
           <div style={{
             width: 64, height: 64, borderRadius: 16,
             backgroundColor: `${primaryColor}15`,
             display: "flex", alignItems: "center", justifyContent: "center",
             margin: "0 auto 16px", fontSize: 32,
-          }}>📲</div>
+          }}>
+            📲
+          </div>
           <h3 style={{ fontSize: 20, fontWeight: 700, color: textColor, margin: "0 0 8px" }}>
             Ajouter à l'écran d'accueil
           </h3>
@@ -204,7 +247,8 @@ function IOSInstallModal({ primaryColor, textColor, cardBg, onClose }: {
               display: "flex", alignItems: "center", justifyContent: "center",
               flexShrink: 0,
             }}>
-              <span style={{ fontSize: 18 }}>1</span>
+              {/* FIX 4: always white text on colored circle */}
+              <span style={{ fontSize: 16, fontWeight: 700, color: "white" }}>1</span>
             </div>
             <div style={{ flex: 1 }}>
               <p style={{ fontSize: 13, fontWeight: 600, color: textColor, margin: "0 0 3px" }}>
@@ -212,7 +256,6 @@ function IOSInstallModal({ primaryColor, textColor, cardBg, onClose }: {
               </p>
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                 <span style={{ fontSize: 11, color: `${textColor}60` }}>En bas de l'écran Safari :</span>
-                {/* Safari share icon */}
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={primaryColor} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/>
                   <polyline points="16 6 12 2 8 6"/>
@@ -235,7 +278,8 @@ function IOSInstallModal({ primaryColor, textColor, cardBg, onClose }: {
               display: "flex", alignItems: "center", justifyContent: "center",
               flexShrink: 0,
             }}>
-              <span style={{ fontSize: 18 }}>2</span>
+              {/* FIX 4: always white text on colored circle */}
+              <span style={{ fontSize: 16, fontWeight: 700, color: "white" }}>2</span>
             </div>
             <div style={{ flex: 1 }}>
               <p style={{ fontSize: 13, fontWeight: 600, color: textColor, margin: "0 0 3px" }}>
@@ -303,10 +347,8 @@ async function subscribeToPush(clientId: string): Promise<boolean> {
     const permission = await Notification.requestPermission();
     if (permission !== "granted") return false;
 
-    // Wait for SW to be fully ready
     const registration = await navigator.serviceWorker.ready;
 
-    // Unsubscribe any stale subscription first
     const existing = await registration.pushManager.getSubscription();
     if (existing) await existing.unsubscribe();
 
@@ -348,8 +390,12 @@ async function unsubscribeFromPush(): Promise<void> {
   }
 }
 
-// Show notification via SW (works when app is open; push API handles background)
-async function showSWNotification(title: string, body: string, icon?: string, tag?: string): Promise<void> {
+async function showSWNotification(
+  title: string,
+  body: string,
+  icon?: string,
+  tag?: string
+): Promise<void> {
   if (!("serviceWorker" in navigator)) return;
   try {
     const registration = await navigator.serviceWorker.ready;
@@ -367,7 +413,7 @@ async function showSWNotification(title: string, body: string, icon?: string, ta
   }
 }
 
-// ── Redesigned Points Celebration Overlay ─────────────────────────────
+// ── Points Celebration Overlay ────────────────────────────────────────
 type CelebrationMode = "earned" | "spent";
 
 type PointsCelebrationProps = {
@@ -382,8 +428,14 @@ type PointsCelebrationProps = {
 };
 
 function PointsCelebration({
-  pointsEarned, newTotal, primaryColor, textColor, cardBg,
-  mode = "earned", rewardName, onClose,
+  pointsEarned,
+  newTotal,
+  primaryColor,
+  textColor,
+  cardBg,
+  mode = "earned",
+  rewardName,
+  onClose,
 }: PointsCelebrationProps) {
   const [displayCount, setDisplayCount] = useState(0);
   const [phase, setPhase] = useState<"enter" | "count" | "done">("enter");
@@ -435,7 +487,6 @@ function PointsCelebration({
   }, [onClose]);
 
   const accentColor = isEarned ? primaryColor : "#7c3aed";
-  const emoji = isEarned ? "✦" : "🎁";
 
   return (
     <div
@@ -448,7 +499,6 @@ function PointsCelebration({
       }}
       onClick={onClose}
     >
-      {/* Confetti particles */}
       <div style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none" }}>
         {particles.map((p, i) => (
           <div key={i} style={{
@@ -465,7 +515,6 @@ function PointsCelebration({
         ))}
       </div>
 
-      {/* Card */}
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
@@ -476,7 +525,6 @@ function PointsCelebration({
           position: "relative",
         }}
       >
-        {/* Top band */}
         <div style={{
           backgroundColor: accentColor,
           padding: "32px 28px 40px",
@@ -484,19 +532,16 @@ function PointsCelebration({
           position: "relative",
           overflow: "hidden",
         }}>
-          {/* Decorative circles */}
           <div style={{ position: "absolute", top: -20, right: -20, width: 100, height: 100, borderRadius: "50%", backgroundColor: "rgba(255,255,255,0.08)" }}/>
           <div style={{ position: "absolute", bottom: -30, left: -15, width: 80, height: 80, borderRadius: "50%", backgroundColor: "rgba(255,255,255,0.06)" }}/>
 
           <div style={{ position: "relative", zIndex: 1 }}>
-            {/* Icon circle */}
             <div style={{
               width: 64, height: 64, borderRadius: "50%",
               backgroundColor: "rgba(255,255,255,0.2)",
               border: "2px solid rgba(255,255,255,0.35)",
               display: "flex", alignItems: "center", justifyContent: "center",
-              margin: "0 auto 16px",
-              fontSize: 28,
+              margin: "0 auto 16px", fontSize: 28,
               animation: phase === "enter" ? "iconPop 0.5s cubic-bezier(0.34,1.56,0.64,1)" : "none",
             }}>
               {isEarned ? (
@@ -506,7 +551,6 @@ function PointsCelebration({
               )}
             </div>
 
-            {/* Label */}
             <p style={{
               fontSize: 11, fontWeight: 700, letterSpacing: "0.12em",
               textTransform: "uppercase", color: "rgba(255,255,255,0.7)",
@@ -515,10 +559,7 @@ function PointsCelebration({
               {isEarned ? "Points gagnés" : "Récompense utilisée"}
             </p>
 
-            {/* Big number */}
-            <div style={{
-              display: "flex", alignItems: "baseline", justifyContent: "center", gap: 4,
-            }}>
+            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center", gap: 4 }}>
               <span style={{
                 fontSize: 68, fontWeight: 800, lineHeight: 1,
                 color: "white",
@@ -543,13 +584,7 @@ function PointsCelebration({
           </div>
         </div>
 
-        {/* Bottom section */}
-        <div style={{
-          backgroundColor: cardBg,
-          padding: "20px 24px 24px",
-          textAlign: "center",
-        }}>
-          {/* New balance */}
+        <div style={{ backgroundColor: cardBg, padding: "20px 24px 24px", textAlign: "center" }}>
           <div style={{
             display: "flex", alignItems: "center", justifyContent: "space-between",
             backgroundColor: `${accentColor}08`,
@@ -558,10 +593,7 @@ function PointsCelebration({
             border: `1px solid ${accentColor}18`,
           }}>
             <span style={{ fontSize: 13, color: `${textColor}60`, fontWeight: 500 }}>Nouveau solde</span>
-            <span style={{
-              fontSize: 22, fontWeight: 800, color: accentColor,
-              fontVariantNumeric: "tabular-nums",
-            }}>
+            <span style={{ fontSize: 22, fontWeight: 800, color: accentColor, fontVariantNumeric: "tabular-nums" }}>
               {newTotal} pts
             </span>
           </div>
@@ -573,14 +605,13 @@ function PointsCelebration({
               backgroundColor: accentColor,
               border: "none", borderRadius: 14,
               color: "#fff", fontWeight: 700, fontSize: 15,
-              cursor: "pointer",
-              letterSpacing: "0.01em",
+              cursor: "pointer", letterSpacing: "0.01em",
             }}
           >
             {isEarned ? "Super, merci ! 🎉" : "Profitez bien ! 🎁"}
           </button>
 
-          <p style={{ fontSize: 11, color: `${textColor}30`, marginTop: 10, margin: "10px 0 0" }}>
+          <p style={{ fontSize: 11, color: `${textColor}30`, margin: "10px 0 0" }}>
             Se ferme automatiquement…
           </p>
         </div>
@@ -621,7 +652,7 @@ const BONUS_ACTIONS: BonusAction[] = [
   { id: "twitter", label: "X (Twitter)", urlKey: "twitterUrl", starsKey: "twitterBonusStars", icon: <IconX size={20} />, hint: "Suivez notre compte X", actionLabel: "Suivre le compte X" },
 ];
 
-// ── Bonus Modal Component ─────────────────────────────────────────────
+// ── Bonus Modal ───────────────────────────────────────────────────────
 type BonusModalProps = {
   action: BonusAction;
   pointsValue: number;
@@ -649,7 +680,9 @@ function BonusModal({ action, pointsValue, primaryColor, textColor, cardBg, onCo
     }, 1000);
   };
 
-  useEffect(() => { return () => { if (timerRef.current) clearInterval(timerRef.current); }; }, []);
+  useEffect(() => {
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, []);
 
   return (
     <div
@@ -712,7 +745,9 @@ function BonusModal({ action, pointsValue, primaryColor, textColor, cardBg, onCo
 }
 
 // ── Notification Permission Modal ─────────────────────────────────────
-function NotificationPermModal({ primaryColor, textColor, cardBg, onAllow, onDeny }: {
+function NotificationPermModal({
+  primaryColor, textColor, cardBg, onAllow, onDeny,
+}: {
   primaryColor: string; textColor: string; cardBg: string; onAllow: () => void; onDeny: () => void;
 }) {
   return (
@@ -742,7 +777,9 @@ function NotificationPermModal({ primaryColor, textColor, cardBg, onAllow, onDen
 }
 
 // ── QR Modal ──────────────────────────────────────────────────────────
-function QRModal({ client, primaryColor, textColor, cardBg, onClose }: {
+function QRModal({
+  client, primaryColor, textColor, cardBg, onClose,
+}: {
   client: any; primaryColor: string; textColor: string; cardBg: string; onClose: () => void;
 }) {
   return (
@@ -777,7 +814,15 @@ function QRModal({ client, primaryColor, textColor, cardBg, onClose }: {
 }
 
 // ── AnimSection ───────────────────────────────────────────────────────
-function AnimSection({ children, delay = 0, style = {} }: { children: React.ReactNode; delay?: number; style?: React.CSSProperties }) {
+function AnimSection({
+  children,
+  delay = 0,
+  style = {},
+}: {
+  children: React.ReactNode;
+  delay?: number;
+  style?: React.CSSProperties;
+}) {
   const { ref, visible } = useScrollReveal();
   return (
     <div ref={ref} style={{
@@ -792,7 +837,9 @@ function AnimSection({ children, delay = 0, style = {} }: { children: React.Reac
 }
 
 // ── Reward Card ───────────────────────────────────────────────────────
-function RewardCard({ reward, clientPts, primaryColor, cardBg, textColor, index }: {
+function RewardCard({
+  reward, clientPts, primaryColor, cardBg, textColor, index,
+}: {
   reward: any; clientPts: number; primaryColor: string; cardBg: string; textColor: string; index: number;
 }) {
   const unlocked = clientPts >= reward.pts;
@@ -856,12 +903,13 @@ export default function ClientDashboard() {
   const [showAbout, setShowAbout] = useState(false);
   const [showIOSInstall, setShowIOSInstall] = useState(false);
   const [activeTab, setActiveTab] = useState("rewards");
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [patternStyle, setPatternStyle] = useState<React.CSSProperties>({});
   const [completedBonuses, setCompletedBonuses] = useState<string[]>([]);
   const [claimingBonus, setClaimingBonus] = useState<string | null>(null);
   const [activeBonusModal, setActiveBonusModal] = useState<BonusAction | null>(null);
-  const [celebration, setCelebration] = useState<{ pointsEarned: number; newTotal: number; mode?: "earned" | "spent"; rewardName?: string } | null>(null);
+  const [celebration, setCelebration] = useState<{
+    pointsEarned: number; newTotal: number; mode?: "earned" | "spent"; rewardName?: string;
+  } | null>(null);
   const [notifPermission, setNotifPermission] = useState<NotificationPermission | "unknown">("unknown");
   const [showNotifModal, setShowNotifModal] = useState(false);
   const [notifActive, setNotifActive] = useState(false);
@@ -875,7 +923,7 @@ export default function ClientDashboard() {
   const restaurantRef = useRef<any>(null);
   useEffect(() => { restaurantRef.current = restaurant; }, [restaurant]);
 
-  // Check if already installed as PWA
+  // Check if already installed as PWA on mount
   useEffect(() => {
     if (isInStandaloneMode()) setPwaInstalled(true);
     if ("Notification" in window) {
@@ -927,17 +975,22 @@ export default function ClientDashboard() {
     finally { setLoading(false); }
   };
 
+  // ── FIX 5: Correct redirect when launched from home screen ──────────
+  // When opened from the installed PWA icon, there are NO query params.
+  // We must use localStorage's restaurantId, not the URL param.
   useEffect(() => {
     const clientId = localStorage.getItem("clientId");
-    const clientName = localStorage.getItem("clientName");
     const storedRestaurantId = localStorage.getItem("restaurantId");
-    if (clientId && clientName && storedRestaurantId) {
+
+    if (clientId && storedRestaurantId) {
       fetchClientData(clientId);
       fetchRestaurantData(storedRestaurantId);
     } else {
-      router.push(`/client/login?restaurantId=${restaurantId || ""}`);
+      // Prefer storedRestaurantId, fall back to URL param, then empty string
+      const rid = storedRestaurantId || restaurantId || "";
+      router.push(`/client/login?restaurantId=${rid}`);
     }
-  }, [restaurantId, router]);
+  }, []); // intentionally empty deps — runs once on mount
 
   useEffect(() => {
     const handleVisibilityChange = () => {
@@ -959,22 +1012,6 @@ export default function ClientDashboard() {
     }
   }, []);
 
-  // Capture beforeinstallprompt for Android
-  useEffect(() => {
-    const handler = (e: Event) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-    };
-    window.addEventListener("beforeinstallprompt", handler);
-    window.addEventListener("appinstalled", () => {
-      setPwaInstalled(true);
-      setDeferredPrompt(null);
-    });
-    return () => {
-      window.removeEventListener("beforeinstallprompt", handler);
-    };
-  }, []);
-
   const handleRefresh = async () => {
     setRefreshing(true);
     const clientId = localStorage.getItem("clientId");
@@ -984,33 +1021,37 @@ export default function ClientDashboard() {
     setTimeout(() => setRefreshing(false), 800);
   };
 
-  // ── Add to Home Screen — smart per-platform ───────────────────────
+  // ── FIX 2: Add to Home Screen — uses module-level _deferredInstallPrompt ──
   const handleAddToHomeScreen = async () => {
-    if (pwaInstalled || isInStandaloneMode()) {
-      // Already installed — nothing to do
-      return;
-    }
+    // Already installed — nothing to do
+    if (pwaInstalled || isInStandaloneMode()) return;
 
     const iOS = isIOS();
 
     if (iOS) {
-      // iOS Safari: show native guide
+      // iOS Safari: show the native guide modal
       setShowIOSInstall(true);
       return;
     }
 
-    if (deferredPrompt) {
-      // Android/Chrome: trigger native install prompt
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === "accepted") {
-        setPwaInstalled(true);
+    if (_deferredInstallPrompt) {
+      // Android / Chrome: trigger the native install prompt
+      try {
+        _deferredInstallPrompt.prompt();
+        const { outcome } = await _deferredInstallPrompt.userChoice;
+        if (outcome === "accepted") {
+          setPwaInstalled(true);
+        }
+      } catch (err) {
+        console.error("[install] prompt failed:", err);
+      } finally {
+        // Consume the prompt — it can only be used once
+        _deferredInstallPrompt = null;
       }
-      setDeferredPrompt(null);
       return;
     }
 
-    // Fallback for Android browsers without beforeinstallprompt (e.g. Firefox)
+    // Fallback: browser doesn't support beforeinstallprompt (e.g. Firefox Android)
     setShowIOSInstall(true);
   };
 
@@ -1052,7 +1093,10 @@ export default function ClientDashboard() {
 
   const handleOpenBonusModal = (action: BonusAction) => {
     if (completedBonuses.includes(action.id)) return;
-    if (!restaurant?.[action.urlKey]) { alert("Ce lien n'est pas encore configuré par le restaurant."); return; }
+    if (!restaurant?.[action.urlKey]) {
+      alert("Ce lien n'est pas encore configuré par le restaurant.");
+      return;
+    }
     (window as any).__bonusUrl = restaurant[action.urlKey];
     setActiveBonusModal(action);
   };
@@ -1075,7 +1119,12 @@ export default function ClientDashboard() {
         setActiveBonusModal(null);
         setTimeout(() => {
           setCelebration({ pointsEarned: gained, newTotal, mode: "earned" });
-          showSWNotification("⭐ Bonus gagné !", `+${gained} points pour ${activeBonusModal.label} ! Solde : ${newTotal} pts`, restaurantRef.current?.logo, "adam-bonus");
+          showSWNotification(
+            "⭐ Bonus gagné !",
+            `+${gained} points pour ${activeBonusModal.label} ! Solde : ${newTotal} pts`,
+            restaurantRef.current?.logo,
+            "adam-bonus"
+          );
         }, 350);
       } else {
         alert(data.error || "Une erreur est survenue. Réessayez plus tard.");
@@ -1093,7 +1142,12 @@ export default function ClientDashboard() {
   useEffect(() => {
     (window as any).__triggerSpentCelebration = (pts: number, newTotal: number, rewardName?: string) => {
       setCelebration({ pointsEarned: pts, newTotal, mode: "spent", rewardName });
-      showSWNotification("🎁 Récompense activée !", `${rewardName || "Votre récompense"} est prête ! Solde restant : ${newTotal} pts`, restaurantRef.current?.logo, "adam-reward");
+      showSWNotification(
+        "🎁 Récompense activée !",
+        `${rewardName || "Votre récompense"} est prête ! Solde restant : ${newTotal} pts`,
+        restaurantRef.current?.logo,
+        "adam-reward"
+      );
     };
     return () => { delete (window as any).__triggerSpentCelebration; };
   }, []);
@@ -1158,7 +1212,9 @@ export default function ClientDashboard() {
   const availableBonuses = BONUS_ACTIONS.filter((action) => restaurant[action.urlKey]);
   const completedCount = availableBonuses.filter((a) => completedBonuses.includes(a.id)).length;
   const totalBonusPoints = availableBonuses.reduce((sum, a) => sum + (restaurant[a.starsKey] || 0), 0);
-  const earnedBonusPoints = availableBonuses.filter((a) => completedBonuses.includes(a.id)).reduce((sum, a) => sum + (restaurant[a.starsKey] || 0), 0);
+  const earnedBonusPoints = availableBonuses
+    .filter((a) => completedBonuses.includes(a.id))
+    .reduce((sum, a) => sum + (restaurant[a.starsKey] || 0), 0);
 
   const getShortId = () => {
     if (client?.customerId?.includes("-")) {
@@ -1168,16 +1224,17 @@ export default function ClientDashboard() {
     return client?.id?.slice(-4) ?? "****";
   };
 
-  // Install button label
-  const installButtonLabel = pwaInstalled || isInStandaloneMode()
+  // ── Install button label ───────────────────────────────────────────
+  const alreadyInstalled = pwaInstalled || isInStandaloneMode();
+  const installButtonLabel = alreadyInstalled
     ? "✓ Application installée"
     : isIOS()
     ? "📲 Ajouter à l'écran d'accueil"
-    : deferredPrompt
+    : _deferredInstallPrompt
     ? "📲 Installer l'application"
     : "📲 Ajouter à l'écran d'accueil";
 
-  const installButtonDisabled = pwaInstalled || isInStandaloneMode();
+  const installButtonDisabled = alreadyInstalled;
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: D.background, fontFamily: "'Inter', sans-serif", paddingBottom: 88 }}>
@@ -1243,7 +1300,12 @@ export default function ClientDashboard() {
             </div>
           )}
           <div className="px-4 py-3 flex items-center justify-between border-b" style={{ borderColor: `${D.primary}20` }}>
-            <button onClick={handleRefresh} className="p-2 rounded-full transition-colors" style={{ background: "none", border: "none", cursor: "pointer" }} aria-label="Actualiser">
+            <button
+              onClick={handleRefresh}
+              className="p-2 rounded-full transition-colors"
+              style={{ background: "none", border: "none", cursor: "pointer" }}
+              aria-label="Actualiser"
+            >
               <svg className={`w-5 h-5 ${refreshing ? "animate-spin" : ""}`} fill="none" stroke={D.text} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
               </svg>
@@ -1390,19 +1452,42 @@ export default function ClientDashboard() {
                     }}
                   >
                     {rewards.map((reward, i) => (
-                      <RewardCard key={reward.id} reward={reward} clientPts={clientPts} primaryColor={D.primary} cardBg={D.cardBg} textColor={D.text} index={i}/>
+                      <RewardCard
+                        key={reward.id}
+                        reward={reward}
+                        clientPts={clientPts}
+                        primaryColor={D.primary}
+                        cardBg={D.cardBg}
+                        textColor={D.text}
+                        index={i}
+                      />
                     ))}
                   </div>
                 </div>
                 {maxOffset > 0 && (
                   <div className="flex items-center justify-center gap-3 mt-3">
-                    <button onClick={() => setSwiperOffset(o => Math.max(0, o - 1))} disabled={swiperOffset === 0} className="w-7 h-7 rounded-full flex items-center justify-center transition-all disabled:opacity-30" style={{ border: `1px solid ${D.text}25`, color: D.text, background: "none", cursor: "pointer" }}>‹</button>
+                    <button
+                      onClick={() => setSwiperOffset(o => Math.max(0, o - 1))}
+                      disabled={swiperOffset === 0}
+                      className="w-7 h-7 rounded-full flex items-center justify-center transition-all disabled:opacity-30"
+                      style={{ border: `1px solid ${D.text}25`, color: D.text, background: "none", cursor: "pointer" }}
+                    >‹</button>
                     <div className="flex gap-1.5">
                       {Array.from({ length: maxOffset + 1 }).map((_, i) => (
-                        <div key={i} onClick={() => setSwiperOffset(i)} className="h-1.5 rounded-full cursor-pointer transition-all duration-300" style={{ width: i === swiperOffset ? "16px" : "6px", backgroundColor: i === swiperOffset ? D.primary : `${D.text}25` }}/>
+                        <div
+                          key={i}
+                          onClick={() => setSwiperOffset(i)}
+                          className="h-1.5 rounded-full cursor-pointer transition-all duration-300"
+                          style={{ width: i === swiperOffset ? "16px" : "6px", backgroundColor: i === swiperOffset ? D.primary : `${D.text}25` }}
+                        />
                       ))}
                     </div>
-                    <button onClick={() => setSwiperOffset(o => Math.min(maxOffset, o + 1))} disabled={swiperOffset >= maxOffset} className="w-7 h-7 rounded-full flex items-center justify-center transition-all disabled:opacity-30" style={{ border: `1px solid ${D.text}25`, color: D.text, background: "none", cursor: "pointer" }}>›</button>
+                    <button
+                      onClick={() => setSwiperOffset(o => Math.min(maxOffset, o + 1))}
+                      disabled={swiperOffset >= maxOffset}
+                      className="w-7 h-7 rounded-full flex items-center justify-center transition-all disabled:opacity-30"
+                      style={{ border: `1px solid ${D.text}25`, color: D.text, background: "none", cursor: "pointer" }}
+                    >›</button>
                   </div>
                 )}
               </>
@@ -1494,7 +1579,11 @@ export default function ClientDashboard() {
                       key={tab}
                       onClick={() => setActiveTab(tab)}
                       className="flex-1 py-2 font-semibold text-sm border-b-2 transition-all"
-                      style={{ borderColor: activeTab === tab ? D.primary : "transparent", color: activeTab === tab ? D.primary : `${D.text}60`, background: "none", cursor: "pointer" }}
+                      style={{
+                        borderColor: activeTab === tab ? D.primary : "transparent",
+                        color: activeTab === tab ? D.primary : `${D.text}60`,
+                        background: "none", cursor: "pointer",
+                      }}
                     >
                       {tab === "rewards" ? "🎁 Récompenses" : "🏷️ Coupons"}
                     </button>
@@ -1675,8 +1764,6 @@ export default function ClientDashboard() {
           0%, 100% { transform: translateY(0); }
           50%       { transform: translateY(-3px); }
         }
-
-        /* ── Celebration ── */
         @keyframes celebFadeIn {
           from { opacity: 0; }
           to   { opacity: 1; }

@@ -7,10 +7,17 @@ const OFFLINE_URL = "/offline";
 // ── Install ───────────────────────────────────────────────────────────
 self.addEventListener("install", (event) => {
   self.skipWaiting();
-  // Pre-cache the offline fallback page if it exists
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) =>
-      cache.addAll(["/icons/icon-192x192.png", "/icons/icon-72x72.png"]).catch(() => {})
+      cache.addAll([
+        "/icons/icon-192x192.png",
+        "/icons/icon-512x512.png",
+        "/icons/icon-72x72.png",
+        // This is critical — the start_url must be cached for install
+        "/client/dashboard",
+      ]).catch((err) => {
+        console.warn("[SW install] precache partial failure:", err);
+      })
     )
   );
 });
