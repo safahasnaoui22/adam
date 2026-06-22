@@ -1,10 +1,16 @@
-// sw.js — Adam Loyalty Service Worker v4
-// Robust push notifications + background delivery
+// sw.js — Adam Loyalty Service Worker v5
+// Fixed: removed /client/dashboard from precache (caused install deadlock)
+// Fixed: skip navigation requests in fetch handler (caused "still adding previous site")
+// Fixed: bumped cache name to force clean replacement of broken v4
 
-const CACHE_NAME = "adam-v4";
-const OFFLINE_URL = "/offline";
+const CACHE_NAME = "adam-v5";
 
 // ── Install ───────────────────────────────────────────────────────────
+// CRITICAL: Do NOT put authenticated routes like /client/dashboard here.
+// Chrome fetches start_url during install validation. If that URL redirects
+// (because localStorage is empty in install context), cache.addAll() throws
+// and the entire install hangs forever → "still adding previous site" bug.
+// Only cache static assets that always return 200 with no auth required.
 self.addEventListener("install", (event) => {
   self.skipWaiting();
   event.waitUntil(
@@ -13,9 +19,8 @@ self.addEventListener("install", (event) => {
         "/icons/icon-192x192.png",
         "/icons/icon-512x512.png",
         "/icons/icon-72x72.png",
-        // This is critical — the start_url must be cached for install
-        "/client/dashboard",
       ]).catch((err) => {
+        // Non-fatal: icons may not exist yet during first deploy
         console.warn("[SW install] precache partial failure:", err);
       })
     )
@@ -45,6 +50,13 @@ self.addEventListener("fetch", (event) => {
   // Only handle GET requests over http/https
   if (request.method !== "GET") return;
   if (!request.url.startsWith("http")) return;
+
+  // CRITICAL FIX: Never intercept navigation requests (HTML page loads).
+  // Chrome uses a navigation fetch to validate start_url during PWA install.
+  // If we intercept it and return a cached redirect or stale shell, Chrome
+  // sees a non-200 and marks the install as permanently failed.
+  // Next.js handles routing client-side anyway — we don't need to cache HTML.
+  if (request.mode === "navigate") return;
 
   // Never intercept API calls — always go to network
   if (request.url.includes("/api/")) return;
@@ -84,7 +96,6 @@ self.addEventListener("fetch", (event) => {
 });
 
 // ── Push notifications ────────────────────────────────────────────────
-// This fires when a push event arrives from the server (even when app is closed).
 self.addEventListener("push", (event) => {
   let payload = {
     title: "Adam Fidélité",
@@ -105,8 +116,6 @@ self.addEventListener("push", (event) => {
     }
   }
 
-  // IMPORTANT: event.waitUntil keeps the SW alive until the notification is shown.
-  // Without this, the SW may be killed before showNotification completes.
   event.waitUntil(
     self.registration
       .showNotification(payload.title, {
@@ -117,7 +126,6 @@ self.addEventListener("push", (event) => {
         renotify: true,
         requireInteraction: false,
         vibrate: [200, 100, 200, 100, 200],
-        // Store URL in notification data so we can open it on click
         data: { url: payload.url, ...payload.data },
         actions: [
           { action: "open", title: "Voir mon solde" },
@@ -125,7 +133,6 @@ self.addEventListener("push", (event) => {
         ],
       })
       .catch((err) => {
-        // Log but don't let errors break the push handler
         console.error("[SW push] showNotification failed:", err);
       })
   );
@@ -137,16 +144,12 @@ self.addEventListener("notificationclick", (event) => {
 
   if (event.action === "dismiss") return;
 
-  // Determine the URL to open
-  const targetUrl =
-    event.notification.data?.url ||
-    "/client/dashboard";
+  const targetUrl = event.notification.data?.url || "/client/dashboard";
 
   event.waitUntil(
     self.clients
       .matchAll({ type: "window", includeUncontrolled: true })
       .then((clientList) => {
-        // Try to focus an existing window that already has the dashboard open
         for (const client of clientList) {
           const clientUrl = new URL(client.url);
           if (
@@ -156,7 +159,6 @@ self.addEventListener("notificationclick", (event) => {
             return client.focus();
           }
         }
-        // No matching window found — open a new one
         if (self.clients.openWindow) {
           return self.clients.openWindow(targetUrl);
         }
@@ -164,21 +166,18 @@ self.addEventListener("notificationclick", (event) => {
   );
 });
 
-// ── Notification close (user swiped away) ────────────────────────────
+// ── Notification close ────────────────────────────────────────────────
 self.addEventListener("notificationclose", (_event) => {
-  // Optional: send analytics ping here
+  // Optional: analytics
 });
 
 // ── Message from page: show local notification ────────────────────────
-// Called by showSWNotification() in the dashboard when the app IS open.
 self.addEventListener("message", (event) => {
   if (!event.data) return;
 
   if (event.data.type === "SHOW_NOTIFICATION") {
     const { title, body, icon, tag } = event.data;
 
-    // Only show if permission granted; the page already checks this,
-    // but guard here too to avoid unhandled promise rejections.
     if (self.Notification && self.Notification.permission !== "granted") return;
 
     event.waitUntil(
@@ -196,7 +195,7 @@ self.addEventListener("message", (event) => {
   }
 });
 
-// ── Background Sync (optional: retry failed point claims) ────────────
+// ── Background Sync ────────────────────────────────────────────────────
 self.addEventListener("sync", (event) => {
   if (event.tag === "retry-claim") {
     event.waitUntil(retrySyncQueue());

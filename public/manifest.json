@@ -3,7 +3,7 @@
   "short_name": "Adam",
   "description": "Programme de fidélité pour restaurants",
   "id": "/",
-  "start_url": "/client/dashboard",
+  "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
