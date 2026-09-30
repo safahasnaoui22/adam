@@ -17,6 +17,7 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: "Adam Fidélité",
+  applicationName: "Adam Fidélité",
   description: "Programme de fidélité pour restaurants",
   manifest: "/manifest.json",
   appleWebApp: {
@@ -39,17 +40,14 @@ export default function RootLayout({
     <html lang="fr">
       <head>
         {/*
-          These tags MUST be hardcoded in <head> for iOS Safari.
-          Next.js metadata API does not always inject them reliably
-          on older iOS versions.
+          Icon, apple-touch-icon, app title and manifest come from the
+          metadata API (see generateMetadata in app/client/dashboard/layout.tsx),
+          so each restaurant can serve its own logo. Do not hardcode them here,
+          or the browser sees two conflicting sets.
         */}
-        <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
-        <link rel="icon" href="/icons/icon-192x192.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="apple-mobile-web-app-title" content="Adam Fidélité" />
         <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="application-name" content="Adam Fidélité" />
       </head>
       <body className={inter.className}>
         <Providers>

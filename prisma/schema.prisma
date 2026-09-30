@@ -21,6 +21,7 @@ model User {
   customerProfile CustomerProfile?
   restaurant      Restaurant?
   activityLogs    ActivityLog[]
+   passwordResetTokens PasswordResetToken[]
 }
 
 model ActivityLog {
@@ -32,7 +33,7 @@ model ActivityLog {
   createdAt DateTime @default(now())
 }
 
-model Restaurant {prisma.config.js
+model Restaurant {
   id                String            @id @default(cuid())
   name              String
   description       String?
@@ -79,6 +80,8 @@ model Restaurant {prisma.config.js
   tiktokUrl            String?
   tiktokBonusStars     Int?           @default(50)
   tiktokPageId         String? // The TikTok account ID to verify
+
+  spinConfig           SpinConfig?
 }
 
 model LoyaltyProgram {
@@ -116,6 +119,13 @@ model CustomerProfile {
   hasClaimedInstagramBonus  Boolean        @default(false)
   hasClaimedTwitterBonus    Boolean        @default(false)
   hasClaimedTikTokBonus     Boolean        @default(false)
+
+  // Spin wheel: daily free spins reset off lastSpinDate; bonusSpins accrue
+  // from purchases/scans (see add-points) and never expire.
+  spinLogs                  SpinLog[]
+  freeSpinsUsedToday        Int            @default(0)
+  lastSpinDate              DateTime?
+  bonusSpins                Int            @default(0)
 }
 
 model BonusRequest {
@@ -208,6 +218,43 @@ model RestaurantStats {
   restaurant      Restaurant @relation(fields: [restaurantId], references: [id])
 }
 
+// --- Spin wheel -----------------------------------------------------------
+// One config per restaurant. `segments` mirrors the client-side Segment
+// type ({ label, points, color, textColor }[]) so the admin screen can
+// write it directly and the wheel component can render it with no mapping.
+
+model SpinConfig {
+  id                 String     @id @default(cuid())
+  restaurantId       String     @unique
+  restaurant         Restaurant @relation(fields: [restaurantId], references: [id])
+  isActive           Boolean    @default(true)
+  dailyFreeSpins     Int        @default(3)
+  // How many bonus spins one purchase/scan (one Visit) grants.
+  bonusSpinsPerVisit Int        @default(1)
+  segments           Json
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+}
+
+model SpinLog {
+  id            String          @id @default(cuid())
+  customerId    String
+  customer      CustomerProfile @relation(fields: [customerId], references: [id])
+  restaurantId  String
+  source        SpinSource
+  segmentIndex  Int
+  prizeLabel    String
+  pointsAwarded Int             @default(0)
+  spunAt        DateTime        @default(now())
+}
+
+enum SpinSource {
+  FREE
+  BONUS
+}
+
+// ---------------------------------------------------------------------------
+
 enum Role {
   RESTAURANT_OWNER
   CUSTOMER
@@ -238,4 +285,13 @@ model PushSubscription {
   customer  CustomerProfile @relation(fields: [clientId], references: [id], onDelete: Cascade)
   @@index([clientId])
 }
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
 
+  @@index([userId])
+}

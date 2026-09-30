@@ -20,6 +20,9 @@ export default function SignInPage() {
     if (searchParams.get("registered")) {
       setSuccessMessage("Account created successfully! Please sign in.");
     }
+    if (searchParams.get("reset")) {
+      setSuccessMessage("Password updated successfully! Please sign in with your new password.");
+    }
   }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -99,6 +102,11 @@ export default function SignInPage() {
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               />
+              <div className="mt-2 text-right">
+                <Link href="/auth/forgot-password" className="text-sm font-medium text-[#fe5502] hover:text-[#e0682e] transition-colors">
+                  Forgot your password?
+                </Link>
+              </div>
             </div>
           </div>
 

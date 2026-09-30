@@ -13,6 +13,7 @@ import {
   Activity,
   BarChart3,
   LogOut,
+  Sparkles,
 } from "lucide-react";
 
 export default function DashboardNav() {
@@ -24,6 +25,7 @@ export default function DashboardNav() {
     { name: "Programme de fidélité", href: "/dashboard/loyalty-program" },
     { name: "QR Code", href: "/dashboard/qr-code" },
     { name: "Demandes de bonus", href: "/dashboard/bonus-requests" },
+    { name: "Roue de la chance", href: "/dashboard/spin-wheel" },
     { name: "Cartes client", href: "/dashboard/clients" },
     { name: "Activités", href: "/dashboard/activities" },
     { name: "Statistiques", href: "/dashboard/stats" },
@@ -36,6 +38,7 @@ export default function DashboardNav() {
     "/dashboard/loyalty-program": <Star size={20} />,
     "/dashboard/qr-code": <QrCode size={20} />,
     "/dashboard/bonus-requests": <Gift size={20} />,
+    "/dashboard/spin-wheel": <Sparkles size={20} />,
     "/dashboard/clients": <Users size={20} />,
     "/dashboard/activities": <Activity size={20} />,
     "/dashboard/stats": <BarChart3 size={20} />,
