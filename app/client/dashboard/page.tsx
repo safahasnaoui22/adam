@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import { QRCodeSVG } from "qrcode.react";
 import { getPatternStyle } from "@/lib/patterns";
+import SpinWheelModal from "./spin";
 
 // ── FIX 1: Capture beforeinstallprompt at MODULE LEVEL (outside React) ──
 // This fires very early, before React hydrates. Storing it in useState
@@ -900,6 +901,7 @@ export default function ClientDashboard() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [showQR, setShowQR] = useState(false);
+  const [showSpin, setShowSpin] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const [showIOSInstall, setShowIOSInstall] = useState(false);
   const [activeTab, setActiveTab] = useState("rewards");
@@ -1282,6 +1284,23 @@ export default function ClientDashboard() {
         />
       )}
 
+      {showSpin && client && restaurant && (
+        <SpinWheelModal
+          open={showSpin}
+          onClose={() => setShowSpin(false)}
+          restaurantId={restaurant.id}
+          customerId={client.id}
+          restaurantName={restaurant.name}
+          restaurantSlug={restaurant.urlSlug}
+          primaryColor={D.primary}
+          textColor={D.text}
+          cardBg={D.cardBg}
+          onPointsEarned={(pts, newTotal) => {
+            setClient((c: any) => ({ ...c, points: newTotal }));
+          }}
+        />
+      )}
+
       <div
         className="max-w-md mx-auto min-h-screen shadow-lg relative border-x"
         style={{ backgroundColor: D.cardBg, ...patternStyle, borderColor: `${D.primary}20`, color: D.text }}
@@ -1415,6 +1434,29 @@ export default function ClientDashboard() {
               <h3 className="text-base font-semibold tracking-tight" style={{ color: D.text }}>Vos récompenses</h3>
               <span className="text-xs font-semibold px-3 py-1 rounded-full" style={{ backgroundColor: `${D.primary}15`, color: D.primary }}>{clientPts} pts</span>
             </div>
+
+            {/* ── Spin wheel entry point ── */}
+            <button
+              onClick={() => setShowSpin(true)}
+              className="w-full flex items-center gap-3 mb-5 p-4 rounded-2xl text-left transition-transform active:scale-[0.98]"
+              style={{
+                background: `linear-gradient(135deg, ${D.primary}18, ${D.primary}08)`,
+                border: `1px solid ${D.primary}30`,
+              }}
+            >
+              <span style={{ fontSize: 30, lineHeight: 1 }}>🎡</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold" style={{ color: D.text }}>Roue de la chance</p>
+                <p className="text-xs mt-0.5" style={{ color: `${D.text}70` }}>Tournez la roue pour gagner des points bonus</p>
+              </div>
+              <span
+                className="text-xs font-semibold px-3 py-1.5 rounded-full shrink-0"
+                style={{ backgroundColor: D.primary, color: "#fff" }}
+              >
+                Jouer
+              </span>
+            </button>
+
             {nextReward && (
               <div className="mb-5">
                 <div className="flex justify-between items-center mb-2">
