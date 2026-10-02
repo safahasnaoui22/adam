@@ -1046,7 +1046,15 @@ export default function ClientDashboard() {
   // Re-render when the captured prompt changes (e.g. it arrives after this
   // component already mounted) so the button's label stays accurate.
   const [, forceInstallStateRefresh] = useState(0);
-  useEffect(() => onPwaStateChange(() => forceInstallStateRefresh((n) => n + 1)), []);
+useEffect(() => {
+  const unsubscribe = onPwaStateChange(() => {
+    forceInstallStateRefresh((n) => n + 1);
+  });
+
+  return () => {
+    unsubscribe();
+  };
+}, []);
 
   // ── Bell click ─────────────────────────────────────────────────────
   const handleBellClick = async () => {
