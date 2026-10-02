@@ -7,22 +7,10 @@ import { QRCodeSVG } from "qrcode.react";
 import { getPatternStyle } from "@/lib/patterns";
 import SpinWheelModal from "./spin";
 
-// ── FIX 1: Capture beforeinstallprompt at MODULE LEVEL (outside React) ──
-// This fires very early, before React hydrates. Storing it in useState
-// causes a race condition — the event fires and the listener isn't attached yet.
-let _deferredInstallPrompt: any = null;
-
-if (typeof window !== "undefined") {
-  window.addEventListener("beforeinstallprompt", (e: Event) => {
-    e.preventDefault();
-    _deferredInstallPrompt = e;
-  });
-
-  window.addEventListener("appinstalled", () => {
-    _deferredInstallPrompt = null;
-    // isInStandaloneMode() will return true on next interaction
-  });
-}
+// beforeinstallprompt is now captured app-wide in app/providers.tsx
+// (see lib/pwaInstall.ts) so it isn't missed when it fires on an earlier
+// page, before the customer ever reaches this dashboard.
+import { getDeferredPrompt, promptInstall, onPwaStateChange } from "@/lib/pwaInstall";
 
 // ── useScrollReveal hook ───────────────────────────────────────────────
 function useScrollReveal(options?: IntersectionObserverInit) {
@@ -1023,7 +1011,7 @@ export default function ClientDashboard() {
     setTimeout(() => setRefreshing(false), 800);
   };
 
-  // ── FIX 2: Add to Home Screen — uses module-level _deferredInstallPrompt ──
+  // ── Add to Home Screen — uses the app-wide capture from lib/pwaInstall ──
   const handleAddToHomeScreen = async () => {
     // Already installed — nothing to do
     if (pwaInstalled || isInStandaloneMode()) return;
@@ -1036,26 +1024,29 @@ export default function ClientDashboard() {
       return;
     }
 
-    if (_deferredInstallPrompt) {
+    if (getDeferredPrompt()) {
       // Android / Chrome: trigger the native install prompt
       try {
-        _deferredInstallPrompt.prompt();
-        const { outcome } = await _deferredInstallPrompt.userChoice;
+        const outcome = await promptInstall();
         if (outcome === "accepted") {
           setPwaInstalled(true);
         }
       } catch (err) {
         console.error("[install] prompt failed:", err);
-      } finally {
-        // Consume the prompt — it can only be used once
-        _deferredInstallPrompt = null;
       }
       return;
     }
 
-    // Fallback: browser doesn't support beforeinstallprompt (e.g. Firefox Android)
+    // No captured prompt — either the browser doesn't support
+    // beforeinstallprompt (e.g. Firefox Android), or it hasn't fired yet.
+    // Manual instructions are the only option either way.
     setShowIOSInstall(true);
   };
+
+  // Re-render when the captured prompt changes (e.g. it arrives after this
+  // component already mounted) so the button's label stays accurate.
+  const [, forceInstallStateRefresh] = useState(0);
+  useEffect(() => onPwaStateChange(() => forceInstallStateRefresh((n) => n + 1)), []);
 
   // ── Bell click ─────────────────────────────────────────────────────
   const handleBellClick = async () => {
@@ -1232,7 +1223,7 @@ export default function ClientDashboard() {
     ? "✓ Application installée"
     : isIOS()
     ? "📲 Ajouter à l'écran d'accueil"
-    : _deferredInstallPrompt
+    : getDeferredPrompt()
     ? "📲 Installer l'application"
     : "📲 Ajouter à l'écran d'accueil";
 

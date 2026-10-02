@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Services</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400;1,500&family=Jost:wght@300;400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f8ece5; --bg2:#f3e0d8;
+  --wine:#5a0f20; --wine-soft:#7a3c46;
+  --gold:#b9976e;
+  --serif:"Cormorant Garamond",Georgia,serif;
+  --sans:"Jost",system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:linear-gradient(135deg,var(--bg) 0%,var(--bg2) 100%);font-family:var(--sans);color:var(--wine-soft)}
+
+.services{max-width:1536px;margin:0 auto;padding:clamp(24px,3vw,40px) clamp(20px,3.5vw,52px) 80px}
+
+/* ---------- Heading ---------- */
+.head{text-align:center;margin-bottom:clamp(10px,2vw,30px)}
+.eyebrow{display:flex;align-items:center;justify-content:center;gap:22px;
+  font-size:13px;letter-spacing:.42em;text-transform:uppercase;color:var(--wine-soft);font-weight:300}
+.eyebrow::before,.eyebrow::after{content:"";width:62px;height:1px;background:var(--wine-soft);opacity:.7}
+.head h2{font-family:var(--serif);font-weight:400;font-size:clamp(40px,5vw,66px);line-height:1.05;color:var(--wine);margin-top:18px}
+.head h2 em{display:block;font-style:italic;color:var(--gold)}
+
+/* ---------- Rows: text | visual | visual | text ---------- */
+.grid{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,2fr) minmax(0,2fr) minmax(0,.85fr);
+  column-gap:clamp(8px,1.5vw,24px);row-gap:clamp(10px,2vw,30px)}
+
+.item{align-self:center}
+.visual{align-self:stretch;min-height:clamp(260px,32vw,470px);position:relative}
+.v1{grid-column:2;grid-row:1}
+.v2{grid-column:3;grid-row:1}
+.v3{grid-column:2;grid-row:2}
+.v4{grid-column:3;grid-row:2}
+.t1{grid-column:1;grid-row:1}
+.t2{grid-column:4;grid-row:1}
+.t3{grid-column:1;grid-row:2}
+.t4{grid-column:4;grid-row:2}
+.t1{margin-top:-50px}.t2{margin-top:-30px}.t3{margin-top:-20px}
+
+/* ---------- Text block ---------- */
+.num{display:flex;align-items:center;gap:14px;font-size:12px;letter-spacing:.2em;color:var(--wine);margin-bottom:22px}
+.num::after{content:"";width:44px;height:1px;background:var(--wine-soft);opacity:.6}
+.item h3{font-family:var(--serif);font-weight:400;font-size:clamp(30px,3vw,44px);line-height:1.02;color:var(--wine);margin-bottom:22px}
+.item p{font-size:clamp(12.5px,.95vw,14px);line-height:1.75;font-weight:300;color:var(--wine-soft);max-width:240px}
+.item a{display:inline-flex;align-items:center;gap:14px;margin-top:26px;font-size:10.5px;letter-spacing:.22em;
+  text-transform:uppercase;color:var(--wine);text-decoration:none;transition:gap .25s}
+.item a svg{width:22px;height:10px;stroke:currentColor;fill:none;stroke-width:1.2}
+.item a:hover,.item a:focus-visible{gap:22px}
+.item a:focus-visible{outline:1px solid var(--wine);outline-offset:6px}
+.t2,.t4{justify-self:start}
+
+/* ---------- Image slots ---------- */
+.slot{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+.slot img{width:100%;height:100%;object-fit:contain;display:block}
+.slot.empty{border:1.5px dashed rgba(90,15,32,.35);border-radius:28px;background:rgba(90,15,32,.04);
+  color:var(--wine-soft);font-size:12px;letter-spacing:.14em;text-align:center;padding:20px;line-height:1.8}
+.slot.empty img{display:none}
+.slot.empty span{display:block}
+.slot:not(.empty) span{display:none}
+
+/* ---------- Entrance (once) ---------- */
+@media (prefers-reduced-motion:no-preference){
+  .visual{opacity:0;transition:opacity .9s ease}
+  .ready .visual{opacity:1}
+  .ready .v2{transition-delay:.12s}.ready .v3{transition-delay:.24s}.ready .v4{transition-delay:.36s}
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width:1000px){
+  .grid{grid-template-columns:1fr 1fr;row-gap:12px;column-gap:28px}
+  .v1,.v2,.v3,.v4,.t1,.t2,.t3,.t4{grid-column:auto;grid-row:auto;margin-top:0}
+  .item{align-self:start}
+  .item p{max-width:none}
+  .grid>.t1{order:1}.grid>.v1{order:2}.grid>.t2{order:3}.grid>.v2{order:4}
+  .grid>.t3{order:5}.grid>.v3{order:6}.grid>.t4{order:7}.grid>.v4{order:8}
+  .grid{grid-template-columns:1fr 1fr}
+  .visual{min-height:300px}
+}
+@media (max-width:640px){
+  .grid{grid-template-columns:1fr}
+  .eyebrow::before,.eyebrow::after{width:28px}
+}
+</style>
+</head>
+<body>
+
+<section class="services" id="services">
+  <header class="head">
+    <div class="eyebrow">Services</div>
+    <h2>On donne du sens <em>à votre image</em></h2>
+  </header>
+
+  <div class="grid">
+
+    <article class="item t1">
+      <div class="num">01</div>
+      <h3>Web<br>Development</h3>
+      <p>Des sites beaux, rapides et pensés pour convertir. Chaque projet est conçu sur-mesure, avec un design propre et une structure optimisée. Rien de générique, juste une expérience fluide.</p>
+      <a href="#web">En savoir plus <svg viewBox="0 0 22 10"><path d="M0 5h21M17 1l4 4-4 4"/></svg></a>
+    </article>
+    <figure class="visual v1"><div class="slot" data-key="web"><img alt="Web Development"><span>IMAGE 01<br>Web Development</span></div></figure>
+
+    <figure class="visual v2"><div class="slot" data-key="social"><img alt="Social Media Management"><span>IMAGE 02<br>Social Media</span></div></figure>
+    <article class="item t2">
+      <div class="num">02</div>
+      <h3>Social Media<br>Management</h3>
+      <p>Du contenu qui attire, engage et crée une vraie relation. On construit une présence cohérente avec des idées fortes et une gestion active adaptée à votre audience.</p>
+      <a href="#social">En savoir plus <svg viewBox="0 0 22 10"><path d="M0 5h21M17 1l4 4-4 4"/></svg></a>
+    </article>
+
+    <article class="item t3">
+      <div class="num">03</div>
+      <h3>Graphic Design</h3>
+      <p>Une identité visuelle claire, forte et reconnaissable. Du logo aux supports digitaux, chaque détail est travaillé pour refléter votre image et marquer les esprits durablement.</p>
+      <a href="#graphic">En savoir plus <svg viewBox="0 0 22 10"><path d="M0 5h21M17 1l4 4-4 4"/></svg></a>
+    </article>
+    <figure class="visual v3"><div class="slot" data-key="graphic"><img alt="Graphic Design"><span>IMAGE 03<br>Graphic Design</span></div></figure>
+
+    <figure class="visual v4"><div class="slot" data-key="photo"><img alt="Photographie et Visuels"><span>IMAGE 04<br>Photographie &amp; Visuels</span></div></figure>
+    <article class="item t4">
+      <div class="num">04</div>
+      <h3>Photographie &amp;<br>Visuels</h3>
+      <p>Des visuels qui racontent quelque chose et captent l'attention. Shooting produit ou image de marque, chaque création est pensée pour valoriser votre univers avec cohérence.</p>
+      <a href="#photo">En savoir plus <svg viewBox="0 0 22 10"><path d="M0 5h21M17 1l4 4-4 4"/></svg></a>
+    </article>
+
+  </div>
+</section>
+
+<script>
+// ➜ Put your image paths here (transparent PNG/WebP works best).
+const IMAGES = {
+  web:     "dev.png",   // e.g. "img/web.png"
+  social:  "",
+  graphic: "",
+  photo:   ""
+};
+
+document.querySelectorAll(".slot").forEach(slot => {
+  const img = slot.querySelector("img");
+  const src = IMAGES[slot.dataset.key];
+  if (src) {
+    img.onload  = () => slot.classList.remove("empty");
+    img.onerror = () => slot.classList.add("empty");
+    img.src = src;
+  } else {
+    slot.classList.add("empty");
+  }
+});
+requestAnimationFrame(() => document.body.classList.add("ready"));
+</script>
+</body>
+</html>
