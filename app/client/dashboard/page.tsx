@@ -154,6 +154,47 @@ const IconPointsCoin = ({ size = 36, primaryColor }: { size?: number; primaryCol
   </svg>
 );
 
+const IconGoldCoin = ({ size = 64 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="goldCoinG" x1="8" y1="6" x2="56" y2="60" gradientUnits="userSpaceOnUse">
+        <stop offset="0" stopColor="#FFE27A"/>
+        <stop offset="0.55" stopColor="#F6B21A"/>
+        <stop offset="1" stopColor="#D98A00"/>
+      </linearGradient>
+    </defs>
+    <circle cx="32" cy="32" r="30" fill="url(#goldCoinG)"/>
+    <circle cx="32" cy="32" r="30" stroke="#C97F00" strokeWidth="1.5"/>
+    <circle cx="32" cy="32" r="23" stroke="#FFF3B8" strokeWidth="2" strokeDasharray="2 3"/>
+    <text x="32" y="42" textAnchor="middle" fontSize="30" fontWeight="800" fontFamily="'Inter', system-ui, sans-serif" fill="#FFF7D1" stroke="#C97F00" strokeWidth="0.6">$</text>
+    <path d="M14 20 Q20 11 30 10" stroke="white" strokeWidth="2.2" strokeLinecap="round" opacity="0.55"/>
+  </svg>
+);
+
+const IconGiftBox = ({ size = 28, color = "#f43f5e", dim = false }: { size?: number; color?: string; dim?: boolean }) => (
+  <svg width={size} height={size} viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ opacity: dim ? 0.55 : 1 }}>
+    <rect x="4" y="13" width="24" height="15" rx="3" fill={color}/>
+    <rect x="3" y="9" width="26" height="6" rx="2.5" fill={color}/>
+    <rect x="14.5" y="9" width="3" height="19" fill="white" opacity="0.85"/>
+    <path d="M16 9 C16 9 11 8.5 10.5 5.6 C10 3 13.5 2.2 15 4.6 C15.7 5.8 16 9 16 9Z" fill="#FFD166"/>
+    <path d="M16 9 C16 9 21 8.5 21.5 5.6 C22 3 18.5 2.2 17 4.6 C16.3 5.8 16 9 16 9Z" fill="#FFD166"/>
+    <rect x="4" y="13" width="24" height="3" rx="1.5" fill="black" opacity="0.08"/>
+  </svg>
+);
+
+const IconTicket = ({ size = 28, color = "currentColor" }: { size?: number; color?: string }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 9a2 2 0 0 0 0 6v2a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-2a2 2 0 0 1 0-6V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2z"/>
+    <path d="M13 5v2M13 11v2M13 17v2"/>
+  </svg>
+);
+
+const IconChevronRight = ({ size = 18, color = "currentColor" }: { size?: number; color?: string }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M9 6l6 6-6 6"/>
+  </svg>
+);
+
 // ── iOS/Android detection ─────────────────────────────────────────────
 function isIOS(): boolean {
   if (typeof navigator === "undefined") return false;
@@ -890,6 +931,7 @@ export default function ClientDashboard() {
   const [refreshing, setRefreshing] = useState(false);
   const [showQR, setShowQR] = useState(false);
   const [showSpin, setShowSpin] = useState(false);
+  const [showFloatingQR, setShowFloatingQR] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const [showIOSInstall, setShowIOSInstall] = useState(false);
   const [activeTab, setActiveTab] = useState("rewards");
@@ -912,6 +954,15 @@ export default function ClientDashboard() {
 
   const restaurantRef = useRef<any>(null);
   useEffect(() => { restaurantRef.current = restaurant; }, [restaurant]);
+
+  // The big QR button now lives at the top of the page; the floating one
+  // only appears once the customer has scrolled past it.
+  useEffect(() => {
+    const onScroll = () => setShowFloatingQR(window.scrollY > 320);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   // Check if already installed as PWA on mount
   useEffect(() => {
@@ -1304,43 +1355,23 @@ useEffect(() => {
         className="max-w-md mx-auto min-h-screen shadow-lg relative border-x"
         style={{ backgroundColor: D.cardBg, ...patternStyle, borderColor: `${D.primary}20`, color: D.text }}
       >
-        {/* ── Sticky top bar ── */}
-        <div className="sticky top-0 z-20" style={{ backgroundColor: D.cardBg }}>
-          {showAlert && (
-            <div
-              className="mx-3 mt-3 px-4 py-2 rounded-xl flex items-center gap-2"
-              style={{ backgroundColor: `${D.primary}15`, border: `1px solid ${D.primary}40`, animation: "slideDown 0.4s ease" }}
-            >
-              <span className="text-lg">🎯</span>
-              <p className="text-xs font-medium" style={{ color: D.primary }}>
-                Plus que <strong>{pointsToNext} pts</strong> pour débloquer &ldquo;{nextReward!.name}&rdquo; !
-              </p>
-            </div>
-          )}
-          <div className="px-4 py-3 flex items-center justify-between border-b" style={{ borderColor: `${D.primary}20` }}>
+        {/* ── Floating actions (refresh / notifications) ── */}
+        <div className="sticky top-0 z-20" style={{ height: 0 }}>
+          <div className="flex items-center justify-between px-3 pt-3">
             <button
               onClick={handleRefresh}
-              className="p-2 rounded-full transition-colors"
-              style={{ background: "none", border: "none", cursor: "pointer" }}
+              className="w-10 h-10 rounded-full flex items-center justify-center transition-transform active:scale-90"
+              style={{ background: `${D.cardBg}d9`, backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)", border: `1px solid ${D.text}10`, boxShadow: "0 2px 10px rgba(0,0,0,0.06)", cursor: "pointer" }}
               aria-label="Actualiser"
             >
               <svg className={`w-5 h-5 ${refreshing ? "animate-spin" : ""}`} fill="none" stroke={D.text} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
               </svg>
             </button>
-            <div className="flex-1 flex justify-center">
-              {restaurant.logo ? (
-                <Image src={restaurant.logo} alt={restaurant.name} width={40} height={40} className="rounded-full border" style={{ borderColor: D.primary }}/>
-              ) : (
-                <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-lg" style={{ backgroundColor: D.primary }}>
-                  {restaurant.name?.charAt(0) || "R"}
-                </div>
-              )}
-            </div>
             <button
               onClick={handleBellClick}
-              className="p-2 rounded-full transition-all active:scale-90"
-              style={{ background: notifActive ? `${D.primary}15` : "none", border: "none", cursor: "pointer", borderRadius: 10 }}
+              className="w-10 h-10 rounded-full flex items-center justify-center transition-transform active:scale-90"
+              style={{ background: notifActive ? `${D.primary}22` : `${D.cardBg}d9`, backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)", border: `1px solid ${D.text}10`, boxShadow: "0 2px 10px rgba(0,0,0,0.06)", cursor: "pointer" }}
               aria-label="Notifications"
             >
               <IconBell size={20} color={D.text} active={notifActive} pulsing={notifActive}/>
@@ -1348,87 +1379,196 @@ useEffect(() => {
           </div>
         </div>
 
-        {/* ── Client info ── */}
-        <div className="px-4 py-6 text-center border-b" style={{ borderColor: `${D.primary}20`, animation: "fadeSlideIn 0.5s ease" }}>
-          <h2 style={{ fontSize: 22, fontWeight: 800, color: "#111827", margin: 0, letterSpacing: "-0.3px" }}>
-            Marhbee byk{" "}
-            <span style={{ color: D.primary }}>{client.name}</span>
-          </h2>
-          <p className="text-xs mt-1.5 font-medium tracking-wider uppercase" style={{ color: `${D.text}60` }}>
-            ID {getShortId()}
+        {/* ── Hero: logo, name, QR button ── */}
+        <div
+          className="px-5 pt-14 pb-2 text-center"
+          style={{
+            background: `linear-gradient(180deg, ${D.primary}26 0%, ${D.primary}0f 55%, transparent 100%)`,
+            animation: "fadeSlideIn 0.5s ease",
+          }}
+        >
+          <div className="mx-auto rounded-full overflow-hidden flex items-center justify-center"
+            style={{ width: 104, height: 104, background: "#fff", border: "4px solid #fff", boxShadow: `0 10px 28px ${D.primary}30, 0 2px 8px rgba(0,0,0,0.08)` }}>
+            {restaurant.logo ? (
+              <Image src={restaurant.logo} alt={restaurant.name} width={104} height={104} className="object-cover w-full h-full"/>
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-white font-extrabold text-4xl" style={{ backgroundColor: D.primary }}>
+                {restaurant.name?.charAt(0) || "R"}
+              </div>
+            )}
+          </div>
+
+          <h1 className="mt-4" style={{ fontSize: 30, fontWeight: 800, color: "#111827", letterSpacing: "-0.6px", lineHeight: 1.1, margin: "16px 0 0" }}>
+            {restaurant.name}
+          </h1>
+          <p className="mt-1.5 text-sm font-medium" style={{ color: `${D.text}80` }}>
+            Marhbee byk <span style={{ color: D.primary, fontWeight: 700 }}>{client.name}</span>
+          </p>
+
+          <button
+            onClick={() => setShowQR(true)}
+            className="w-full mt-6 flex items-center gap-4 text-left transition-transform active:scale-[0.98]"
+            style={{
+              padding: "16px 18px",
+              borderRadius: 28,
+              border: "none",
+              cursor: "pointer",
+              color: "#fff",
+              background: `linear-gradient(135deg, ${D.primary} 0%, ${D.secondary || D.primary} 100%)`,
+              boxShadow: `0 14px 32px ${D.primary}4d, 0 2px 8px rgba(0,0,0,0.08)`,
+            }}
+            aria-label="Afficher mon code QR"
+          >
+            <span className="shrink-0 flex items-center justify-center" style={{ width: 54, height: 54, borderRadius: 18, background: "rgba(255,255,255,0.22)" }}>
+              <IconQR size={30} color="#fff"/>
+            </span>
+            <span className="flex-1 min-w-0 text-center">
+              <span className="block" style={{ fontSize: 21, fontWeight: 800, letterSpacing: "-0.2px" }}>Mon code QR</span>
+              <span className="block" style={{ fontSize: 14, fontWeight: 500, opacity: 0.88, marginTop: 1 }}>Carte n° {getShortId()}</span>
+            </span>
+            <span className="shrink-0 flex items-center justify-center" style={{ width: 40, height: 40, borderRadius: 999, background: "rgba(255,255,255,0.22)" }}>
+              <IconChevronRight size={20} color="#fff"/>
+            </span>
+          </button>
+
+          <p className="mt-4 text-sm font-medium" style={{ color: `${D.text}b3` }}>
+            {clientPts === 0 ? "Votre parcours points commence ici" : "Merci pour votre fidélité 💛"}
           </p>
         </div>
 
-        {/* ── Progress bar ── */}
-        {nextReward && (
-          <AnimSection>
-            <div className="px-4 py-3 border-b" style={{ borderColor: `${D.primary}20` }}>
-              <div className="rounded-2xl p-4" style={{ backgroundColor: `${D.primary}06`, border: `1px solid ${D.primary}15` }}>
-                <div className="flex items-center justify-between mb-2 flex-wrap gap-1">
-                  <p className="text-sm font-semibold" style={{ color: D.text }}>
-                    🎯 Il vous manque&nbsp;
-                    <span className="inline-block min-w-[3rem] text-center font-extrabold text-lg" style={{ color: D.primary, fontVariantNumeric: "tabular-nums" }}>
-                      {pointsToNext}
-                    </span>
-                    &nbsp;points
-                  </p>
-                  <span className="text-xs font-bold px-3 py-1 rounded-full" style={{ backgroundColor: D.primary, color: "#fff" }}>{nextReward.name}</span>
-                </div>
-                <p className="text-xs mb-3" style={{ color: `${D.text}70` }}>
-                  Pour débloquer <strong style={{ color: D.primary }}>{nextReward.name}</strong> et profiter de votre récompense !
-                </p>
-                <div className="relative w-full h-2 rounded-full overflow-hidden" style={{ backgroundColor: `${D.primary}20` }}>
-                  <div className="h-full rounded-full" style={{
-                    width: `${progress}%`,
-                    background: `linear-gradient(90deg, ${D.primary}, ${D.secondary || D.primary})`,
-                    boxShadow: `0 0 8px ${D.primary}80`,
-                    transition: "width 1s cubic-bezier(0.22,1,0.36,1)",
-                    animation: "progressGlow 2s ease-in-out infinite alternate",
-                  }}/>
-                </div>
-                <div className="flex justify-between mt-1.5">
-                  <span className="text-[11px]" style={{ color: `${D.text}50` }}>{clientPts} pts</span>
-                  <span className="text-[11px]" style={{ color: `${D.text}50` }}>{nextReward.pts} pts</span>
-                </div>
-              </div>
-            </div>
-          </AnimSection>
-        )}
-        {!nextReward && rewards.length > 0 && (
-          <AnimSection>
-            <div className="px-4 py-3 border-b" style={{ borderColor: `${D.primary}20` }}>
-              <div className="rounded-2xl p-4 text-center" style={{ backgroundColor: `${D.primary}08`, border: `1px solid ${D.primary}20` }}>
-                <p className="text-sm font-bold" style={{ color: D.primary }}>🎉 Félicitations ! Vous avez débloqué toutes les récompenses !</p>
-                <p className="text-xs mt-1" style={{ color: `${D.text}70` }}>Continuez à gagner des points pour profiter de nouveaux avantages.</p>
-              </div>
-            </div>
-          </AnimSection>
-        )}
-
-        {/* ── Balance ── */}
+        {/* ── Points card with reward milestones ── */}
         <AnimSection delay={60}>
-          <div className="px-4 py-5 border-b" style={{ borderColor: `${D.primary}20`, backgroundColor: `${D.primary}08` }}>
-            <p className="text-xs font-medium uppercase tracking-widest mb-2" style={{ color: `${D.text}60` }}>Votre solde</p>
-            <div className="flex items-center gap-3">
-              <div style={{ animation: "coinSpin 0.7s cubic-bezier(0.22,1,0.36,1)" }}>
-                <IconPointsCoin size={38} primaryColor={D.primary}/>
+          <div className="px-4 pt-4 pb-2">
+            <div className="rounded-[28px] p-5" style={{ background: D.cardBg, border: `1.5px solid ${D.text}14`, boxShadow: `0 10px 34px ${D.primary}14` }}>
+              <div className="flex items-center gap-4">
+                <div style={{ animation: "coinSpin 0.7s cubic-bezier(0.22,1,0.36,1)", flexShrink: 0 }}>
+                  <IconGoldCoin size={68}/>
+                </div>
+                <div className="flex items-baseline gap-2 min-w-0">
+                  <span style={{ fontSize: 44, fontWeight: 800, color: D.primary, letterSpacing: "-1px", lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>
+                    {clientPts.toLocaleString("fr-FR")}
+                  </span>
+                  <span style={{ fontSize: 22, fontWeight: 500, color: `${D.primary}b0` }}>points</span>
+                </div>
               </div>
-              <div className="flex items-baseline gap-2">
-                <p className="text-4xl font-bold tracking-tight" style={{ color: D.primary, fontVariantNumeric: "tabular-nums", animation: "fadeSlideIn 0.6s ease" }}>
-                  {clientPts}
+
+              {rewards.length > 0 && (() => {
+                // Show at most 5 reward milestones, windowed around the next one,
+                // spread evenly along the track (reward point values can be wildly uneven).
+                const MAX_MARKERS = 5;
+                const nextIdx = rewards.findIndex((r) => r.pts > clientPts);
+                const reachedCount = nextIdx === -1 ? rewards.length : nextIdx;
+                const start = Math.max(0, Math.min(reachedCount - 1, rewards.length - MAX_MARKERS));
+                const windowed = rewards.slice(start, start + MAX_MARKERS);
+                const m = windowed.length;
+                const posOf = (i: number) => (m === 1 ? 90 : 9 + (i / (m - 1)) * 82);
+                const stops = [
+                  { pts: start > 0 ? rewards[start - 1].pts : 0, pos: 0 },
+                  ...windowed.map((r, i) => ({ pts: r.pts, pos: posOf(i) })),
+                ];
+                let fill = 100;
+                if (nextIdx !== -1) {
+                  fill = 0;
+                  for (let k = 1; k < stops.length; k++) {
+                    if (clientPts < stops[k].pts) {
+                      const lo = stops[k - 1], hi = stops[k];
+                      const t = Math.max(0, Math.min(1, (clientPts - lo.pts) / Math.max(1, hi.pts - lo.pts)));
+                      fill = lo.pos + t * (hi.pos - lo.pos);
+                      break;
+                    }
+                  }
+                }
+                return (
+                  <div className="mt-5">
+                    <div className="relative" style={{ height: 40 }}>
+                      {windowed.map((r, i) => {
+                        const reached = clientPts >= r.pts;
+                        return (
+                          <div key={r.id} className="absolute flex items-end justify-center" style={{ left: `${posOf(i)}%`, bottom: 0, transform: "translateX(-50%)" }}>
+                            <IconGiftBox size={reached ? 36 : 32} color={D.primary} dim={!reached}/>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div className="relative w-full overflow-hidden" style={{ height: 12, borderRadius: 999, backgroundColor: `${D.text}12` }}>
+                      <div style={{
+                        width: `${fill}%`, height: "100%", borderRadius: 999,
+                        background: `linear-gradient(90deg, ${D.primary}, ${D.secondary || D.primary})`,
+                        transition: "width 1s cubic-bezier(0.22,1,0.36,1)",
+                      }}/>
+                    </div>
+                    <div className="relative" style={{ height: 22, marginTop: 8 }}>
+                      {windowed.map((r, i) => (
+                        <span key={r.id} className="absolute text-xs font-semibold" style={{ left: `${posOf(i)}%`, transform: "translateX(-50%)", color: clientPts >= r.pts ? D.primary : `${D.text}70`, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>
+                          {r.pts.toLocaleString("fr-FR")}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
+
+              <p className="mt-3 text-[15px] leading-snug font-medium" style={{ color: nextReward ? D.primary : D.text }}>
+                {nextReward
+                  ? <>Plus que <strong>{pointsToNext} pts</strong> pour débloquer {nextReward.name}</>
+                  : rewards.length > 0
+                  ? "🎉 Vous avez débloqué toutes les récompenses !"
+                  : `${spendThreshold} DT dépensé = ${pointsEarned} point${pointsEarned > 1 ? "s" : ""} gagné${pointsEarned > 1 ? "s" : ""}`}
+              </p>
+              {rewards.length > 0 && (
+                <p className="mt-1 text-xs" style={{ color: `${D.text}60` }}>
+                  {spendThreshold} DT dépensé = {pointsEarned} point{pointsEarned > 1 ? "s" : ""} gagné{pointsEarned > 1 ? "s" : ""}
                 </p>
-                <p className="text-lg font-medium" style={{ color: `${D.primary}90` }}>points</p>
-              </div>
+              )}
+
+              <button
+                onClick={() => {
+                  setActiveTab("rewards");
+                  document.getElementById("rewards-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                }}
+                className="w-full mt-4 transition-transform active:scale-[0.98]"
+                style={{ padding: "16px 0", borderRadius: 20, border: "none", cursor: "pointer", background: `${D.primary}12`, color: D.primary, fontSize: 18, fontWeight: 700 }}
+              >
+                Voir les récompenses
+              </button>
             </div>
-            <p className="text-xs mt-2 font-medium" style={{ color: `${D.text}50` }}>
-              {spendThreshold} DT dépensé = {pointsEarned} point{pointsEarned > 1 ? "s" : ""} gagnés
-            </p>
+          </div>
+        </AnimSection>
+
+        {/* ── Coupons card ── */}
+        <AnimSection delay={100}>
+          <div className="px-4 pt-3 pb-4">
+            <button
+              onClick={() => {
+                if (coupons.length === 0) return;
+                setActiveTab("coupons");
+                document.getElementById("coupons-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
+              }}
+              className="w-full flex items-center gap-4 text-left rounded-[28px] p-4 transition-transform active:scale-[0.99]"
+              style={{ background: D.cardBg, border: `1.5px solid ${D.text}14`, boxShadow: `0 6px 22px ${D.primary}0d`, cursor: coupons.length > 0 ? "pointer" : "default" }}
+              aria-label="Coupons"
+            >
+              <span className="shrink-0 flex items-center justify-center" style={{ width: 60, height: 60, borderRadius: 20, background: `${D.text}08`, border: `1px solid ${D.text}0f`, color: coupons.length > 0 ? D.primary : `${D.text}50` }}>
+                <IconTicket size={30} color="currentColor"/>
+              </span>
+              <span className="flex-1 min-w-0 text-center">
+                <span className="block" style={{ fontSize: 21, fontWeight: 800, color: D.text, letterSpacing: "-0.2px" }}>Coupons</span>
+                <span className="block text-sm" style={{ color: `${D.text}80`, marginTop: 2 }}>
+                  {coupons.length > 0
+                    ? `${coupons.length} coupon${coupons.length > 1 ? "s" : ""} disponible${coupons.length > 1 ? "s" : ""}`
+                    : "Vos coupons apparaîtront ici"}
+                </span>
+              </span>
+              <span className="shrink-0 flex items-center justify-center" style={{ width: 44, height: 44, borderRadius: 999, background: coupons.length > 0 ? `${D.primary}18` : `${D.text}0a`, color: coupons.length > 0 ? D.primary : `${D.text}40` }}>
+                <IconChevronRight size={20} color="currentColor"/>
+              </span>
+            </button>
           </div>
         </AnimSection>
 
         {/* ── Rewards Swiper ── */}
         <AnimSection delay={100}>
-          <div className="px-4 py-5 border-b" style={{ borderColor: `${D.primary}20` }}>
+          <div id="rewards-section" className="px-4 py-5 border-b" style={{ borderColor: `${D.primary}20`, scrollMarginTop: 64 }}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-base font-semibold tracking-tight" style={{ color: D.text }}>Vos récompenses</h3>
               <span className="text-xs font-semibold px-3 py-1 rounded-full" style={{ backgroundColor: `${D.primary}15`, color: D.primary }}>{clientPts} pts</span>
@@ -1613,7 +1753,7 @@ useEffect(() => {
         {coupons.length > 0 && (
           <AnimSection delay={180}>
             <>
-              <div className="px-4 py-2 border-b" style={{ borderColor: `${D.primary}20` }}>
+              <div id="coupons-section" className="px-4 py-2 border-b" style={{ borderColor: `${D.primary}20`, scrollMarginTop: 64 }}>
                 <div className="flex space-x-4">
                   {["rewards", "coupons"].map((tab) => (
                     <button
@@ -1737,8 +1877,8 @@ useEffect(() => {
         </AnimSection>
       </div>
 
-      {/* ── Fixed bottom QR button ── */}
-      {client && (
+      {/* ── Fixed bottom QR button (only after scrolling past the hero) ── */}
+      {client && showFloatingQR && (
         <div style={{
           position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 30,
           display: "flex", justifyContent: "center",
