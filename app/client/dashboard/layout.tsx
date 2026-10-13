@@ -1,7 +1,41 @@
 // app/client/dashboard/layout.tsx
+import type { Metadata } from "next";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "../../lib/auth";
+import { prisma } from "../../lib/prisma";
+
+// The customer's restaurant decides the manifest and the icons, so the app
+// installed from this page carries the restaurant's own name and logo.
+export async function generateMetadata(): Promise<Metadata> {
+  const session = await getServerSession(authOptions);
+  // For customers, login stores the slug of THEIR restaurant (restaurantId is
+  // only filled in for owners).
+  const slug =
+    session?.user?.role === "CUSTOMER" ? session.user.restaurantSlug : undefined;
+  if (!slug) return {};
+
+  const restaurant = await prisma.restaurant.findUnique({
+    where: { urlSlug: slug },
+    select: { id: true, name: true, appName: true, updatedAt: true },
+  });
+  if (!restaurant) return {};
+
+  const base = `/api/pwa/${restaurant.id}`;
+  const v = restaurant.updatedAt.getTime(); // changes when the logo is updated
+  const title = restaurant.appName || restaurant.name;
+
+  return {
+    title,
+    applicationName: title,
+    manifest: `${base}/manifest?v=${v}`,
+    appleWebApp: { capable: true, statusBarStyle: "black-translucent", title },
+    icons: {
+      icon: [{ url: `${base}/icon?size=192&v=${v}`, sizes: "192x192", type: "image/png" }],
+      apple: [{ url: `${base}/icon?size=180&v=${v}`, sizes: "180x180" }],
+    },
+  };
+}
 
 export default async function ClientLayout({
   children,
@@ -17,7 +51,7 @@ export default async function ClientLayout({
   // Only CUSTOMER can access client dashboard
   if (session.user.role !== "CUSTOMER") {
     console.log("⚠️ Non-customer tried to access client area");
-    
+
     if (session.user.role === "ADMIN") {
       redirect("/admin");
     } else if (session.user.role === "RESTAURANT_OWNER") {

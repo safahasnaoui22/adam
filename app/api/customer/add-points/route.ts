@@ -83,8 +83,8 @@ export async function POST(request: NextRequest) {
         {
           title: "🎉 Points ajoutés !",
           body: `+${pointsToAdd} points ajoutés à votre carte. Solde : ${updatedCustomer.points} pts`,
-          icon: restaurant?.logo || "/icon-192x192.png",
-          badge: "/icon-72x72.png",
+          icon: `/api/pwa/${session.user.restaurantId}/icon?size=192`,
+          badge: "/icons/icon-72x72.png",
           tag: "adam-points",
           data: {
             url: "/client/dashboard",

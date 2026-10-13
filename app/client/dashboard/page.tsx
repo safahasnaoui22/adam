@@ -955,6 +955,17 @@ export default function ClientDashboard() {
   const restaurantRef = useRef<any>(null);
   useEffect(() => { restaurantRef.current = restaurant; }, [restaurant]);
 
+  // Last balance this customer actually SAW on screen. Kept in localStorage so
+  // points earned while the app was closed still trigger the popup next time it opens.
+  const lastPointsRef = useRef<number | null>(null);
+  const markPointsSeen = (points: number) => {
+    lastPointsRef.current = points;
+    try {
+      const id = localStorage.getItem("clientId");
+      if (id) localStorage.setItem(`adam:lastPoints:${id}`, String(points));
+    } catch {}
+  };
+
   // The big QR button now lives at the top of the page; the floating one
   // only appears once the customer has scrolled past it.
   useEffect(() => {
@@ -979,21 +990,31 @@ export default function ClientDashboard() {
       const res = await fetch(`/api/client/${id}`);
       const data = await res.json();
       if (res.ok) {
-        setClient((prev: any) => {
-          if (prev !== null && data.points !== prev.points) {
-            const diff = data.points - prev.points;
-            const logo = restaurantRef.current?.logo;
-            if (diff > 0) {
-              setCelebration({ pointsEarned: diff, newTotal: data.points, mode: "earned" });
-              showSWNotification("🎉 Points ajoutés !", `+${diff} points sur votre carte. Solde : ${data.points} pts`, logo, "adam-points");
-            } else {
-              const spent = Math.abs(diff);
-              setCelebration({ pointsEarned: spent, newTotal: data.points, mode: "spent", rewardName: data.lastRewardName });
-              showSWNotification("🎁 Récompense activée !", `${data.lastRewardName || "Votre récompense"} est prête ! Solde restant : ${data.points} pts`, logo, "adam-reward");
-            }
+        // Compare with the last balance the customer saw (memory first, then
+        // localStorage) — not just the previous in-memory value, which is empty
+        // every time the app is opened.
+        const seenKey = `adam:lastPoints:${id}`;
+        let baseline: number | null = lastPointsRef.current;
+        if (baseline === null) {
+          const stored = localStorage.getItem(seenKey);
+          baseline = stored !== null && !Number.isNaN(Number(stored)) ? Number(stored) : null;
+        }
+        if (baseline !== null && data.points !== baseline) {
+          const diff = data.points - baseline;
+          const logo = restaurantRef.current?.logo;
+          if (diff > 0) {
+            setCelebration({ pointsEarned: diff, newTotal: data.points, mode: "earned" });
+            showSWNotification("🎉 Points ajoutés !", `+${diff} points sur votre carte. Solde : ${data.points} pts`, logo, "adam-points");
+          } else {
+            const spent = Math.abs(diff);
+            setCelebration({ pointsEarned: spent, newTotal: data.points, mode: "spent", rewardName: data.lastRewardName });
+            showSWNotification("🎁 Récompense activée !", `${data.lastRewardName || "Votre récompense"} est prête ! Solde restant : ${data.points} pts`, logo, "adam-reward");
           }
-          return data;
-        });
+        }
+        lastPointsRef.current = data.points;
+        try { localStorage.setItem(seenKey, String(data.points)); } catch {}
+        // Only re-render when something actually changed (this now runs on a timer).
+        setClient((prev: any) => (prev && JSON.stringify(prev) === JSON.stringify(data) ? prev : data));
         const derived: string[] = [];
         if (data.hasClaimedGoogleMapsBonus) derived.push("googleMaps");
         if (data.hasClaimedFacebookBonus) derived.push("facebook");
@@ -1044,6 +1065,22 @@ export default function ClientDashboard() {
     };
     document.addEventListener("visibilitychange", handleVisibilityChange);
     return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, []);
+
+  // Live updates: while the app is open and visible, check for new points every
+  // 10 s so the popup appears as soon as the cashier validates a purchase.
+  useEffect(() => {
+    const tick = () => {
+      if (document.visibilityState !== "visible") return;
+      const clientId = localStorage.getItem("clientId");
+      if (clientId) fetchClientData(clientId);
+    };
+    const iv = setInterval(tick, 10000);
+    window.addEventListener("focus", tick);
+    return () => {
+      clearInterval(iv);
+      window.removeEventListener("focus", tick);
+    };
   }, []);
 
   // Register SW
@@ -1166,6 +1203,7 @@ useEffect(() => {
       if (res.ok) {
         const gained = data.pointsAdded;
         const newTotal = data.newPoints;
+        markPointsSeen(newTotal);
         setClient((prev: any) => ({ ...prev, points: newTotal }));
         setCompletedBonuses((prev) => [...prev, activeBonusModal.id]);
         setActiveBonusModal(null);
@@ -1193,6 +1231,7 @@ useEffect(() => {
 
   useEffect(() => {
     (window as any).__triggerSpentCelebration = (pts: number, newTotal: number, rewardName?: string) => {
+      markPointsSeen(newTotal);
       setCelebration({ pointsEarned: pts, newTotal, mode: "spent", rewardName });
       showSWNotification(
         "🎁 Récompense activée !",
@@ -1346,6 +1385,7 @@ useEffect(() => {
           textColor={D.text}
           cardBg={D.cardBg}
           onPointsEarned={(pts, newTotal) => {
+            markPointsSeen(newTotal);
             setClient((c: any) => ({ ...c, points: newTotal }));
           }}
         />

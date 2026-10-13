@@ -17,14 +17,15 @@ export default async function HomePage() {
         redirect("/dashboard");
         break;
       case "CUSTOMER":
-        // For customers, ensure they have a restaurant slug before redirecting
-        if (session.user.restaurantSlug) {
-          redirect(`/${session.user.restaurantSlug}/dashboard`);
-        } else {
-          // If no slug, redirect to the generic client dashboard (or stay on homepage)
-          // To avoid the null restaurantId, we'll stay on homepage instead
-          console.warn("Customer has no restaurantSlug, staying on homepage");
-        }
+        // The real customer dashboard is /client/dashboard. The old
+        // /<slug>/dashboard screen had a different, outdated design, which is
+        // why the installed app looked different from the browser.
+        // /<slug> forwards logged-in customers to /client/dashboard?restaurantId=...
+        redirect(
+          session.user.restaurantSlug
+            ? `/${session.user.restaurantSlug}`
+            : "/client/dashboard"
+        );
         break;
       default:
         // Unknown role, stay on homepage
