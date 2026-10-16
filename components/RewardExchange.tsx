@@ -1131,7 +1131,7 @@ export default function RewardExchange() {
             onClick={() => setShowAddPoints(true)}
             style={{
                flex: "0 1 280px",
-  width: "280px",
+  width: "480px",
   minWidth: 0,
   padding: "1.5rem 1rem",
   boxSizing: "border-box",
@@ -1194,7 +1194,7 @@ letterSpacing: "0.14em",
             onClick={() => setShowExchange(true)}
             style={{
                flex: "0 1 280px",
-  width: "280px",
+  width: "480px",
   minWidth: 0,
   padding: "1.5rem 1rem",
   boxSizing: "border-box",
