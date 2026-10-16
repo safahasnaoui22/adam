@@ -685,8 +685,9 @@ function CustomerPopup({
         .cp-card {
           background: linear-gradient(165deg, #34315a 0%, #221f3d 100%);
           border-radius: 1.5rem;
-          padding: 2rem;
-          width: 100%; max-width: 480px;
+        padding: 2.25rem;
+width: 100%;
+max-width: 540px;
           max-height: 92vh; overflow-y: auto;
           position: relative;
           box-shadow: 0 25px 70px rgba(0,0,0,0.55), 0 0 0 1px rgba(254,85,2,0.18);
@@ -755,6 +756,11 @@ function CustomerPopup({
           margin-bottom: 1rem;
           animation: cpSectionIn 0.4s ease-out backwards;
         }
+          .cp-section-header h3 {
+  font-size: 1.4rem;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+}
         .cp-section-header { display: flex; align-items: center; gap: 0.55rem; margin-bottom: 0.85rem; }
         .cp-section-icon {
           width: 30px; height: 30px; border-radius: 0.5rem;

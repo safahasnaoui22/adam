@@ -324,8 +324,10 @@ export default async function DashboardPage() {
             {/* Welcome Header with Progress */}
             <div className="bg-[var(--bg-card)] shadow rounded-[var(--radius-md)] border border-[var(--border)]">
                 <div className="px-4 py-5 sm:p-6">
-                    <h1 className="text-2xl font-bold text-white">Bienvenue sur votre tableau de bord de fidélité</h1>
-                    <p className="mt-1 text-sm text-gray-400">Démarrer avec Adam</p>
+                    <h1 className="text-3xl font-extrabold text-white tracking-tight"> Bienvenue sur votre tableau de bord de fidélité</h1>
+                  <p className="mt-2 text-base font-semibold text-gray-300">
+  Démarrer avec Adam
+</p>
                     <div className="mt-4">
                         <div className="flex items-center justify-between mb-1">
                             <span className="text-sm font-medium text-white">{stepsCompleted} sur 4 étapes terminées</span>

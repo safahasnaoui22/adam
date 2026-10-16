@@ -41,7 +41,7 @@ export default async function HomePage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Header */}
         <div className="flex justify-between items-center">
-          <div className="text-2xl font-bold text-[#fe5502]">Adam</div>
+          <div className="text-2xl font-bold text-[#fe5502]">BONOO</div>
           <div className="space-x-4">
             <Link
               href="/auth/signin"
@@ -135,7 +135,7 @@ export default async function HomePage() {
         {/* Optional: Add a subtle decorative element with #ffd9b9 */}
         <div className="mt-12 text-center">
           <p className="text-sm text-[#7f8489]">
-            Join thousands of satisfied businesses using Adam
+            Join thousands of satisfied businesses using BONOO
           </p>
           <div className="flex justify-center space-x-2 mt-4">
             <div className="w-2 h-2 rounded-full bg-[#fe5502]"></div>
