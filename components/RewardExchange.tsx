@@ -1077,7 +1077,7 @@ function ExchangeModal({
                 borderRadius: "0.75rem",
                 fontWeight: 700,
                fontSize: "1.25rem",
-fontWeight: 600,
+
                 cursor: loading ? "not-allowed" : "pointer",
               }}
             >
