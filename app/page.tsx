@@ -61,8 +61,8 @@ export default async function HomePage() {
         {/* Hero Section */}
         <div className="text-center py-20">
           <h1 className="text-4xl tracking-tight font-extrabold text-[#282424] sm:text-5xl md:text-6xl">
-            <span className="block">Fidelity system for</span>
-            <span className="block text-[#fe5502]">restaurants & cafes</span>
+            <span className="block">Loyalty system for</span>
+            <span className="block text-[#fe5502]">every business</span>
           </h1>
           <p className="mt-3 max-w-md mx-auto text-base text-[#7f8489] sm:text-lg md:mt-5 md:text-xl md:max-w-3xl">
             Build customer loyalty with digital stamp cards. No app installation required.
@@ -90,9 +90,9 @@ export default async function HomePage() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                     </svg>
                   </div>
-                  <h3 className="mt-8 text-lg font-medium text-[#282424] tracking-tight">Digital platform Cards</h3>
+                  <h3 className="mt-8 text-lg font-medium text-[#282424] tracking-tight">Digital Loyalty Cards</h3>
                   <p className="mt-5 text-base text-[#7f8489]">
-                    Replace paper cards with digital cart. Customers scan QR code to collect stars.
+                    Replace paper cards with digital ones. Customers scan a QR code to collect points or stamps.
                   </p>
                 </div>
               </div>
@@ -108,7 +108,7 @@ export default async function HomePage() {
                   </div>
                   <h3 className="mt-8 text-lg font-medium text-[#282424] tracking-tight">Rewards & Coupons</h3>
                   <p className="mt-5 text-base text-[#7f8489]">
-                    Create custom rewards and time-limited coupons to engage customers.
+                    Create custom rewards and time-limited coupons to engage your customers.
                   </p>
                 </div>
               </div>
@@ -135,7 +135,7 @@ export default async function HomePage() {
         {/* Optional: Add a subtle decorative element with #ffd9b9 */}
         <div className="mt-12 text-center">
           <p className="text-sm text-[#7f8489]">
-            Join thousands of satisfied restaurants using Adam
+            Join thousands of satisfied businesses using Adam
           </p>
           <div className="flex justify-center space-x-2 mt-4">
             <div className="w-2 h-2 rounded-full bg-[#fe5502]"></div>
