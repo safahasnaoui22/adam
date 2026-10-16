@@ -1119,13 +1119,22 @@ export default function RewardExchange() {
           </p>
         </div>
 
-        <div style={{ display: "flex", gap: "1.5rem", flexWrap: "wrap", justifyContent: "center" }}>
+        <div style={{
+  display: "flex",
+  flexDirection: "row",
+  flexWrap: "nowrap",
+  gap: "1rem",
+  width: "100%",
+  alignItems: "stretch",
+}}>
           <button
             onClick={() => setShowAddPoints(true)}
             style={{
-              flex: "1 1 360px",
-minWidth: "300px",
-padding: "2.5rem 2rem",
+               flex: "0 1 280px",
+  width: "280px",
+  minWidth: 0,
+  padding: "1.5rem 1rem",
+  boxSizing: "border-box",
               borderRadius: "1rem",
               background: "#F97316",
               border: "none",
@@ -1184,8 +1193,12 @@ letterSpacing: "0.14em",
           <button
             onClick={() => setShowExchange(true)}
             style={{
-              flex: "1 1 280px",
-              padding: "2rem 1.5rem",
+               flex: "0 1 280px",
+  width: "280px",
+  minWidth: 0,
+  padding: "1.5rem 1rem",
+  boxSizing: "border-box",
+             
               borderRadius: "1rem",
               background: "#2d2b4e",
               border: "none",
