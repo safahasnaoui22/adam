@@ -51,12 +51,38 @@ export async function promptInstall(): Promise<"accepted" | "dismissed" | "unava
   return outcome;
 }
 
+/**
+ * Resolves true as soon as the browser's install prompt is available — right
+ * away if it already is, otherwise as soon as it arrives — or false after the
+ * timeout. Lets the install button wait a moment instead of giving up when the
+ * customer taps it a split second before Chrome fires `beforeinstallprompt`.
+ */
+export function waitForInstallPrompt(timeoutMs = 3000): Promise<boolean> {
+  if (deferredPrompt) return Promise.resolve(true);
+  return new Promise((resolve) => {
+    let off: () => void = () => {};
+    const timer = setTimeout(() => {
+      off();
+      resolve(!!deferredPrompt);
+    }, timeoutMs);
+    off = onPwaStateChange(() => {
+      if (deferredPrompt) {
+        clearTimeout(timer);
+        off();
+        resolve(true);
+      }
+    });
+  });
+}
+
 export function isPwaInstalled() {
   return installed;
 }
 
 /** Subscribe to changes (prompt captured/consumed, app installed). Returns an unsubscribe fn. */
-export function onPwaStateChange(cb: () => void) {
+export function onPwaStateChange(cb: () => void): () => void {
   listeners.add(cb);
-  return () => listeners.delete(cb);
+  return () => {
+    listeners.delete(cb);
+  };
 }

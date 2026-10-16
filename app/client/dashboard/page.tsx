@@ -10,7 +10,8 @@ import SpinWheelModal from "./spin";
 // beforeinstallprompt is now captured app-wide in app/providers.tsx
 // (see lib/pwaInstall.ts) so it isn't missed when it fires on an earlier
 // page, before the customer ever reaches this dashboard.
-import { getDeferredPrompt, promptInstall, onPwaStateChange } from "@/lib/pwaInstall";
+import { getDeferredPrompt, promptInstall, onPwaStateChange, waitForInstallPrompt } from "@/lib/pwaInstall";
+import PwaDebug from "@/components/PwaDebug";
 
 // ── useScrollReveal hook ───────────────────────────────────────────────
 function useScrollReveal(options?: IntersectionObserverInit) {
@@ -934,6 +935,8 @@ export default function ClientDashboard() {
   const [showFloatingQR, setShowFloatingQR] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const [showIOSInstall, setShowIOSInstall] = useState(false);
+  const [installing, setInstalling] = useState(false);
+  const [installHint, setInstallHint] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("rewards");
   const [patternStyle, setPatternStyle] = useState<React.CSSProperties>({});
   const [completedBonuses, setCompletedBonuses] = useState<string[]>([]);
@@ -1102,33 +1105,38 @@ export default function ClientDashboard() {
   // ── Add to Home Screen — uses the app-wide capture from lib/pwaInstall ──
   const handleAddToHomeScreen = async () => {
     // Already installed — nothing to do
-    if (pwaInstalled || isInStandaloneMode()) return;
+    if (pwaInstalled || isInStandaloneMode() || installing) return;
 
-    const iOS = isIOS();
-
-    if (iOS) {
-      // iOS Safari: show the native guide modal
+    // iPhone / iPad: Safari has no install API, so the "Share → Add to Home
+    // Screen" guide is the only way. Android never sees it.
+    if (isIOS()) {
       setShowIOSInstall(true);
       return;
     }
 
-    if (getDeferredPrompt()) {
-      // Android / Chrome: trigger the native install prompt
+    // Android / desktop Chrome: one tap opens the native install dialog.
+    // If Chrome hasn't handed us the prompt yet, give it a few seconds.
+    let ready = !!getDeferredPrompt();
+    if (!ready) {
+      setInstalling(true);
+      ready = await waitForInstallPrompt(3000);
+      setInstalling(false);
+    }
+
+    if (ready) {
       try {
         const outcome = await promptInstall();
-        if (outcome === "accepted") {
-          setPwaInstalled(true);
-        }
+        if (outcome === "accepted") setPwaInstalled(true);
       } catch (err) {
         console.error("[install] prompt failed:", err);
       }
       return;
     }
 
-    // No captured prompt — either the browser doesn't support
-    // beforeinstallprompt (e.g. Firefox Android), or it hasn't fired yet.
-    // Manual instructions are the only option either way.
-    setShowIOSInstall(true);
+    // Chrome isn't offering installation (yet). No instructions pop-up —
+    // just a short message that disappears by itself.
+    setInstallHint("L'installation directe n'est pas disponible pour le moment. Rechargez la page puis réessayez dans Chrome.");
+    setTimeout(() => setInstallHint(null), 7000);
   };
 
   // Re-render when the captured prompt changes (e.g. it arrives after this
@@ -1319,6 +1327,8 @@ useEffect(() => {
   const alreadyInstalled = pwaInstalled || isInStandaloneMode();
   const installButtonLabel = alreadyInstalled
     ? "✓ Application installée"
+    : installing
+    ? "⏳ Préparation…"
     : isIOS()
     ? "📲 Ajouter à l'écran d'accueil"
     : getDeferredPrompt()
@@ -1338,6 +1348,17 @@ useEffect(() => {
           onClose={() => setShowIOSInstall(false)}
         />
       )}
+      {installHint && (
+        <div
+          onClick={() => setInstallHint(null)}
+          className="fixed left-1/2 -translate-x-1/2 px-4 py-3 rounded-2xl text-sm font-medium text-white shadow-xl"
+          style={{ bottom: 96, width: "calc(100% - 40px)", maxWidth: 360, zIndex: 80, background: "rgba(17,24,39,0.95)", textAlign: "center" }}
+          role="status"
+        >
+          {installHint}
+        </div>
+      )}
+      <PwaDebug />
       {showNotifModal && (
         <NotificationPermModal
           primaryColor={D.primary} textColor={D.text} cardBg={D.cardBg}
