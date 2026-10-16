@@ -257,7 +257,8 @@ function AddPointsModal({ onClose }: { onClose: () => void }) {
             background: "#3d3b5e",
             border: "1.5px solid #4a4870",
             color: "#fff",
-            fontSize: "1rem",
+         fontSize: "1.25rem",
+fontWeight: 600,
             outline: "none",
             boxSizing: "border-box",
             marginBottom: "0.5rem",
@@ -1075,7 +1076,8 @@ function ExchangeModal({
                 border: "none",
                 borderRadius: "0.75rem",
                 fontWeight: 700,
-                fontSize: "1rem",
+               fontSize: "1.25rem",
+fontWeight: 600,
                 cursor: loading ? "not-allowed" : "pointer",
               }}
             >
@@ -1109,7 +1111,7 @@ export default function RewardExchange() {
     >
       <div style={{ maxWidth: "900px", width: "100%" }}>
         <div style={{ textAlign: "center", marginBottom: "3rem" }}>
-          <h1 style={{ color: "#fff", fontSize: "2.5rem", fontWeight: 800, margin: "0 0 0.5rem" }}>
+          <h1 style={{ color: "#fff", fontSize: "3rem", fontWeight: 800, margin: "0 0 0.5rem" }}>
             Tableau de bord
           </h1>
           <p style={{ color: "#9ca3af", fontSize: "1rem", margin: 0 }}>
@@ -1121,8 +1123,9 @@ export default function RewardExchange() {
           <button
             onClick={() => setShowAddPoints(true)}
             style={{
-              flex: "1 1 300px",
-              padding: "2rem 1.5rem",
+              flex: "1 1 360px",
+minWidth: "300px",
+padding: "2.5rem 2rem",
               borderRadius: "1rem",
               background: "#F97316",
               border: "none",
@@ -1157,13 +1160,18 @@ export default function RewardExchange() {
               </svg>
             </div>
             <div>
-              <div style={{ color: "#fff", fontSize: "1.2rem", fontWeight: 800 }}>Ajouter des Points</div>
+              <div style={{ color: "#fff", 
+                fontSize: "1.6rem",
+fontWeight: 900,
+letterSpacing: "0.2px",
+whiteSpace: "nowrap"
+              }}>Ajouter des Points</div>
               <div
                 style={{
                   color: "rgba(255,255,255,0.75)",
-                  fontSize: "0.72rem",
-                  fontWeight: 700,
-                  letterSpacing: "0.12em",
+                  fontSize: "0.9rem",
+fontWeight: 800,
+letterSpacing: "0.14em",
                   textTransform: "uppercase",
                   marginTop: "0.2rem",
                 }}
@@ -1203,13 +1211,16 @@ export default function RewardExchange() {
               <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" />
             </svg>
             <div>
-              <div style={{ color: "#fff", fontSize: "1.2rem", fontWeight: 800 }}>Échanger Cadeau</div>
+              <div style={{ color: "#fff", fontSize: "1.6rem",
+fontWeight: 900,
+letterSpacing: "0.2px",
+whiteSpace: "nowrap" }}>Échanger Cadeau</div>
               <div
                 style={{
                   color: "#6b7280",
-                  fontSize: "0.72rem",
-                  fontWeight: 700,
-                  letterSpacing: "0.12em",
+                 fontSize: "0.9rem",
+fontWeight: 800,
+letterSpacing: "0.14em",
                   textTransform: "uppercase",
                   marginTop: "0.2rem",
                 }}
