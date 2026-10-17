@@ -1119,7 +1119,7 @@ export default function ClientDashboard() {
     let ready = !!getDeferredPrompt();
     if (!ready) {
       setInstalling(true);
-      ready = await waitForInstallPrompt(3000);
+      ready = await waitForInstallPrompt(8000);
       setInstalling(false);
     }
 
@@ -1135,7 +1135,7 @@ export default function ClientDashboard() {
 
     // Chrome isn't offering installation (yet). No instructions pop-up —
     // just a short message that disappears by itself.
-    setInstallHint("L'installation directe n'est pas disponible pour le moment. Rechargez la page puis réessayez dans Chrome.");
+    setInstallHint("Installation indisponible pour le moment. Si l'application est déjà installée sur ce téléphone, ouvrez-la depuis votre écran d'accueil. Sinon, rechargez la page puis réessayez.");
     setTimeout(() => setInstallHint(null), 7000);
   };
 

@@ -21,6 +21,34 @@ export const runtime = "nodejs";
 
 const ALLOWED_SIZES = [48, 72, 96, 144, 180, 192, 512];
 
+// Chrome (and Google's WebAPK service) download several icons in a row before
+// it offers "Install". Rebuilding each one from the stored logo made that slow
+// enough for the install prompt to arrive late, so finished icons are kept in
+// memory (keyed by restaurant + version + size) and also cached by the CDN.
+const ICON_CACHE = new Map<string, Buffer>();
+const ICON_CACHE_MAX = 60;
+function remember(key: string, icon: Buffer) {
+  if (ICON_CACHE.size >= ICON_CACHE_MAX) {
+    const oldest = ICON_CACHE.keys().next().value;
+    if (oldest !== undefined) ICON_CACHE.delete(oldest);
+  }
+  ICON_CACHE.set(key, icon);
+}
+
+function pngResponse(icon: Buffer, versioned: boolean) {
+  return new NextResponse(new Uint8Array(icon), {
+    headers: {
+      "Content-Type": "image/png",
+      // With ?v=<timestamp> the URL changes whenever the restaurant is updated,
+      // so it can be cached for a year (browser AND Vercel's CDN).
+      // Without it, only 1 hour.
+      "Cache-Control": versioned
+        ? "public, max-age=31536000, s-maxage=31536000, immutable"
+        : "public, max-age=3600, s-maxage=3600",
+    },
+  });
+}
+
 function fallback(size: number, req: NextRequest) {
   const path =
     size === 180 ? "/icons/apple-touch-icon.png" : `/icons/icon-${size}x${size}.png`;
@@ -56,6 +84,13 @@ export async function GET(
   const size = ALLOWED_SIZES.includes(requested) ? requested : 192;
   const purpose = sp.get("purpose") === "maskable" ? "maskable" : "any";
 
+  const versioned = sp.has("v");
+  const cacheKey = `${restaurantId}:${sp.get("v")}:${size}:${purpose}`;
+  if (versioned) {
+    const cached = ICON_CACHE.get(cacheKey);
+    if (cached) return pngResponse(cached, true);
+  }
+
   const restaurant = await prisma.restaurant.findUnique({
     where: { id: restaurantId },
     select: { logo: true },
@@ -89,16 +124,8 @@ export async function GET(
       .png({ compressionLevel: 9 })
       .toBuffer();
 
-    return new NextResponse(new Uint8Array(icon), {
-      headers: {
-        "Content-Type": "image/png",
-        // With ?v=<timestamp> the URL changes whenever the restaurant is
-        // updated, so it can be cached for a year. Without it, only 1 hour.
-        "Cache-Control": sp.has("v")
-          ? "public, max-age=31536000, immutable"
-          : "public, max-age=3600, s-maxage=3600",
-      },
-    });
+    if (versioned) remember(cacheKey, icon);
+    return pngResponse(icon, versioned);
   } catch (error) {
     console.error("PWA icon generation failed:", error);
     return fallback(size, req);

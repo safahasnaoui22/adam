@@ -44,10 +44,6 @@ export async function GET(
     theme_color: "#fe5502",
     lang: "fr",
     icons: [
-      icon(48, "any"),
-      icon(72, "any"),
-      icon(96, "any"),
-      icon(144, "any"),
       icon(192, "any"),
       icon(192, "maskable"),
       icon(512, "any"),
