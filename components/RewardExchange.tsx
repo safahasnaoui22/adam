@@ -1121,8 +1121,8 @@ export default function RewardExchange() {
 
         <div style={{
           display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: "1rem",
+          gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+          gap: "2rem",
           width: "100%",
           alignItems: "stretch",
         }}>
@@ -1130,37 +1130,41 @@ export default function RewardExchange() {
             onClick={() => setShowAddPoints(true)}
             style={{
               width: "100%",
-              padding: "0.75rem 1rem",
+              padding: "2rem 1.5rem",
               boxSizing: "border-box",
-              borderRadius: "1rem",
-              background: "#F97316",
-              border: "none",
+              borderRadius: "2rem",
+              background: "linear-gradient(135deg, #F97316 0%, #D95B05 100%)",
+              border: "1px solid rgba(255,255,255,0.08)",
+              boxShadow: "0 18px 40px rgba(249,115,22,0.25)",
               cursor: "pointer",
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
-              gap: "0.4rem",
+              justifyContent: "center",
+              gap: "1rem",
               transition: "transform 0.15s, filter 0.15s",
             }}
             onMouseEnter={(e) => {
               (e.currentTarget as HTMLButtonElement).style.filter = "brightness(1.1)";
+              (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-2px)";
             }}
             onMouseLeave={(e) => {
               (e.currentTarget as HTMLButtonElement).style.filter = "brightness(1)";
+              (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0)";
             }}
           >
             <div
               style={{
-                width: "42px",
-                height: "42px",
-                background: "rgba(255,255,255,0.25)",
+                width: "64px",
+                height: "64px",
+                background: "#fff",
                 borderRadius: "50%",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
               }}
             >
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#F97316" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="12" y1="5" x2="12" y2="19" />
                 <line x1="5" y1="12" x2="19" y2="12" />
               </svg>
@@ -1168,19 +1172,18 @@ export default function RewardExchange() {
             <div>
               <div style={{
                 color: "#fff",
-                fontSize: "1.6rem",
+                fontSize: "clamp(1.4rem, 3vw, 2rem)",
                 fontWeight: 900,
                 letterSpacing: "0.2px",
-                whiteSpace: "nowrap",
               }}>Ajouter des Points</div>
               <div
                 style={{
-                  color: "rgba(255,255,255,0.75)",
-                  fontSize: "0.9rem",
+                  color: "rgba(255,255,255,0.8)",
+                  fontSize: "0.95rem",
                   fontWeight: 800,
-                  letterSpacing: "0.14em",
+                  letterSpacing: "0.16em",
                   textTransform: "uppercase",
-                  marginTop: "0.2rem",
+                  marginTop: "0.5rem",
                 }}
               >
                 TERMINAL CAISSE
@@ -1192,48 +1195,50 @@ export default function RewardExchange() {
             onClick={() => setShowExchange(true)}
             style={{
               width: "100%",
-              padding: "0.75rem 1rem",
+              padding: "2rem 1.5rem",
               boxSizing: "border-box",
-              borderRadius: "1rem",
-              background: "#2d2b4e",
-              border: "none",
+              borderRadius: "2rem",
+              background: "#352f47",
+              border: "1px solid rgba(255,255,255,0.08)",
               cursor: "pointer",
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
-              gap: "0.4rem",
+              justifyContent: "center",
+              gap: "1rem",
               transition: "transform 0.15s, background 0.15s",
             }}
             onMouseEnter={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.background = "#3d3b5e";
+              (e.currentTarget as HTMLButtonElement).style.background = "#40395a";
+              (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-2px)";
             }}
             onMouseLeave={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.background = "#2d2b4e";
+              (e.currentTarget as HTMLButtonElement).style.background = "#352f47";
+              (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0)";
             }}
           >
-            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#fe5502" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="#F97316" stroke="#F97316" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="20 12 20 22 4 22 4 12" />
               <rect x="2" y="7" width="20" height="5" />
-              <line x1="12" y1="22" x2="12" y2="7" />
-              <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z" />
-              <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" />
+              <line x1="12" y1="22" x2="12" y2="7" stroke="#352f47" />
+              <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z" fill="none" />
+              <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" fill="none" />
             </svg>
             <div>
               <div style={{
                 color: "#fff",
-                fontSize: "1.6rem",
+                fontSize: "clamp(1.4rem, 3vw, 2rem)",
                 fontWeight: 900,
                 letterSpacing: "0.2px",
-                whiteSpace: "nowrap",
               }}>Échanger Cadeau</div>
               <div
                 style={{
-                  color: "#6b7280",
-                  fontSize: "0.9rem",
+                  color: "#9ca3af",
+                  fontSize: "0.95rem",
                   fontWeight: 800,
-                  letterSpacing: "0.14em",
+                  letterSpacing: "0.16em",
                   textTransform: "uppercase",
-                  marginTop: "0.2rem",
+                  marginTop: "0.5rem",
                 }}
               >
                 CONSOMMER POINTS

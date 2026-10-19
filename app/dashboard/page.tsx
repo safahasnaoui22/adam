@@ -65,6 +65,59 @@ async function getDashboardStats(restaurantId: string) {
     };
 }
 
+// Reward trends: most redeemed rewards over the last 30 days vs the 30 days before
+async function getRewardTrends(restaurantId: string) {
+    const now = Date.now();
+    const DAY = 24 * 60 * 60 * 1000;
+    const last30Start = now - 30 * DAY;
+    const prev30Start = now - 60 * DAY;
+
+    const earned = await prisma.earnedReward.findMany({
+        where: { customer: { restaurantId } },
+        select: {
+            earnedAt: true,
+            reward: { select: { id: true, name: true, pointsRequired: true } },
+        },
+    });
+
+    const byReward = new Map<
+        string,
+        { id: string; name: string; pointsRequired: number; total: number; last30: number; prev30: number }
+    >();
+
+    for (const er of earned) {
+        const key = er.reward.id;
+        const entry =
+            byReward.get(key) ??
+            {
+                id: er.reward.id,
+                name: er.reward.name,
+                pointsRequired: er.reward.pointsRequired,
+                total: 0,
+                last30: 0,
+                prev30: 0,
+            };
+        entry.total += 1;
+        const t = er.earnedAt.getTime();
+        if (t >= last30Start) entry.last30 += 1;
+        else if (t >= prev30Start) entry.prev30 += 1;
+        byReward.set(key, entry);
+    }
+
+    const items = Array.from(byReward.values())
+        .sort((a, b) => b.last30 - a.last30 || b.total - a.total)
+        .slice(0, 5)
+        .map((r) => {
+            let trend: number | null = null; // % change vs previous 30 days
+            if (r.prev30 > 0) trend = Math.round(((r.last30 - r.prev30) / r.prev30) * 100);
+            else if (r.last30 > 0) trend = 100;
+            return { ...r, trend };
+        });
+
+    const totalLast30 = Array.from(byReward.values()).reduce((s, r) => s + r.last30, 0);
+    return { items, totalLast30 };
+}
+
 export default async function DashboardPage() {
     const session = await getServerSession(authOptions);
 
@@ -134,6 +187,8 @@ export default async function DashboardPage() {
 
     // Fetch additional stats
     const stats = await getDashboardStats(restaurant.id);
+    const rewardTrends = await getRewardTrends(restaurant.id);
+    const maxTrendCount = Math.max(1, ...rewardTrends.items.map((r) => r.last30));
 
     const steps = [
         !!restaurant.logo,
@@ -169,7 +224,7 @@ export default async function DashboardPage() {
        
             {/* Reward Exchange component - centered */}
             <div className="flex justify-center">
-                <div className="w-full max-w-2xl">
+                <div className="w-full max-w-[1200px]">
                     <RewardExchange />
                 </div>
             </div>
@@ -228,6 +283,79 @@ export default async function DashboardPage() {
                         <p className="text-3xl font-bold text-white mt-1">{stats.exchangeRate}%</p>
                     </div>
                 </div>
+            </div>
+
+            {/* Tendances Récompenses */}
+            <div className="bg-[var(--bg-card)] rounded-[var(--radius-md)] border border-[var(--border)] p-6">
+                <div className="flex items-start justify-between flex-wrap gap-3">
+                    <div>
+                        <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                            <span>📈</span> Tendances Récompenses
+                        </h2>
+                        <p className="text-sm text-gray-400 mt-1">
+                            Les récompenses les plus échangées sur les 30 derniers jours
+                        </p>
+                    </div>
+                    <span className="text-xs font-semibold text-gray-300 bg-white/5 border border-[var(--border)] px-3 py-1 rounded-full">
+                        {rewardTrends.totalLast30} échange{rewardTrends.totalLast30 > 1 ? "s" : ""} · 30 jours
+                    </span>
+                </div>
+
+                {rewardTrends.items.length === 0 ? (
+                    <div className="mt-6 text-center py-8 border border-dashed border-[var(--border)] rounded-xl">
+                        <p className="text-gray-300 font-medium">Aucun échange pour le moment</p>
+                        <p className="text-sm text-gray-500 mt-1">
+                            Dès que vos clients échangeront leurs points, les récompenses les plus populaires apparaîtront ici.
+                        </p>
+                        <Link
+                            href="/dashboard/loyalty-program"
+                            className="mt-4 inline-flex items-center px-4 py-2 text-sm font-medium rounded-md text-white bg-[#fe5502] hover:bg-[#e0682e] transition-colors"
+                        >
+                            Gérer mes récompenses
+                        </Link>
+                    </div>
+                ) : (
+                    <ul className="mt-5 space-y-3">
+                        {rewardTrends.items.map((r, i) => (
+                            <li
+                                key={r.id}
+                                className="flex items-center gap-4 bg-white/5 border border-[var(--border)] rounded-xl px-4 py-3"
+                            >
+                                <span className="w-8 h-8 shrink-0 rounded-full bg-[#fe5502]/15 text-[#fe5502] text-sm font-bold flex items-center justify-center">
+                                    {i + 1}
+                                </span>
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-baseline justify-between gap-3">
+                                        <p className="text-white font-semibold truncate">{r.name}</p>
+                                        <p className="text-xs text-gray-400 shrink-0">{r.pointsRequired} pts</p>
+                                    </div>
+                                    <div className="mt-2 h-2 bg-white/10 rounded-full overflow-hidden">
+                                        <div
+                                            className="h-full rounded-full bg-gradient-to-r from-[#F97316] to-[#fb923c]"
+                                            style={{ width: `${Math.max(4, (r.last30 / maxTrendCount) * 100)}%` }}
+                                        />
+                                    </div>
+                                </div>
+                                <div className="text-right shrink-0">
+                                    <p className="text-white font-bold">{r.last30}</p>
+                                    <p
+                                        className={`text-xs font-semibold ${
+                                            r.trend === null
+                                                ? "text-gray-500"
+                                                : r.trend > 0
+                                                ? "text-emerald-400"
+                                                : r.trend < 0
+                                                ? "text-red-400"
+                                                : "text-gray-400"
+                                        }`}
+                                    >
+                                        {r.trend === null ? "—" : `${r.trend > 0 ? "↑ +" : r.trend < 0 ? "↓ " : ""}${r.trend}%`}
+                                    </p>
+                                </div>
+                            </li>
+                        ))}
+                    </ul>
+                )}
             </div>
 
          {/* Performance de fidélité block (animated) - Nouveau design */}
