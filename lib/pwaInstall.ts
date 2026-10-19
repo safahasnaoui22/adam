@@ -16,6 +16,7 @@ type BeforeInstallPromptEvent = Event & {
 
 let deferredPrompt: BeforeInstallPromptEvent | null = null;
 let installed = false;
+let promptFiredAt: number | null = null; // ms after page load
 const listeners = new Set<() => void>();
 
 function notify() {
@@ -26,6 +27,7 @@ if (typeof window !== "undefined") {
   window.addEventListener("beforeinstallprompt", (e: Event) => {
     e.preventDefault();
     deferredPrompt = e as BeforeInstallPromptEvent;
+    promptFiredAt = Math.round(performance.now());
     notify();
   });
 
@@ -73,6 +75,11 @@ export function waitForInstallPrompt(timeoutMs = 3000): Promise<boolean> {
       }
     });
   });
+}
+
+/** How long after the page loaded Chrome fired the install prompt (null = it never did). */
+export function getPromptFiredAt() {
+  return promptFiredAt;
 }
 
 export function isPwaInstalled() {

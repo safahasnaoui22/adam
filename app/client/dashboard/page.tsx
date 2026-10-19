@@ -937,6 +937,7 @@ export default function ClientDashboard() {
   const [showIOSInstall, setShowIOSInstall] = useState(false);
   const [installing, setInstalling] = useState(false);
   const [installHint, setInstallHint] = useState<string | null>(null);
+  const [showDebug, setShowDebug] = useState(false);
   const [activeTab, setActiveTab] = useState("rewards");
   const [patternStyle, setPatternStyle] = useState<React.CSSProperties>({});
   const [completedBonuses, setCompletedBonuses] = useState<string[]>([]);
@@ -1136,7 +1137,7 @@ export default function ClientDashboard() {
     // Chrome isn't offering installation (yet). No instructions pop-up —
     // just a short message that disappears by itself.
     setInstallHint("Installation indisponible pour le moment. Si l'application est déjà installée sur ce téléphone, ouvrez-la depuis votre écran d'accueil. Sinon, rechargez la page puis réessayez.");
-    setTimeout(() => setInstallHint(null), 7000);
+    setTimeout(() => setInstallHint(null), 20000);
   };
 
   // Re-render when the captured prompt changes (e.g. it arrives after this
@@ -1356,9 +1357,16 @@ useEffect(() => {
           role="status"
         >
           {installHint}
+          <button
+            onClick={(e) => { e.stopPropagation(); setInstallHint(null); setShowDebug(true); }}
+            className="block mx-auto mt-2 px-4 py-1.5 rounded-full text-xs font-bold"
+            style={{ background: "#fff", color: "#111827", border: "none" }}
+          >
+            Voir pourquoi
+          </button>
         </div>
       )}
-      <PwaDebug />
+      <PwaDebug forceOpen={showDebug} onClose={() => setShowDebug(false)} />
       {showNotifModal && (
         <NotificationPermModal
           primaryColor={D.primary} textColor={D.text} cardBg={D.cardBg}
