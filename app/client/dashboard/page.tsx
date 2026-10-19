@@ -435,7 +435,7 @@ async function showSWNotification(
         body,
         icon: icon || "/icons/icon-192x192.png",
         badge: "/icons/icon-72x72.png",
-        tag: tag || "adam-local",
+        tag: tag || "BONOO-local",
         vibrate: [200, 100, 200],
       } as NotificationOptions);
     }
@@ -966,7 +966,7 @@ export default function ClientDashboard() {
     lastPointsRef.current = points;
     try {
       const id = localStorage.getItem("clientId");
-      if (id) localStorage.setItem(`adam:lastPoints:${id}`, String(points));
+      if (id) localStorage.setItem(`BONOO:lastPoints:${id}`, String(points));
     } catch {}
   };
 
@@ -997,7 +997,7 @@ export default function ClientDashboard() {
         // Compare with the last balance the customer saw (memory first, then
         // localStorage) — not just the previous in-memory value, which is empty
         // every time the app is opened.
-        const seenKey = `adam:lastPoints:${id}`;
+        const seenKey = `BONOO:lastPoints:${id}`;
         let baseline: number | null = lastPointsRef.current;
         if (baseline === null) {
           const stored = localStorage.getItem(seenKey);
@@ -1008,11 +1008,11 @@ export default function ClientDashboard() {
           const logo = restaurantRef.current?.logo;
           if (diff > 0) {
             setCelebration({ pointsEarned: diff, newTotal: data.points, mode: "earned" });
-            showSWNotification("🎉 Points ajoutés !", `+${diff} points sur votre carte. Solde : ${data.points} pts`, logo, "adam-points");
+            showSWNotification("🎉 Points ajoutés !", `+${diff} points sur votre carte. Solde : ${data.points} pts`, logo, "BONOO-points");
           } else {
             const spent = Math.abs(diff);
             setCelebration({ pointsEarned: spent, newTotal: data.points, mode: "spent", rewardName: data.lastRewardName });
-            showSWNotification("🎁 Récompense activée !", `${data.lastRewardName || "Votre récompense"} est prête ! Solde restant : ${data.points} pts`, logo, "adam-reward");
+            showSWNotification("🎁 Récompense activée !", `${data.lastRewardName || "Votre récompense"} est prête ! Solde restant : ${data.points} pts`, logo, "BONOO-reward");
           }
         }
         lastPointsRef.current = data.points;
@@ -1183,7 +1183,7 @@ useEffect(() => {
           "🎉 Notifications activées !",
           "Vous recevrez +points, offres et récompenses sur ce téléphone.",
           restaurantRef.current?.logo,
-          "adam-welcome"
+          "BONOO-welcome"
         );
       }, 600);
     }
@@ -1222,7 +1222,7 @@ useEffect(() => {
             "⭐ Bonus gagné !",
             `+${gained} points pour ${activeBonusModal.label} ! Solde : ${newTotal} pts`,
             restaurantRef.current?.logo,
-            "adam-bonus"
+            "BONOO-bonus"
           );
         }, 350);
       } else {
@@ -1246,7 +1246,7 @@ useEffect(() => {
         "🎁 Récompense activée !",
         `${rewardName || "Votre récompense"} est prête ! Solde restant : ${newTotal} pts`,
         restaurantRef.current?.logo,
-        "adam-reward"
+        "BONOO-reward"
       );
     };
     return () => { delete (window as any).__triggerSpentCelebration; };
@@ -1925,25 +1925,83 @@ useEffect(() => {
         </AnimSection>
 
         {/* ── Add to home screen ── */}
-        <AnimSection delay={300}>
-          <div className="px-4 py-5 border-t" style={{ borderColor: `${D.primary}20`, backgroundColor: D.background }}>
-            <button
-              onClick={handleAddToHomeScreen}
-              disabled={installButtonDisabled}
-              className="w-full py-4 border-2 rounded-2xl font-semibold text-sm flex items-center justify-center gap-2 transition-all active:scale-95"
-              style={{
-                borderColor: installButtonDisabled ? `${D.primary}40` : D.primary,
-                color: installButtonDisabled ? `${D.primary}70` : D.primary,
-                backgroundColor: installButtonDisabled ? `${D.primary}06` : `${D.primary}0d`,
-                cursor: installButtonDisabled ? "default" : "pointer",
-                opacity: installButtonDisabled ? 0.7 : 1,
-              }}
+   
+<AnimSection delay={260}>
+  <div
+    className="px-4 pt-4 pb-2 border-t"
+    style={{ borderColor: `${D.primary}20` }}
+  >
+    <p
+      className="text-xs font-semibold uppercase tracking-widest mb-4 text-center"
+      style={{ color: `${D.text}50` }}
+    >
+      Kiféch nerba7 ? 🤔
+    </p>
+
+    <div
+      className="rounded-2xl overflow-hidden border"
+      style={{ borderColor: `${D.primary}18` }}
+    >
+      {[
+        {
+          emoji: "🛍️",
+          step: "1. Chri w jma3 points",
+          desc: "Kol mara techri men 3and commerce partenaire, tjama3 points fi compte mte3ek.",
+          shade: `${D.primary}0a`,
+        },
+        {
+          emoji: "📱",
+          step: "2. Scanni codek QR",
+          desc: 'Wa9t el paiement, warri code QR mte3ek lel commerçant bech tjama3 points facilement.',
+          shade: `${D.primary}06`,
+        },
+        {
+          emoji: "🎁",
+          step: "3. Baddel points b cadeaux",
+          desc: "Ki tjama3 points kfeya, najmou ywalliwlek réductions, cadeaux wala récompenses 3and les commerces partenaires.",
+          shade: `${D.primary}0a`,
+        },
+      ].map((item, idx, arr) => (
+        <div key={idx}>
+          <div
+            className="flex items-start gap-4 px-4 py-4"
+            style={{ backgroundColor: item.shade }}
+          >
+            <div
+              className="w-10 h-10 rounded-2xl flex items-center justify-center text-xl flex-shrink-0"
+              style={{ backgroundColor: `${D.primary}20` }}
             >
-              {installButtonLabel}
-            </button>
-            <p className="text-xs text-center mt-3" style={{ color: `${D.text}50` }}>Powered by adam · Mentions légales</p>
+              {item.emoji}
+            </div>
+
+            <div>
+              <p
+                className="text-sm font-semibold"
+                style={{ color: D.text }}
+              >
+                {item.step}
+              </p>
+              <p
+                className="text-xs mt-1 leading-relaxed"
+                style={{ color: `${D.text}70` }}
+              >
+                {item.desc}
+              </p>
+            </div>
           </div>
-        </AnimSection>
+
+          {idx < arr.length - 1 && (
+            <div
+              className="h-px"
+              style={{ backgroundColor: `${D.primary}12` }}
+            />
+          )}
+        </div>
+      ))}
+    </div>
+  </div>
+</AnimSection>
+
       </div>
 
       {/* ── Fixed bottom QR button (only after scrolling past the hero) ── */}
