@@ -1121,38 +1121,40 @@ export default function RewardExchange() {
 
         <div style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-          gap: "2rem",
+          gridTemplateColumns: "repeat(auto-fit, minmax(240px, 340px))",
+justifyContent: "center",
+gap: "1.5rem",
+         
           width: "100%",
           alignItems: "stretch",
         }}>
-          <button
-            onClick={() => setShowAddPoints(true)}
-            style={{
-              width: "100%",
-              padding: "2rem 1.5rem",
-              boxSizing: "border-box",
-              borderRadius: "2rem",
-              background: "linear-gradient(135deg, #F97316 0%, #D95B05 100%)",
-              border: "1px solid rgba(255,255,255,0.08)",
-              boxShadow: "0 18px 40px rgba(249,115,22,0.25)",
-              cursor: "pointer",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "1rem",
-              transition: "transform 0.15s, filter 0.15s",
-            }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.filter = "brightness(1.1)";
-              (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-2px)";
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.filter = "brightness(1)";
-              (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0)";
-            }}
-          >
+     <button
+  onClick={() => setShowAddPoints(true)}
+  style={{
+    width: "100%",
+    padding: "1.4rem 1rem", // Reduced height
+    boxSizing: "border-box",
+    borderRadius: "1.5rem", // Smaller rounded corners
+    background: "linear-gradient(135deg, #F97316 0%, #D95B05 100%)",
+    border: "1px solid rgba(255,255,255,0.08)",
+    boxShadow: "0 18px 40px rgba(249,115,22,0.25)",
+    cursor: "pointer",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "0.65rem", // Less space between icon and text
+    transition: "transform 0.15s, filter 0.15s",
+  }}
+  onMouseEnter={(e) => {
+    (e.currentTarget as HTMLButtonElement).style.filter = "brightness(1.1)";
+    (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-2px)";
+  }}
+  onMouseLeave={(e) => {
+    (e.currentTarget as HTMLButtonElement).style.filter = "brightness(1)";
+    (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0)";
+  }}
+>
             <div
               style={{
                 width: "64px",
@@ -1191,32 +1193,32 @@ export default function RewardExchange() {
             </div>
           </button>
 
-          <button
-            onClick={() => setShowExchange(true)}
-            style={{
-              width: "100%",
-              padding: "2rem 1.5rem",
-              boxSizing: "border-box",
-              borderRadius: "2rem",
-              background: "#352f47",
-              border: "1px solid rgba(255,255,255,0.08)",
-              cursor: "pointer",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "1rem",
-              transition: "transform 0.15s, background 0.15s",
-            }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.background = "#40395a";
-              (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-2px)";
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.background = "#352f47";
-              (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0)";
-            }}
-          >
+       <button
+  onClick={() => setShowExchange(true)}
+  style={{
+    width: "100%",
+    padding: "1.4rem 1rem",
+    boxSizing: "border-box",
+    borderRadius: "1.5rem",
+    background: "#352f47",
+    border: "1px solid rgba(255,255,255,0.08)",
+    cursor: "pointer",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "0.65rem",
+    transition: "transform 0.15s, background 0.15s",
+  }}
+  onMouseEnter={(e) => {
+    (e.currentTarget as HTMLButtonElement).style.background = "#40395a";
+    (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-2px)";
+  }}
+  onMouseLeave={(e) => {
+    (e.currentTarget as HTMLButtonElement).style.background = "#352f47";
+    (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0)";
+  }}
+>
             <svg width="64" height="64" viewBox="0 0 24 24" fill="#F97316" stroke="#F97316" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="20 12 20 22 4 22 4 12" />
               <rect x="2" y="7" width="20" height="5" />
