@@ -1096,7 +1096,7 @@ export default function RewardExchange() {
   const [showExchange, setShowExchange] = useState(false);
   const [popupData, setPopupData] = useState<{ customer: CustomerData; rewards: Reward[] } | null>(null);
 
-  return (
+ return (
     <div
       style={{
         minHeight: "50vh",
@@ -1104,12 +1104,12 @@ export default function RewardExchange() {
         fontFamily: "system-ui, -apple-system, sans-serif",
         display: "flex",
         flexDirection: "column",
-        alignItems: "center",
+        alignItems: "stretch",
         justifyContent: "center",
         padding: "2rem",
       }}
     >
-      <div style={{ maxWidth: "1200px", width: "100%" }}>
+      <div style={{ maxWidth: "1200px", width: "100%", margin: "0 auto" }}>
         <div style={{ textAlign: "center", marginBottom: "3rem" }}>
           <h1 style={{ color: "#fff", fontSize: "3rem", fontWeight: 800, margin: "0 0 0.5rem" }}>
             Tableau de bord
@@ -1120,21 +1120,18 @@ export default function RewardExchange() {
         </div>
 
         <div style={{
-  display: "flex",
-  flexDirection: "row",
-  flexWrap: "nowrap",
-  gap: "1rem",
-  width: "100%",
-  alignItems: "stretch",
-}}>
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: "1rem",
+          width: "100%",
+          alignItems: "stretch",
+        }}>
           <button
             onClick={() => setShowAddPoints(true)}
             style={{
-          flex: "1 1 0",
-minWidth: 0,
-padding: "0.9rem 1rem",
-boxSizing: "border-box",
-
+              width: "100%",
+              padding: "0.75rem 1rem",
+              boxSizing: "border-box",
               borderRadius: "1rem",
               background: "#F97316",
               border: "none",
@@ -1142,7 +1139,7 @@ boxSizing: "border-box",
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
-              gap: "0.75rem",
+              gap: "0.4rem",
               transition: "transform 0.15s, filter 0.15s",
             }}
             onMouseEnter={(e) => {
@@ -1154,8 +1151,8 @@ boxSizing: "border-box",
           >
             <div
               style={{
-                width: "52px",
-                height: "52px",
+                width: "42px",
+                height: "42px",
                 background: "rgba(255,255,255,0.25)",
                 borderRadius: "50%",
                 display: "flex",
@@ -1163,24 +1160,25 @@ boxSizing: "border-box",
                 justifyContent: "center",
               }}
             >
-              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="12" y1="5" x2="12" y2="19" />
                 <line x1="5" y1="12" x2="19" y2="12" />
               </svg>
             </div>
             <div>
-              <div style={{ color: "#fff", 
+              <div style={{
+                color: "#fff",
                 fontSize: "1.6rem",
-fontWeight: 900,
-letterSpacing: "0.2px",
-whiteSpace: "nowrap"
+                fontWeight: 900,
+                letterSpacing: "0.2px",
+                whiteSpace: "nowrap",
               }}>Ajouter des Points</div>
               <div
                 style={{
                   color: "rgba(255,255,255,0.75)",
                   fontSize: "0.9rem",
-fontWeight: 800,
-letterSpacing: "0.14em",
+                  fontWeight: 800,
+                  letterSpacing: "0.14em",
                   textTransform: "uppercase",
                   marginTop: "0.2rem",
                 }}
@@ -1193,11 +1191,9 @@ letterSpacing: "0.14em",
           <button
             onClick={() => setShowExchange(true)}
             style={{
-           flex: "1 1 0",
-minWidth: 0,
-padding: "0.9rem 1rem",
-boxSizing: "border-box",
-             
+              width: "100%",
+              padding: "0.75rem 1rem",
+              boxSizing: "border-box",
               borderRadius: "1rem",
               background: "#2d2b4e",
               border: "none",
@@ -1205,7 +1201,7 @@ boxSizing: "border-box",
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
-              gap: "0.75rem",
+              gap: "0.4rem",
               transition: "transform 0.15s, background 0.15s",
             }}
             onMouseEnter={(e) => {
@@ -1215,7 +1211,7 @@ boxSizing: "border-box",
               (e.currentTarget as HTMLButtonElement).style.background = "#2d2b4e";
             }}
           >
-            <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#fe5502" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#fe5502" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="20 12 20 22 4 22 4 12" />
               <rect x="2" y="7" width="20" height="5" />
               <line x1="12" y1="22" x2="12" y2="7" />
@@ -1223,16 +1219,19 @@ boxSizing: "border-box",
               <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" />
             </svg>
             <div>
-              <div style={{ color: "#fff", fontSize: "1.6rem",
-fontWeight: 900,
-letterSpacing: "0.2px",
-whiteSpace: "nowrap" }}>Échanger Cadeau</div>
+              <div style={{
+                color: "#fff",
+                fontSize: "1.6rem",
+                fontWeight: 900,
+                letterSpacing: "0.2px",
+                whiteSpace: "nowrap",
+              }}>Échanger Cadeau</div>
               <div
                 style={{
                   color: "#6b7280",
-                 fontSize: "0.9rem",
-fontWeight: 800,
-letterSpacing: "0.14em",
+                  fontSize: "0.9rem",
+                  fontWeight: 800,
+                  letterSpacing: "0.14em",
                   textTransform: "uppercase",
                   marginTop: "0.2rem",
                 }}
