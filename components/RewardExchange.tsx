@@ -1109,7 +1109,7 @@ export default function RewardExchange() {
         padding: "2rem",
       }}
     >
-      <div style={{ maxWidth: "900px", width: "100%" }}>
+      <div style={{ maxWidth: "1200px", width: "100%" }}>
         <div style={{ textAlign: "center", marginBottom: "3rem" }}>
           <h1 style={{ color: "#fff", fontSize: "3rem", fontWeight: 800, margin: "0 0 0.5rem" }}>
             Tableau de bord
@@ -1130,13 +1130,13 @@ export default function RewardExchange() {
           <button
             onClick={() => setShowAddPoints(true)}
             style={{
-            flex: "1 1 0",
-width: "auto",
+          flex: "1 1 0",
 minWidth: 0,
-padding: "1.1rem 1rem",
+padding: "0.9rem 1rem",
 boxSizing: "border-box",
+
               borderRadius: "1rem",
-              background: "white",
+              background: "#F97316",
               border: "none",
               cursor: "pointer",
               display: "flex",
@@ -1193,10 +1193,9 @@ letterSpacing: "0.14em",
           <button
             onClick={() => setShowExchange(true)}
             style={{
-             flex: "1 1 0",
-width: "auto",
+           flex: "1 1 0",
 minWidth: 0,
-padding: "1.1rem 1rem",
+padding: "0.9rem 1rem",
 boxSizing: "border-box",
              
               borderRadius: "1rem",
