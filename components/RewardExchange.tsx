@@ -1121,10 +1121,10 @@ export default function RewardExchange() {
 
         <div style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(240px, 340px))",
+        
+         gridTemplateColumns: "repeat(auto-fit, minmax(260px, 360px))",
 justifyContent: "center",
 gap: "1.5rem",
-         
           width: "100%",
           alignItems: "stretch",
         }}>
