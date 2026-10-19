@@ -1096,7 +1096,7 @@ export default function RewardExchange() {
   const [showExchange, setShowExchange] = useState(false);
   const [popupData, setPopupData] = useState<{ customer: CustomerData; rewards: Reward[] } | null>(null);
 
-return (
+ return (
     <div
       style={{
         minHeight: "50vh",
@@ -1109,8 +1109,7 @@ return (
         padding: "2rem",
       }}
     >
-      {/* No maxWidth — stretches to full available width */}
-      <div style={{ width: "100%" }}>
+      <div style={{ maxWidth: "1200px", width: "100%", margin: "0 auto" }}>
         <div style={{ textAlign: "center", marginBottom: "3rem" }}>
           <h1 style={{ color: "#fff", fontSize: "3rem", fontWeight: 800, margin: "0 0 0.5rem" }}>
             Tableau de bord
@@ -1138,10 +1137,9 @@ return (
               border: "none",
               cursor: "pointer",
               display: "flex",
-              flexDirection: "row",
+              flexDirection: "column",
               alignItems: "center",
-              justifyContent: "center",
-              gap: "1rem",
+              gap: "0.4rem",
               transition: "transform 0.15s, filter 0.15s",
             }}
             onMouseEnter={(e) => {
@@ -1153,9 +1151,8 @@ return (
           >
             <div
               style={{
-                width: "48px",
-                height: "48px",
-                flexShrink: 0,
+                width: "42px",
+                height: "42px",
                 background: "rgba(255,255,255,0.25)",
                 borderRadius: "50%",
                 display: "flex",
@@ -1163,12 +1160,12 @@ return (
                 justifyContent: "center",
               }}
             >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="12" y1="5" x2="12" y2="19" />
                 <line x1="5" y1="12" x2="19" y2="12" />
               </svg>
             </div>
-            <div style={{ textAlign: "left" }}>
+            <div>
               <div style={{
                 color: "#fff",
                 fontSize: "1.6rem",
@@ -1179,11 +1176,11 @@ return (
               <div
                 style={{
                   color: "rgba(255,255,255,0.75)",
-                  fontSize: "0.85rem",
+                  fontSize: "0.9rem",
                   fontWeight: 800,
                   letterSpacing: "0.14em",
                   textTransform: "uppercase",
-                  marginTop: "0.15rem",
+                  marginTop: "0.2rem",
                 }}
               >
                 TERMINAL CAISSE
@@ -1202,10 +1199,9 @@ return (
               border: "none",
               cursor: "pointer",
               display: "flex",
-              flexDirection: "row",
+              flexDirection: "column",
               alignItems: "center",
-              justifyContent: "center",
-              gap: "1rem",
+              gap: "0.4rem",
               transition: "transform 0.15s, background 0.15s",
             }}
             onMouseEnter={(e) => {
@@ -1215,14 +1211,14 @@ return (
               (e.currentTarget as HTMLButtonElement).style.background = "#2d2b4e";
             }}
           >
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#fe5502" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#fe5502" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="20 12 20 22 4 22 4 12" />
               <rect x="2" y="7" width="20" height="5" />
               <line x1="12" y1="22" x2="12" y2="7" />
               <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z" />
               <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" />
             </svg>
-            <div style={{ textAlign: "left" }}>
+            <div>
               <div style={{
                 color: "#fff",
                 fontSize: "1.6rem",
@@ -1233,11 +1229,11 @@ return (
               <div
                 style={{
                   color: "#6b7280",
-                  fontSize: "0.85rem",
+                  fontSize: "0.9rem",
                   fontWeight: 800,
                   letterSpacing: "0.14em",
                   textTransform: "uppercase",
-                  marginTop: "0.15rem",
+                  marginTop: "0.2rem",
                 }}
               >
                 CONSOMMER POINTS
