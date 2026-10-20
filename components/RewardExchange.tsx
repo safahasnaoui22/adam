@@ -189,7 +189,7 @@ function AddPointsModal({ onClose }: { onClose: () => void }) {
             }}
           >
             <strong>Règle active :</strong> {spendThreshold} DT dépensé →{" "}
-            {pointsEarned} étoile(s) gagnée(s)
+            {pointsEarned} point(s) gagnée(s)
           </div>
         )}
 
@@ -202,7 +202,7 @@ function AddPointsModal({ onClose }: { onClose: () => void }) {
             marginBottom: "0.6rem",
           }}
         >
-          1. ID Client (4 derniers caractères) *
+          1. ID Client  *
         </label>
         <input
           type="text"
