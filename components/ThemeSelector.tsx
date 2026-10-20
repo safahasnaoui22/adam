@@ -211,7 +211,7 @@ export default function ThemeSelector({
             ))}
           </div>
         </div>
-
+{/*
         <div>
           <h3 className="text-lg font-semibold mb-4 text-white">🖼️ Motif d'arrière‑plan</h3>
           <div className="grid grid-cols-3 gap-3">
@@ -239,6 +239,10 @@ export default function ThemeSelector({
             ))}
           </div>
         </div>
+
+
+
+        */}
       </div>
 
       {/* Right: realistic phone showing the real client dashboard */}
