@@ -171,11 +171,57 @@ export default function SpinWheel({
     if (status) drawWheel(angleRef.current, status.segments);
   }, [status, drawWheel]);
 
-  // Inverse of the pointer-at-top winner mapping: rotation whose mod-2π
-  // lands the given segment index dead center under the pointer.
+  // The pointer is fixed at the top. Segment 0 starts at the top when
+  // rotation is 0, so the selected segment's CENTER must finish at the top.
   const angleForIndex = (idx: number, segCount: number) => {
-    const ARC = (2 * Math.PI) / segCount;
-    return ((-(idx + 0.5) * ARC) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
+    const arc = (2 * Math.PI) / segCount;
+    return ((-(idx + 0.5) * arc) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
+  };
+
+  // API responses may contain a winningIndex that doesn't line up with the
+  // exact segment order sent to the client. Prefer the segment that matches
+  // the server-returned prize so the pointer and result card agree.
+  const getPrizeSegmentIndex = (
+    prize: Segment,
+    segments: Segment[],
+    winningIndex: unknown,
+  ): number => {
+    const normalize = (value: string) =>
+      value
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, "");
+
+    const validWinningIndex =
+      Number.isInteger(Number(winningIndex)) &&
+      Number(winningIndex) >= 0 &&
+      Number(winningIndex) < segments.length
+        ? Number(winningIndex)
+        : -1;
+
+    const prizeLabel = normalize(prize.label || "");
+    const exactMatch = segments.findIndex(
+      (segment) =>
+        segment.points === prize.points &&
+        normalize(segment.label || "") === prizeLabel,
+    );
+    if (exactMatch >= 0) return exactMatch;
+
+    // "Réessayer" and "Pas de chance" can be different labels for the same
+    // no-prize outcome. Match the zero-point segment instead of a winning one.
+    if (prize.points <= 0) {
+      const noPrizeIndex = segments.findIndex((segment) => segment.points <= 0);
+      if (noPrizeIndex >= 0) return noPrizeIndex;
+    }
+
+    const pointsMatch = segments.findIndex(
+      (segment) => segment.points === prize.points,
+    );
+    if (pointsMatch >= 0) return pointsMatch;
+
+    if (validWinningIndex >= 0) return validWinningIndex;
+    return 0;
   };
 
   const fireConfetti = () => {
@@ -247,10 +293,19 @@ export default function SpinWheel({
 
       const { winningIndex, prize, newPoints, freeSpinsLeft, bonusSpins } = data;
       const segments = status.segments;
-      const ARC = (2 * Math.PI) / segments.length;
 
+      if (!Array.isArray(segments) || segments.length === 0) {
+        throw new Error("La configuration de la roue est invalide.");
+      }
+      if (!prize || typeof prize.points !== "number" || typeof prize.label !== "string") {
+        throw new Error("Le serveur a renvoyé un résultat de roue invalide.");
+      }
+
+      // Align the wheel with the prize returned by the server, not blindly
+      // with an index that may refer to a differently ordered segment array.
+      const targetIndex = getPrizeSegmentIndex(prize as Segment, segments, winningIndex);
       const extraSpins = 6 + Math.floor(Math.random() * 4);
-      const targetNorm = angleForIndex(winningIndex, segments.length);
+      const targetNorm = angleForIndex(targetIndex, segments.length);
       const startAngle = angleRef.current;
       const startNorm = ((startAngle % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
       const forwardDelta = ((targetNorm - startNorm) + 2 * Math.PI) % (2 * Math.PI);
