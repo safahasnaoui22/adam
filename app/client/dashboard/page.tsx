@@ -1975,9 +1975,43 @@ useEffect(() => {
       ))}
     </div>
   </div>
+
+
+
+
+
+
+
+
+  
 </AnimSection>
 
+
+
+
+
+      {/* ── Add to home screen ── */}
+        <AnimSection delay={300}>
+          <div className="px-4 py-5 border-t" style={{ borderColor: `${D.primary}20`, backgroundColor: D.background }}>
+            <button
+              onClick={handleAddToHomeScreen}
+              disabled={installButtonDisabled}
+              className="w-full py-4 border-2 rounded-2xl font-semibold text-sm flex items-center justify-center gap-2 transition-all active:scale-95"
+              style={{
+                borderColor: installButtonDisabled ? `${D.primary}40` : D.primary,
+                color: installButtonDisabled ? `${D.primary}70` : D.primary,
+                backgroundColor: installButtonDisabled ? `${D.primary}06` : `${D.primary}0d`,
+                cursor: installButtonDisabled ? "default" : "pointer",
+                opacity: installButtonDisabled ? 0.7 : 1,
+              }}
+            >
+              {installButtonLabel}
+            </button>
+            <p className="text-xs text-center mt-3" style={{ color: `${D.text}50` }}>Powered by BONOO · Mentions légales</p>
+          </div>
+        </AnimSection>
       </div>
+      
 
       {/* ── Fixed bottom QR button (only after scrolling past the hero) ── */}
       {client && showFloatingQR && (
