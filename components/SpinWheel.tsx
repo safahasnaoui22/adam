@@ -175,7 +175,7 @@ export default function SpinWheel({
   // lands the given segment index dead center under the pointer.
   const angleForIndex = (idx: number, segCount: number) => {
     const ARC = (2 * Math.PI) / segCount;
-    return ((-idx * ARC) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
+    return ((-(idx + 0.5) * ARC) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
   };
 
   const fireConfetti = () => {
@@ -254,8 +254,9 @@ export default function SpinWheel({
       const startAngle = angleRef.current;
       const startNorm = ((startAngle % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
       const forwardDelta = ((targetNorm - startNorm) + 2 * Math.PI) % (2 * Math.PI);
-      const jitter = (Math.random() - 0.5) * (ARC * 0.55);
-      const target = startAngle + extraSpins * 2 * Math.PI + forwardDelta + jitter;
+      // Stop at the exact center of the server-selected segment. Jitter can
+      // push the pointer into a neighboring segment and show the wrong prize.
+      const target = startAngle + extraSpins * 2 * Math.PI + forwardDelta;
 
       const duration = 4200 + Math.random() * 1200;
       const startTime = performance.now();
