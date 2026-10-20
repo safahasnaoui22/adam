@@ -37,7 +37,7 @@ export default function DashboardNav() {
     "/dashboard/personalize": <Palette size={20} />,
     "/dashboard/loyalty-program": <Star size={20} />,
     "/dashboard/qr-code": <QrCode size={20} />,
-    "/dashboard/bonus-requests": <Gift size={20} />,
+  
     "/dashboard/spin-wheel": <Sparkles size={20} />,
     "/dashboard/clients": <Users size={20} />,
     "/dashboard/activities": <Activity size={20} />,
