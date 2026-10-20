@@ -46,32 +46,32 @@ export default function SignUpPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#fdf9f4] py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-[#282424]">
-            Create your restaurant account
-          </h2>
-          <p className="mt-2 text-center text-sm text-[#7f8489]">
-            Join adam and start building customer loyalty
-          </p>
-        </div>
+       <div>
+  <h2 className="mt-6 text-center text-3xl font-extrabold text-[#282424]">
+    Create your business account
+  </h2>
+  <p className="mt-2 text-center text-sm text-[#7f8489]">
+    Join Generate and start rewarding your customers
+  </p>
+</div>
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="rounded-md shadow-sm space-y-4">
-            <div>
-              <label htmlFor="cafeName" className="block text-sm font-medium text-[#282424] mb-1">
-                Restaurant/Cafe Name *
-              </label>
-              <input
-                id="cafeName"
-                name="cafeName"
-                type="text"
-                required
-                className="appearance-none relative block w-full px-3 py-2 border border-[#c6c9c8] placeholder-[#7f8489] text-[#282424] rounded-md focus:outline-none focus:ring-[#fe5502] focus:border-[#fe5502] focus:z-10 sm:text-sm"
-                placeholder="e.g., Café Central"
-                value={formData.cafeName}
-                onChange={(e) => setFormData({ ...formData, cafeName: e.target.value })}
-              />
-            </div>
+           <div>
+  <label htmlFor="cafeName" className="block text-sm font-medium text-[#282424] mb-1">
+    Business Name *
+  </label>
+  <input
+    id="cafeName"
+    name="cafeName"
+    type="text"
+    required
+    className="appearance-none relative block w-full px-3 py-2 border border-[#c6c9c8] placeholder-[#7f8489] text-[#282424] rounded-md focus:outline-none focus:ring-[#fe5502] focus:border-[#fe5502] focus:z-10 sm:text-sm"
+    placeholder="e.g., My Business"
+    value={formData.cafeName}
+    onChange={(e) => setFormData({ ...formData, cafeName: e.target.value })}
+  />
+</div>
 
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-[#282424] mb-1">
