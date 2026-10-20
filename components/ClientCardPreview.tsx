@@ -500,27 +500,57 @@ export default function ClientCardPreview({
         </div>
 
         {/* ── How to earn ── */}
-        <div style={{ padding: "16px 16px 8px", borderTop: `1px solid ${D.primary}20` }}>
-          <p style={{ fontSize: 12, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 16, marginTop: 0, textAlign: "center", color: `${D.text}50` }}>Kiféch nerba7 ? 🤔</p>
-          <div style={{ borderRadius: 16, overflow: "hidden", border: `1px solid ${D.primary}18` }}>
-            {[
-              { emoji: "🍔", step: "1. Koul w khalles", desc: `Pour chaque ${spendThreshold} DT payé, on t'offre ${pointsEarned} points direct sur ton téléphone !`, shade: `${D.primary}0a` },
-              { emoji: "📱", step: "2. Scanni Codek", desc: 'Wa9t lkhlas, appuie sur "Mon Code QR" et passe ton téléphone à la caisse.', shade: `${D.primary}06` },
-              { emoji: "🎁", step: "3. Hizz l'gratuit !", desc: "Dès que ta jauge touche un cadeau, demande ta récompense gratuite !", shade: `${D.primary}0a` },
-            ].map((item, idx, arr) => (
-              <div key={idx}>
-                <div style={{ display: "flex", alignItems: "flex-start", gap: 16, padding: 16, backgroundColor: item.shade }}>
-                  <div style={{ width: 40, height: 40, borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, flexShrink: 0, backgroundColor: `${D.primary}20` }}>{item.emoji}</div>
-                  <div>
-                    <p style={{ fontSize: 14, fontWeight: 600, color: D.text, margin: 0 }}>{item.step}</p>
-                    <p style={{ fontSize: 12, marginTop: 4, marginBottom: 0, lineHeight: 1.625, color: `${D.text}70` }}>{item.desc}</p>
-                  </div>
-                </div>
-                {idx < arr.length - 1 && <div style={{ height: 1, backgroundColor: `${D.primary}12` }} />}
-              </div>
-            ))}
+   
+<div style={{ padding: "16px 16px 8px", borderTop: `1px solid ${D.primary}20` }}>
+  <p style={{ fontSize: 12, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 16, marginTop: 0, textAlign: "center", color: `${D.text}50` }}>
+    Kiféch nerba7 ? 🤔
+  </p>
+
+  <div style={{ borderRadius: 16, overflow: "hidden", border: `1px solid ${D.primary}18` }}>
+    {[
+      {
+        emoji: "🛍️",
+        step: "1. Chri w jma3 points",
+        desc: `Pour chaque ${spendThreshold} DT dépensés chez un commerce partenaire, تربح ${pointsEarned} points directement fi compte mte3ek !`,
+        shade: `${D.primary}0a`,
+      },
+      {
+        emoji: "📱",
+        step: "2. Scanni Codek",
+        desc: 'Wa9t el paiement, warri code QR mte3ek lel commerçant bech tjama3 points facilement.',
+        shade: `${D.primary}06`,
+      },
+      {
+        emoji: "🎁",
+        step: "3. Baddel points b cadeaux",
+        desc: "Ki tjama3 points kfeya, baddelhom b réductions, cadeaux wala récompenses 3and les commerces partenaires !",
+        shade: `${D.primary}0a`,
+      },
+    ].map((item, idx, arr) => (
+      <div key={idx}>
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 16, padding: 16, backgroundColor: item.shade }}>
+          <div style={{ width: 40, height: 40, borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, flexShrink: 0, backgroundColor: `${D.primary}20` }}>
+            {item.emoji}
+          </div>
+
+          <div>
+            <p style={{ fontSize: 14, fontWeight: 600, color: D.text, margin: 0 }}>
+              {item.step}
+            </p>
+            <p style={{ fontSize: 12, marginTop: 4, marginBottom: 0, lineHeight: 1.625, color: `${D.text}70` }}>
+              {item.desc}
+            </p>
           </div>
         </div>
+
+        {idx < arr.length - 1 && (
+          <div style={{ height: 1, backgroundColor: `${D.primary}12` }} />
+        )}
+      </div>
+    ))}
+  </div>
+</div>
+
 
         {/* ── Add to home screen ── */}
         <div style={{ padding: "20px 16px 96px", borderTop: `1px solid ${D.primary}20`, backgroundColor: D.background }}>

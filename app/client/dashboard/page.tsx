@@ -1899,32 +1899,7 @@ useEffect(() => {
           </div>
         </AnimSection>
 
-        {/* ── How to earn ── */}
-        <AnimSection delay={260}>
-          <div className="px-4 pt-4 pb-2 border-t" style={{ borderColor: `${D.primary}20` }}>
-            <p className="text-xs font-semibold uppercase tracking-widest mb-4 text-center" style={{ color: `${D.text}50` }}>Kiféch nerba7 ? 🤔</p>
-            <div className="rounded-2xl overflow-hidden border" style={{ borderColor: `${D.primary}18` }}>
-              {[
-                { emoji: "🍔", step: "1. Koul w khalles", desc: "Pour chaque 1 DT payé, on t'offre 10 points direct sur ton téléphone !", shade: `${D.primary}0a` },
-                { emoji: "📱", step: "2. Scanni Codek", desc: 'Wa9t lkhlas, appuie sur "Mon Code QR" et passe ton téléphone à la caisse.', shade: `${D.primary}06` },
-                { emoji: "🎁", step: "3. Hizz l'gratuit !", desc: "Dès que ta jauge touche un cadeau, demande ta récompense gratuite !", shade: `${D.primary}0a` },
-              ].map((item, idx, arr) => (
-                <div key={idx}>
-                  <div className="flex items-start gap-4 px-4 py-4" style={{ backgroundColor: item.shade }}>
-                    <div className="w-10 h-10 rounded-2xl flex items-center justify-center text-xl flex-shrink-0" style={{ backgroundColor: `${D.primary}20` }}>{item.emoji}</div>
-                    <div>
-                      <p className="text-sm font-semibold" style={{ color: D.text }}>{item.step}</p>
-                      <p className="text-xs mt-1 leading-relaxed" style={{ color: `${D.text}70` }}>{item.desc}</p>
-                    </div>
-                  </div>
-                  {idx < arr.length - 1 && <div className="h-px" style={{ backgroundColor: `${D.primary}12` }}/>}
-                </div>
-              ))}
-            </div>
-          </div>
-        </AnimSection>
-
-        {/* ── Add to home screen ── */}
+   
    
 <AnimSection delay={260}>
   <div
