@@ -24,7 +24,7 @@ export default function DashboardNav() {
     { name: "Personnaliser la carte", href: "/dashboard/personalize" },
     { name: "Programme de fidélité", href: "/dashboard/loyalty-program" },
     { name: "QR Code", href: "/dashboard/qr-code" },
-    { name: "Demandes de bonus", href: "/dashboard/bonus-requests" },
+   
     { name: "Roue de la chance", href: "/dashboard/spin-wheel" },
     { name: "Cartes client", href: "/dashboard/clients" },
     { name: "Activités", href: "/dashboard/activities" },
