@@ -74,8 +74,13 @@ export default function PwaDebug({ forceOpen = false, onClose }: { forceOpen?: b
                 const icon = icons.find((i) => String(i.sizes).startsWith(size));
                 if (!icon) { r[`icon${size}`] = "MISSING from manifest"; continue; }
                 try {
-                  const i = await withTimeout(probe(new URL(icon.src, link.href).toString()), 10000, `icon ${size} download`);
-                  r[`icon${size}`] = `${i.status} ${i.type} in ${i.ms} ms${i.redirected ? " (REDIRECTED)" : ""}`;
+                  const u = new URL(icon.src, link.href);
+                  // Our own icon route can explain itself (which renderer it used, or why it fell back).
+                  if (u.pathname.startsWith("/api/pwa/")) u.searchParams.set("debug", "1");
+                  const i = await withTimeout(probe(u.toString()), 10000, `icon ${size} download`);
+                  r[`icon${size}`] = i.type?.includes("application/json")
+                    ? `${i.status} in ${i.ms} ms → ${await i.res.text()}`
+                    : `${i.status} ${i.type} in ${i.ms} ms${i.redirected ? " (REDIRECTED)" : ""}`;
                 } catch (e) {
                   r[`icon${size}`] = `FAILED: ${String(e)}`;
                 }

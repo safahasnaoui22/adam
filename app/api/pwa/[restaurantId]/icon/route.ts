@@ -1,8 +1,8 @@
 // app/api/pwa/[restaurantId]/icon/route.ts
 //
 // Turns the logo the owner uploaded under "Logo du commerce" (stored as a
-// base64 data URL) into a real, square, opaque PNG that phones accept as
-// an app icon.
+// base64 data URL) into a real, square, opaque PNG that phones accept as an
+// app icon.
 //
 //   /api/pwa/<id>/icon?size=192                      -> normal icon
 //   /api/pwa/<id>/icon?size=512&purpose=maskable     -> extra padding, so
@@ -10,11 +10,20 @@
 //                                                       squircle mask won't
 //                                                       crop the logo
 //   add &v=<timestamp> to cache-bust after a logo change
+//   add &debug=1 to see which renderer was used (or why it fell back)
 //
-// No logo (or unreadable logo) -> falls back to the default Adam icon.
+// This route must NEVER answer with a server error: Chrome refuses to offer
+// "Install app" if the manifest's icons fail. So every step is guarded:
+//   1. sharp (fast, high quality)          — loaded lazily, in case the native
+//                                            module is missing on the server
+//   2. next/og (no native dependency)      — used if sharp is unavailable
+//   3. the default Adam icon (redirect)    — used if both fail or no logo
+//
+// The failure that prompted this: both icons returned HTTP 500 on Vercel.
 
 import { NextRequest, NextResponse } from "next/server";
-import sharp from "sharp";
+import { ImageResponse } from "next/og";
+import { createElement } from "react";
 import { prisma } from "@/app/lib/prisma";
 
 export const runtime = "nodejs";
@@ -22,9 +31,8 @@ export const runtime = "nodejs";
 const ALLOWED_SIZES = [48, 72, 96, 144, 180, 192, 512];
 
 // Chrome (and Google's WebAPK service) download several icons in a row before
-// it offers "Install". Rebuilding each one from the stored logo made that slow
-// enough for the install prompt to arrive late, so finished icons are kept in
-// memory (keyed by restaurant + version + size) and also cached by the CDN.
+// it offers "Install". Finished icons are kept in memory (keyed by restaurant +
+// version + size) and also cached by the CDN.
 const ICON_CACHE = new Map<string, Buffer>();
 const ICON_CACHE_MAX = 60;
 function remember(key: string, icon: Buffer) {
@@ -73,6 +81,62 @@ function readDataUrl(logo: string): Buffer | null {
   }
 }
 
+function shortMessage(e: unknown) {
+  return (e instanceof Error ? e.message : String(e)).replace(/\s+/g, " ").slice(0, 300);
+}
+
+// 1. sharp
+async function renderWithSharp(input: Buffer, size: number, scale: number): Promise<Buffer> {
+  const { default: sharp } = await import("sharp"); // lazy: a missing native module must not break the route
+  const inner = Math.max(1, Math.round(size * scale));
+
+  const logoPng = await sharp(input, { density: 300 }) // density: crisp SVG logos
+    .rotate() // honour EXIF orientation from phone photos
+    .resize(inner, inner, {
+      fit: "contain",
+      background: { r: 255, g: 255, b: 255, alpha: 0 },
+    })
+    .png()
+    .toBuffer();
+
+  // White, fully opaque background: iOS turns transparent icons black.
+  return sharp({
+    create: { width: size, height: size, channels: 3, background: { r: 255, g: 255, b: 255 } },
+  })
+    .composite([{ input: logoPng }])
+    .removeAlpha()
+    .png({ compressionLevel: 9 })
+    .toBuffer();
+}
+
+// 2. next/og — no native dependency (PNG, JPEG, GIF and SVG logos)
+async function renderWithOg(dataUrl: string, size: number, scale: number): Promise<Buffer> {
+  const inner = Math.max(1, Math.round(size * scale));
+  const image = new ImageResponse(
+    createElement(
+      "div",
+      {
+        style: {
+          width: size,
+          height: size,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: "#ffffff",
+        },
+      },
+      createElement("img", {
+        src: dataUrl,
+        width: inner,
+        height: inner,
+        style: { objectFit: "contain" },
+      })
+    ),
+    { width: size, height: size }
+  );
+  return Buffer.from(await image.arrayBuffer());
+}
+
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ restaurantId: string }> }
@@ -83,51 +147,71 @@ export async function GET(
   const requested = parseInt(sp.get("size") || "192", 10);
   const size = ALLOWED_SIZES.includes(requested) ? requested : 192;
   const purpose = sp.get("purpose") === "maskable" ? "maskable" : "any";
+  const debug = sp.get("debug") === "1";
 
   const versioned = sp.has("v");
   const cacheKey = `${restaurantId}:${sp.get("v")}:${size}:${purpose}`;
-  if (versioned) {
+  if (versioned && !debug) {
     const cached = ICON_CACHE.get(cacheKey);
     if (cached) return pngResponse(cached, true);
   }
 
-  const restaurant = await prisma.restaurant.findUnique({
-    where: { id: restaurantId },
-    select: { logo: true },
-  });
+  const started = Date.now();
+  const notes: string[] = [];
 
-  if (!restaurant?.logo) return fallback(size, req);
-
-  const input = readDataUrl(restaurant.logo);
-  if (!input) return fallback(size, req);
-
+  let logo: string | null = null;
   try {
+    const restaurant = await prisma.restaurant.findUnique({
+      where: { id: restaurantId },
+      select: { logo: true },
+    });
+    logo = restaurant?.logo ?? null;
+    if (!restaurant) notes.push("restaurant not found");
+    else if (!logo) notes.push("restaurant has no logo");
+  } catch (e) {
+    console.error("PWA icon: database error:", e);
+    notes.push("database error"); // deliberately no details
+  }
+
+  let icon: Buffer | null = null;
+  let used: "sharp" | "og" | "default" = "default";
+  const input = logo ? readDataUrl(logo) : null;
+  if (logo && !input) notes.push("logo is not a base64 data URL");
+
+  if (logo && input) {
     // The logo fills 86% of the icon; 60% for maskable (safe zone of the mask).
     const scale = purpose === "maskable" ? 0.6 : 0.86;
-    const inner = Math.max(1, Math.round(size * scale));
 
-    const logoPng = await sharp(input, { density: 300 }) // density: crisp SVG logos
-      .rotate() // honour EXIF orientation from phone photos
-      .resize(inner, inner, {
-        fit: "contain",
-        background: { r: 255, g: 255, b: 255, alpha: 0 },
-      })
-      .png()
-      .toBuffer();
+    try {
+      icon = await renderWithSharp(input, size, scale);
+      used = "sharp";
+    } catch (e) {
+      console.error("PWA icon: sharp failed:", e);
+      notes.push(`sharp: ${shortMessage(e)}`);
+    }
 
-    // White, fully opaque background: iOS turns transparent icons black.
-    const icon = await sharp({
-      create: { width: size, height: size, channels: 3, background: { r: 255, g: 255, b: 255 } },
-    })
-      .composite([{ input: logoPng }])
-      .removeAlpha()
-      .png({ compressionLevel: 9 })
-      .toBuffer();
-
-    if (versioned) remember(cacheKey, icon);
-    return pngResponse(icon, versioned);
-  } catch (error) {
-    console.error("PWA icon generation failed:", error);
-    return fallback(size, req);
+    if (!icon) {
+      try {
+        icon = await renderWithOg(logo, size, scale);
+        used = "og";
+      } catch (e) {
+        console.error("PWA icon: next/og failed:", e);
+        notes.push(`og: ${shortMessage(e)}`);
+      }
+    }
   }
+
+  if (debug) {
+    return NextResponse.json({
+      used,
+      ms: Date.now() - started,
+      logoBytes: input ? input.length : 0,
+      notes,
+    });
+  }
+
+  if (!icon) return fallback(size, req);
+
+  if (versioned) remember(cacheKey, icon);
+  return pngResponse(icon, versioned);
 }

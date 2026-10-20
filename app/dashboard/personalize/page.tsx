@@ -585,6 +585,21 @@ export default function PersonalizePage() {
               restaurantLogo={formData.logo}
               onThemeChange={(theme) => patch({ theme })}
               onPatternChange={(pattern) => patch({ backgroundPattern: pattern })}
+              rewards={(restaurant?.loyaltyProgram?.rewards ?? [])
+                .filter((r: any) => r.isActive)
+                .map((r: any) => ({ id: r.id, name: r.name, pts: r.pointsRequired }))}
+              spendThreshold={restaurant?.loyaltyProgram?.spendThreshold ?? 1}
+              pointsEarned={restaurant?.loyaltyProgram?.pointsEarned ?? 10}
+              bonuses={(
+                [
+                  { id: "googleMaps", url: formData.googleMapsUrl, stars: formData.googleMapsBonusStars },
+                  { id: "facebook", url: formData.facebookUrl, stars: formData.facebookBonusStars },
+                  { id: "instagram", url: formData.instagramUrl, stars: formData.instagramBonusStars },
+                  { id: "twitter", url: formData.twitterUrl, stars: formData.twitterBonusStars },
+                ] as const
+              )
+                .filter((b) => b.url)
+                .map((b) => ({ id: b.id, stars: b.stars }))}
             />
           </div>
         )}
