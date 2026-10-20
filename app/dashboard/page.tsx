@@ -284,6 +284,25 @@ export default async function DashboardPage() {
                     </div>
                 </div>
             </div>
+                        {/* Status Banner */}
+            <div className="bg-[var(--bg-card)] shadow rounded-[var(--radius-md)] border border-[var(--border)]">
+                <div className="px-4 py-5 sm:p-6">
+                    <div className="flex items-center justify-between flex-wrap gap-4">
+                        <div>
+                            <h2 className="text-lg font-medium text-white">Statut de votre compte</h2>
+                            <p className="mt-1 text-sm text-gray-400">Consultez l'état de votre compte et votre abonnement actuel</p>
+                        </div>
+                        <div className="flex space-x-4">
+                            <div className={`px-3 py-1 rounded-full text-sm font-semibold ${getStatusStyles()}`}>
+                                {getStatusDisplay()}
+                            </div>
+                            <div className="px-3 py-1 bg-[#1e3a5f] text-[#fe5502] rounded-full text-sm font-semibold border border-[#fe5502]">
+                                Plan {getPlanDisplay()}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             {/* Tendances Récompenses */}
             <div className="bg-[var(--bg-card)] rounded-[var(--radius-md)] border border-[var(--border)] p-6">
@@ -429,25 +448,7 @@ export default async function DashboardPage() {
     </div>
 </div>
 
-            {/* Status Banner */}
-            <div className="bg-[var(--bg-card)] shadow rounded-[var(--radius-md)] border border-[var(--border)]">
-                <div className="px-4 py-5 sm:p-6">
-                    <div className="flex items-center justify-between flex-wrap gap-4">
-                        <div>
-                            <h2 className="text-lg font-medium text-white">Statut de votre compte</h2>
-                            <p className="mt-1 text-sm text-gray-400">Consultez l'état de votre compte et votre abonnement actuel</p>
-                        </div>
-                        <div className="flex space-x-4">
-                            <div className={`px-3 py-1 rounded-full text-sm font-semibold ${getStatusStyles()}`}>
-                                {getStatusDisplay()}
-                            </div>
-                            <div className="px-3 py-1 bg-[#1e3a5f] text-[#fe5502] rounded-full text-sm font-semibold border border-[#fe5502]">
-                                Plan {getPlanDisplay()}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+
 
         
         </div>
