@@ -5,9 +5,9 @@
   --foreground: #2e283d;
 
   --bg-app: #2e283d;
-  --bg-card: #ffffff;
-  --bg-card-hover: #fff5ed;
-  --border: #eaeaea;
+  --bg-card: #2e283d;
+  --bg-card-hover: #373340;
+  --border: #616063;
   --border-light: rgba(0, 0, 0, 0.06);
   --radius-lg: 24px;
   --radius-md: 14px;
