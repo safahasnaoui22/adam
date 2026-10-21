@@ -68,21 +68,27 @@ export async function POST(request: Request) {
       status: "PENDING"
     });
 
-    // Optional: Create an admin notification
-    await prisma.adminLog.create({
-      data: {
-        adminId: "", // This will be handled by a trigger or leave empty
-        action: "NEW_RESTAURANT_SIGNUP",
-        targetType: "RESTAURANT",
-        targetId: user.restaurant?.id || "",
-        details: {
-          restaurantName: cafeName,
-          email: email,
-          phone: phoneNumber,
-          signedUpAt: new Date().toISOString()
+    // Optional: record the signup for admins. Must never make the signup fail
+    // (the account already exists at this point), and adminId must be null,
+    // not "" (an empty string violates the foreign key to User).
+    try {
+      await prisma.adminLog.create({
+        data: {
+          adminId: null,
+          action: "NEW_RESTAURANT_SIGNUP",
+          targetType: "RESTAURANT",
+          targetId: user.restaurant?.id || "",
+          details: {
+            restaurantName: cafeName,
+            email: email,
+            phone: phoneNumber,
+            signedUpAt: new Date().toISOString(),
+          },
         },
-      },
-    });
+      });
+    } catch (logError) {
+      console.error("Could not write signup admin log:", logError);
+    }
 
     return NextResponse.json(
       {

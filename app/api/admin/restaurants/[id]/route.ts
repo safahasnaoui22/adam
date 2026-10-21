@@ -173,7 +173,7 @@ export async function DELETE(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session || session.user.role !== "ADMIN") {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -183,79 +183,82 @@ export async function DELETE(
 
     const { id } = await context.params;
 
-    // Delete restaurant and all related data in a transaction
-    await prisma.$transaction(async (tx) => {
-      // Find all customer profiles for this restaurant
-      const customers = await tx.customerProfile.findMany({
-        where: { restaurantId: id },
-        select: { id: true },
-      });
-
-      const customerIds = customers.map(c => c.id);
-
-      // Delete visits related to these customers
-      if (customerIds.length > 0) {
-        await tx.visit.deleteMany({
-          where: { customerId: { in: customerIds } },
-        });
-        
-        // Delete earned rewards
-        await tx.earnedReward.deleteMany({
-          where: { customerId: { in: customerIds } },
-        });
-      }
-      
-      // Delete customer profiles
-      await tx.customerProfile.deleteMany({
-        where: { restaurantId: id },
-      });
-      
-      // Find and delete loyalty program if exists
-      const loyaltyProgram = await tx.loyaltyProgram.findFirst({
-        where: { restaurantId: id },
-      });
-      
-      if (loyaltyProgram) {
-        // Delete rewards
-        await tx.reward.deleteMany({
-          where: { loyaltyProgramId: loyaltyProgram.id },
-        });
-        
-        // Delete loyalty program
-        await tx.loyaltyProgram.delete({
-          where: { id: loyaltyProgram.id },
-        });
-      }
-      
-      // Delete subscription if exists
-      await tx.subscription.deleteMany({
-        where: { restaurantId: id },
-      });
-      
-      // Delete stats if exists
-      await tx.restaurantStats.deleteMany({
-        where: { restaurantId: id },
-      });
-      
-      // Delete admin logs related to this restaurant
-      await tx.adminLog.deleteMany({
-        where: { 
-          targetType: "RESTAURANT",
-          targetId: id 
-        },
-      });
-      
-      // Finally delete the restaurant
-      await tx.restaurant.delete({
-        where: { id },
-      });
+    const existing = await prisma.restaurant.findUnique({
+      where: { id },
+      select: { id: true, ownerId: true },
     });
 
+    if (!existing) {
+      return NextResponse.json(
+        { error: "Restaurant introuvable (déjà supprimé ?)" },
+        { status: 404 }
+      );
+    }
+
+    // Delete restaurant and ALL related data in one transaction.
+    // Every table that points to the restaurant or to its customers must be
+    // emptied first, otherwise PostgreSQL rejects the delete (foreign keys).
+    await prisma.$transaction(
+      async (tx) => {
+        const customers = await tx.customerProfile.findMany({
+          where: { restaurantId: id },
+          select: { id: true, userId: true },
+        });
+        const customerIds = customers.map((c) => c.id);
+        const customerUserIds = customers.map((c) => c.userId);
+
+        if (customerIds.length > 0) {
+          await tx.visit.deleteMany({ where: { customerId: { in: customerIds } } });
+          await tx.earnedReward.deleteMany({ where: { customerId: { in: customerIds } } });
+          await tx.spinLog.deleteMany({ where: { customerId: { in: customerIds } } });
+          await tx.bonusRequest.deleteMany({ where: { customerId: { in: customerIds } } });
+          // push subscriptions are ON DELETE CASCADE, but be explicit
+          await tx.pushSubscription.deleteMany({ where: { clientId: { in: customerIds } } });
+        }
+
+        // Anything still attached to the restaurant itself
+        await tx.bonusRequest.deleteMany({ where: { restaurantId: id } });
+        await tx.spinLog.deleteMany({ where: { restaurantId: id } });
+        await tx.spinConfig.deleteMany({ where: { restaurantId: id } });
+
+        await tx.customerProfile.deleteMany({ where: { restaurantId: id } });
+
+        const loyaltyProgram = await tx.loyaltyProgram.findFirst({
+          where: { restaurantId: id },
+          select: { id: true },
+        });
+        if (loyaltyProgram) {
+          await tx.reward.deleteMany({ where: { loyaltyProgramId: loyaltyProgram.id } });
+          await tx.loyaltyProgram.delete({ where: { id: loyaltyProgram.id } });
+        }
+
+        await tx.subscription.deleteMany({ where: { restaurantId: id } });
+        await tx.restaurantStats.deleteMany({ where: { restaurantId: id } });
+        await tx.adminLog.deleteMany({
+          where: { targetType: "RESTAURANT", targetId: id },
+        });
+
+        await tx.restaurant.delete({ where: { id } });
+
+        // Remove the login accounts too (owner + the customers' accounts),
+        // otherwise the owner could still sign in and land on a dashboard with
+        // no restaurant ("Restaurant not found"), and their email stays locked.
+        const userIds = [existing.ownerId, ...customerUserIds];
+        await tx.activityLog.deleteMany({ where: { userId: { in: userIds } } });
+        await tx.passwordResetToken.deleteMany({ where: { userId: { in: userIds } } });
+        await tx.user.deleteMany({ where: { id: { in: userIds } } });
+      },
+      // large restaurants can have thousands of rows: the default 5s is too short
+      { maxWait: 10000, timeout: 60000 }
+    );
+
     return NextResponse.json({ success: true });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Failed to delete restaurant:", error);
+    // Prisma error code (e.g. P2003 = foreign key) helps to diagnose quickly
+    const code = error?.code ? ` (${error.code})` : "";
     return NextResponse.json(
-      { error: "Failed to delete restaurant" },
+      { error: `Failed to delete restaurant${code}` },
       { status: 500 }
     );
   }
