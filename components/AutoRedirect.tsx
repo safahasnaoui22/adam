@@ -18,4 +18,4 @@ export default function AutoRedirect({ restaurantSlug }: { restaurantSlug: strin
   }, [restaurantSlug, router]);
 
   return null;
-}
+}[restaurantSlug]

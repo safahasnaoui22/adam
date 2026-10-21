@@ -1044,19 +1044,40 @@ export default function ClientDashboard() {
   // ── FIX 5: Correct redirect when launched from home screen ──────────
   // When opened from the installed PWA icon, there are NO query params.
   // We must use localStorage's restaurantId, not the URL param.
-  useEffect(() => {
-    const clientId = localStorage.getItem("clientId");
-    const storedRestaurantId = localStorage.getItem("restaurantId");
+ useEffect(() => {
+  const clientId = localStorage.getItem("clientId");
+  const storedRestaurantId = localStorage.getItem("restaurantId");
 
-    if (clientId && storedRestaurantId) {
-      fetchClientData(clientId);
-      fetchRestaurantData(storedRestaurantId);
-    } else {
-      // Prefer storedRestaurantId, fall back to URL param, then empty string
-      const rid = storedRestaurantId || restaurantId || "";
-      router.push(`/client/login?restaurantId=${rid}`);
-    }
-  }, []); // intentionally empty deps — runs once on mount
+  // If the URL specifies a restaurant, it takes priority.
+  const activeRestaurantId = restaurantId || storedRestaurantId;
+
+  // If the saved restaurant differs from the requested one,
+  // clear the old login and ask the customer to log in again.
+  if (
+    restaurantId &&
+    storedRestaurantId &&
+    restaurantId !== storedRestaurantId
+  ) {
+    localStorage.removeItem("clientId");
+    localStorage.removeItem("customerId");
+    localStorage.removeItem("restaurantId");
+    localStorage.removeItem("restaurantSlug");
+
+    router.replace(
+      `/client/login?restaurantId=${encodeURIComponent(restaurantId)}`
+    );
+    return;
+  }
+
+  if (clientId && activeRestaurantId) {
+    fetchClientData(clientId);
+    fetchRestaurantData(activeRestaurantId);
+  } else {
+    router.replace(
+      `/client/login?restaurantId=${encodeURIComponent(activeRestaurantId || "")}`
+    );
+  }
+}, [restaurantId, router]);  
 
   useEffect(() => {
     const handleVisibilityChange = () => {
