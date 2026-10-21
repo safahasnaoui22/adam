@@ -43,20 +43,7 @@ export async function POST(request: NextRequest) {
 
     // Create user and customer profile in transaction
     const user = await prisma.$transaction(async (tx) => {
-      // Check if user with this name already exists for this restaurant
-      const existingCustomer = await tx.customerProfile.findFirst({
-        where: {
-          restaurantId,
-          name: {
-            equals: name,
-            mode: 'insensitive'
-          }
-        }
-      });
-
-      if (existingCustomer) {
-        throw new Error("Un client avec ce nom existe déjà dans ce restaurant");
-      }
+ 
 
       // Create user
       const newUser = await tx.user.create({
@@ -107,12 +94,7 @@ tempPassword,
   } catch (error: any) {
     console.error("Failed to create customer:", error);
     
-    if (error.message === "Un client avec ce nom existe déjà dans ce restaurant") {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 409 }
-      );
-    }
+  
     
     return NextResponse.json(
       { error: "Impossible de créer le compte" },
