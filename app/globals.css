@@ -3,14 +3,12 @@
 :root {
   --background: #ffffff;
   --foreground: #2e283d;
-  
-}
-:root {
-  --bg-app: #2e283d;
-  --bg-card: #3d344d;
-  --bg-card-hover: #483d5a;
-  --border: #4a3d5e;
-  --border-light: rgba(255, 255, 255, 0.1);
+
+  --bg-app: #fdf9f4;
+  --bg-card: #ffffff;
+  --bg-card-hover: #fff5ed;
+  --border: #eaeaea;
+  --border-light: rgba(0, 0, 0, 0.06);
   --radius-lg: 24px;
   --radius-md: 14px;
 }
@@ -22,18 +20,22 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/* Do NOT flip --background to dark here, or your white pages turn purple. */
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #2e283d;
-    --foreground: #ededed;
+    --background: #ffffff;
+    --foreground: #2e283d;
   }
 }
 
-body {
-  
+html, body {
+  margin: 0;
+  padding: 0;
+  background-color: #ffffff !important;
+  color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
-  background-color: #2e283d;
 }
+
 @keyframes shimmer {
   0% { transform: translateX(-100%); }
   100% { transform: translateX(100%); }
