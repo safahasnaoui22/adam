@@ -67,12 +67,12 @@ export default function QRCodeScanner({ restaurantId, restaurantSlug }: { restau
   if (!showNameInput) {
     return (
       <div className="text-center">
-        <button
-          onClick={() => setShowNameInput(true)}
-          className="w-full py-3.5 bg-gradient-to-r from-[#fe5502] to-[#ff7a33] text-white rounded-xl font-semibold shadow-lg shadow-orange-500/25 hover:shadow-xl hover:shadow-orange-500/35 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200"
-        >
-          Commencer
-        </button>
+ <button
+  onClick={() => setShowNameInput(true)}
+  className="tailwind-test w-full py-3.5 bg-gradient-to-r from-[#fe5502] to-[#ff7a33] text-white rounded-xl font-semibold"
+>
+  Commencer
+</button>
       </div>
     );
   }

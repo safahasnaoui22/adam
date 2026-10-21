@@ -27,7 +27,12 @@
     --foreground: #2e283d;
   }
 }
-
+.tailwind-test {
+  background: red !important;
+  color: white !important;
+  padding: 20px !important;
+  border-radius: 12px !important;
+}
 html, body {
   margin: 0;
   padding: 0;
