@@ -59,7 +59,16 @@ self.addEventListener("fetch", (event) => {
   if (request.mode === "navigate") return;
 
   // Never intercept API calls — always go to network
-  if (request.url.includes("/api/")) return;
+// Always fetch Next.js generated assets directly from the network.
+// Avoid stale CSS/JS bundles after deployments.
+const url = new URL(request.url);
+
+if (
+  url.pathname.startsWith("/_next/") ||
+  url.pathname.startsWith("/api/")
+) {
+  return;
+}
 
   // Chrome DevTools: skip extension requests
   if (request.url.startsWith("chrome-extension://")) return;
