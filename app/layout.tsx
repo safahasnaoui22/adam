@@ -31,6 +31,23 @@ export const metadata: Metadata = {
   },
 };
 
+// Chrome fires `beforeinstallprompt` ONCE per page load, and it can fire before
+// React has finished loading (slow phone, big page). A listener that only
+// exists inside the JavaScript bundle then misses it forever and the install
+// button can never work. This tiny inline script runs before any bundle: it
+// catches the event and keeps it on `window` for lib/pwaInstall.ts to pick up.
+const EARLY_INSTALL_PROMPT_SCRIPT = `
+(function () {
+  window.addEventListener("beforeinstallprompt", function (e) {
+    e.preventDefault();
+    window.__bip = e;
+    window.__bipAt = Math.round(performance.now());
+    window.dispatchEvent(new Event("bip-captured"));
+  });
+  window.addEventListener("appinstalled", function () { window.__bip = undefined; });
+})();
+`;
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -39,6 +56,7 @@ export default function RootLayout({
   return (
     <html lang="fr">
       <head>
+        <script dangerouslySetInnerHTML={{ __html: EARLY_INSTALL_PROMPT_SCRIPT }} />
         {/*
           Icon, apple-touch-icon, app title and manifest come from the
           metadata API (see generateMetadata in app/client/dashboard/layout.tsx),

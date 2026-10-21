@@ -14,6 +14,14 @@ type BeforeInstallPromptEvent = Event & {
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 };
 
+// The inline script in app/layout.tsx stores the event here as soon as Chrome fires it.
+declare global {
+  interface Window {
+    __bip?: BeforeInstallPromptEvent;
+    __bipAt?: number;
+  }
+}
+
 let deferredPrompt: BeforeInstallPromptEvent | null = null;
 let installed = false;
 let promptFiredAt: number | null = null; // ms after page load
@@ -24,16 +32,33 @@ function notify() {
 }
 
 if (typeof window !== "undefined") {
+  // 1. Chrome may already have fired the event before this code even loaded.
+  if (window.__bip) {
+    deferredPrompt = window.__bip;
+    promptFiredAt = window.__bipAt ?? null;
+  }
+
+  // 2. ...or it fires later and the early script tells us.
+  window.addEventListener("bip-captured", () => {
+    if (window.__bip) {
+      deferredPrompt = window.__bip;
+      promptFiredAt = window.__bipAt ?? promptFiredAt;
+      notify();
+    }
+  });
+
+  // 3. Safety net if the inline script is ever removed from the layout.
   window.addEventListener("beforeinstallprompt", (e: Event) => {
     e.preventDefault();
     deferredPrompt = e as BeforeInstallPromptEvent;
-    promptFiredAt = Math.round(performance.now());
+    if (promptFiredAt === null) promptFiredAt = Math.round(performance.now());
     notify();
   });
 
   window.addEventListener("appinstalled", () => {
     installed = true;
     deferredPrompt = null;
+    window.__bip = undefined;
     notify();
   });
 }
@@ -47,6 +72,7 @@ export async function promptInstall(): Promise<"accepted" | "dismissed" | "unava
   if (!deferredPrompt) return "unavailable";
   const prompt = deferredPrompt;
   deferredPrompt = null;
+  window.__bip = undefined;
   notify();
   await prompt.prompt();
   const { outcome } = await prompt.userChoice;
