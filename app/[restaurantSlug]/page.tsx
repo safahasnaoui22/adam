@@ -306,7 +306,7 @@ export default async function RestaurantLandingPage({ params }: PageProps) {
           <div className="rlp-tip-icon">💡</div>
           <p>
             Astuce: Après votre inscription, ajoutez cette page à l'écran
-            d'accueil pour y accéder facilement à chaque visite safa
+            d'accueil pour y accéder facilement à chaque visite 
           </p>
         </div>
       </div>
