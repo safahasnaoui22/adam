@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   X,
   Plus,
@@ -13,14 +13,24 @@ import {
   Edit2,
   Trash2,
   Calendar,
-  ChevronDown,
   ChevronRight,
   Info,
-  ArrowRight,
   RefreshCw,
 } from "lucide-react";
 
-// --- Types ---
+// --- 1. TYPESCRIPT INTERFACE (Fixes your build error) ---
+interface SpinWheelProps {
+  primaryColor?: string;
+  textColor?: string;
+  cardBg?: string;
+  restaurantId: string;
+  customerId: string;
+  restaurantName?: string;
+  restaurantSlug?: string;
+  onPointsEarned?: (points: number, newTotal: number) => void;
+}
+
+// --- Internal Types ---
 type Segment = {
   id: number;
   label: string;
@@ -43,7 +53,8 @@ type GameConfig = {
   };
 };
 
-// --- Mock Data for Dashboard ---
+const COLORS = ["#3B82F6", "#F59E0B", "#10B981", "#EF4444", "#8B5CF6", "#EC4899", "#6366F1", "#14B8A6", "#F97316", "#84CC16"];
+
 const INITIAL_GAMES = [
   {
     id: 1,
@@ -57,14 +68,22 @@ const INITIAL_GAMES = [
   },
 ];
 
-const COLORS = ["#3B82F6", "#F59E0B", "#10B981", "#EF4444", "#8B5CF6", "#EC4899", "#6366F1", "#14B8A6", "#F97316", "#84CC16"];
-
-export default function SpinWheelApp() {
+// --- 2. MAIN COMPONENT (Accepts the props to fix the error) ---
+export default function SpinWheel({
+  primaryColor,
+  textColor,
+  cardBg,
+  restaurantId,
+  customerId,
+  restaurantName,
+  restaurantSlug,
+  onPointsEarned,
+}: SpinWheelProps) {
+  
   const [games, setGames] = useState(INITIAL_GAMES);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [step, setStep] = useState(1);
   
-  // Game creation state
   const [gameConfig, setGameConfig] = useState<GameConfig>({
     name: "",
     startDate: "",
@@ -83,7 +102,6 @@ export default function SpinWheelApp() {
     },
   });
 
-  // --- Handlers ---
   const handleCreateGame = () => {
     const newGame = {
       id: Date.now(),
@@ -93,7 +111,7 @@ export default function SpinWheelApp() {
     };
     setGames([newGame, ...games]);
     setIsModalOpen(false);
-    setStep(1); // Reset for next time
+    setStep(1);
   };
 
   const addSegment = () => {
@@ -106,7 +124,7 @@ export default function SpinWheelApp() {
       probability: parseFloat(newProb.toFixed(1)),
       color: COLORS[updatedSegments.length % COLORS.length],
     });
-    // Adjust last item to make exactly 100
+    
     const total = updatedSegments.reduce((acc, curr) => acc + curr.probability, 0);
     if (total !== 100) updatedSegments[updatedSegments.length - 1].probability += (100 - total);
 
@@ -119,26 +137,14 @@ export default function SpinWheelApp() {
     const newProb = 100 / updatedSegments.length;
     updatedSegments = updatedSegments.map(s => ({ ...s, probability: parseFloat(newProb.toFixed(1)) }));
     
-    // Fix rounding errors
     const total = updatedSegments.reduce((acc, curr) => acc + curr.probability, 0);
     if (total !== 100) updatedSegments[0].probability += (100 - total);
 
     setGameConfig({ ...gameConfig, segments: updatedSegments });
   };
 
-  const updateProbability = (id: number, value: number) => {
-    // Note: A robust implementation requires complex balancing logic to keep total at 100%
-    // For this UI, we'll just update the specific value
-    const updated = gameConfig.segments.map(s => s.id === id ? { ...s, probability: value } : s);
-    setGameConfig({ ...gameConfig, segments: updated });
-  };
-
-  // --- Sub-components ---
-
   const PieChart = ({ segments, size = 120 }: { segments: Segment[], size?: number }) => {
     let cumulativePercent = 0;
-    
-    // SVG Pie Chart generation
     const getCoordinatesForPercent = (percent: number) => {
       const x = Math.cos(2 * Math.PI * percent);
       const y = Math.sin(2 * Math.PI * percent);
@@ -174,7 +180,6 @@ export default function SpinWheelApp() {
             );
           })}
         </svg>
-        {/* Center pin */}
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full border-4 border-gray-800 shadow-sm" />
       </div>
     );
@@ -183,7 +188,7 @@ export default function SpinWheelApp() {
   return (
     <div className="min-h-screen bg-[#0B0F19] text-gray-200 p-8 font-sans">
       
-      {/* --- DASHBOARD VIEW --- */}
+      {/* DASHBOARD VIEW */}
       <div className="max-w-6xl mx-auto">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-semibold text-white">Spin & Win</h1>
@@ -195,7 +200,6 @@ export default function SpinWheelApp() {
           </button>
         </div>
 
-        {/* Info Banner */}
         <div className="bg-[#111827] border border-[#374151] rounded-xl p-5 mb-8 flex gap-4">
           <div className="bg-[#1F2937] p-3 rounded-lg h-fit">
             <Gift className="text-[#8B5CF6]" size={24} />
@@ -208,7 +212,6 @@ export default function SpinWheelApp() {
           </div>
         </div>
 
-        {/* Games Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {games.map((game) => (
             <div key={game.id} className="bg-[#111827] border border-[#1F2937] rounded-xl p-5 hover:border-[#374151] transition-colors relative">
@@ -258,12 +261,11 @@ export default function SpinWheelApp() {
         </div>
       </div>
 
-      {/* --- MODAL VIEW (STEPS 1-3) --- */}
+      {/* MODAL VIEW */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-[#111827] border border-[#1F2937] rounded-2xl w-full max-w-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
             
-            {/* Modal Header */}
             <div className="p-6 border-b border-[#1F2937] flex justify-between items-center">
               <div>
                 <h2 className="text-xl font-semibold text-white mb-4">Nouveau jeu roue</h2>
@@ -278,7 +280,6 @@ export default function SpinWheelApp() {
               </button>
             </div>
 
-            {/* Progress Bar & Tabs */}
             <div className="px-6 pt-4">
               <div className="flex items-center gap-2 mb-2">
                 <div className="flex-1 h-1 bg-[#1F2937] rounded-full overflow-hidden">
@@ -301,10 +302,8 @@ export default function SpinWheelApp() {
               </div>
             </div>
 
-            {/* Modal Body (Scrollable) */}
             <div className="p-6 overflow-y-auto flex-1 custom-scrollbar">
               
-              {/* STEP 1: SETTINGS */}
               {step === 1 && (
                 <div className="space-y-6">
                   <div className="bg-[#1F2937]/50 border border-[#374151] rounded-xl p-5">
@@ -380,7 +379,6 @@ export default function SpinWheelApp() {
                 </div>
               )}
 
-              {/* STEP 2: REWARDS */}
               {step === 2 && (
                 <div className="flex gap-8">
                   <div className="flex-1">
@@ -416,7 +414,6 @@ export default function SpinWheelApp() {
                     </div>
                   </div>
 
-                  {/* Wheel Preview */}
                   <div className="w-64 flex flex-col items-center">
                     <div className="w-full bg-[#1F2937]/30 border border-[#374151] rounded-xl p-6 flex flex-col items-center">
                       <PieChart segments={gameConfig.segments} size={180} />
@@ -434,7 +431,6 @@ export default function SpinWheelApp() {
                 </div>
               )}
 
-              {/* STEP 3: CONDITIONS */}
               {step === 3 && (
                 <div className="bg-[#1F2937]/50 border border-[#374151] rounded-xl p-5">
                   <h3 className="flex items-center gap-2 text-white font-medium mb-1">
@@ -443,7 +439,6 @@ export default function SpinWheelApp() {
                   <p className="text-sm text-gray-400 mb-6">Exiger que les clients complètent ces actions avant de tourner</p>
                   
                   <div className="grid grid-cols-2 gap-4">
-                    {/* Condition 1 */}
                     <div className="flex items-start gap-3 bg-[#111827] border border-[#374151] p-4 rounded-xl">
                       <div className="bg-[#1F2937] p-2 rounded-lg text-blue-400">
                         <Smartphone size={20} />
@@ -462,7 +457,6 @@ export default function SpinWheelApp() {
                       </div>
                     </div>
 
-                    {/* Condition 2 */}
                     <div className="flex items-start gap-3 bg-[#111827] border border-[#374151] p-4 rounded-xl">
                       <div className="bg-[#1F2937] p-2 rounded-lg text-blue-400">
                         <Bell size={20} />
@@ -481,7 +475,6 @@ export default function SpinWheelApp() {
                       </div>
                     </div>
 
-                    {/* Condition 3 */}
                     <div className="flex items-start gap-3 bg-[#111827] border border-[#3B82F6] p-4 rounded-xl col-span-2">
                       <div className="bg-[#1F2937] p-2 rounded-lg text-blue-400">
                         <PhoneCall size={20} />
@@ -505,7 +498,6 @@ export default function SpinWheelApp() {
 
             </div>
 
-            {/* Modal Footer */}
             <div className="p-6 border-t border-[#1F2937] flex justify-between items-center bg-[#111827]">
               <button 
                 onClick={() => step > 1 ? setStep(step - 1) : setIsModalOpen(false)}
