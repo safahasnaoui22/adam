@@ -21,7 +21,14 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/lib/auth";
 import { prisma } from "@/app/lib/prisma";
 
-type Segment = { label: string; points: number; color: string; textColor: string };
+// 1. Added probability to the Segment type
+type Segment = { 
+  label: string; 
+  points: number; 
+  color: string; 
+  textColor: string;
+  probability?: number; 
+};
 
 function isSameDay(a: Date, b: Date) {
   return a.toDateString() === b.toDateString();
@@ -92,6 +99,7 @@ export async function POST(req: NextRequest) {
     if (!config || !config.isActive) {
       return NextResponse.json({ error: "Spin wheel not available" }, { status: 404 });
     }
+    
     const segments = config.segments as Segment[];
     if (!Array.isArray(segments) || segments.length === 0) {
       return NextResponse.json({ error: "Wheel has no segments configured" }, { status: 500 });
@@ -118,10 +126,36 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No bonus spins available" }, { status: 400 });
     }
 
-    // Uniform random pick — the wheel's visual sectors are equal-sized, so
-    // this matches what the player sees. Swap for a weighted pick if you
-    // later want some segments rarer than their sector size suggests.
-    const winningIndex = Math.floor(Math.random() * segments.length);
+    // 2. WEIGHTED RANDOM PICK based on probabilities set by Admin
+    let winningIndex = 0;
+    
+    // Check if all segments have a valid probability
+    const hasValidProbabilities = segments.every(s => typeof s.probability === 'number' && s.probability >= 0);
+    
+    if (hasValidProbabilities) {
+      const totalProbability = segments.reduce((sum, s) => sum + (s.probability || 0), 0);
+      
+      if (totalProbability > 0) {
+        // Pick a random number between 0 and totalProbability
+        let random = Math.random() * totalProbability;
+        
+        // Loop through segments and subtract their probability until we hit 0
+        for (let i = 0; i < segments.length; i++) {
+          random -= (segments[i].probability || 0);
+          if (random <= 0) {
+            winningIndex = i;
+            break;
+          }
+        }
+      } else {
+        // Fallback if all probabilities are 0
+        winningIndex = Math.floor(Math.random() * segments.length);
+      }
+    } else {
+      // Fallback to uniform random if probabilities are missing
+      winningIndex = Math.floor(Math.random() * segments.length);
+    }
+
     const winner = segments[winningIndex];
 
     const [updatedCustomer] = await prisma.$transaction([

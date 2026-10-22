@@ -6,6 +6,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+
 }
 
 model User {
@@ -21,7 +22,7 @@ model User {
   customerProfile CustomerProfile?
   restaurant      Restaurant?
   activityLogs    ActivityLog[]
-   passwordResetTokens PasswordResetToken[]
+  passwordResetTokens PasswordResetToken[]
 }
 
 model ActivityLog {
@@ -112,7 +113,6 @@ model CustomerProfile {
   visits            Visit[]
   pushSubscriptions PushSubscription[]
 
-  // Add this line for the relation to BonusRequest
   bonusRequests             BonusRequest[]
   hasClaimedGoogleMapsBonus Boolean        @default(false)
   hasClaimedFacebookBonus   Boolean        @default(false)
@@ -140,7 +140,6 @@ model BonusRequest {
   rejectedAt     DateTime?
   rejectedReason String?
 
-  // Relations
   customer   CustomerProfile @relation(fields: [customerId], references: [id])
   restaurant Restaurant      @relation(fields: [restaurantId], references: [id])
 }
@@ -219,19 +218,30 @@ model RestaurantStats {
 }
 
 // --- Spin wheel -----------------------------------------------------------
-// One config per restaurant. `segments` mirrors the client-side Segment
-// type ({ label, points, color, textColor }[]) so the admin screen can
-// write it directly and the wheel component can render it with no mapping.
+// Updated to match Stampi UI (3-step creation modal)
 
 model SpinConfig {
   id                 String     @id @default(cuid())
   restaurantId       String     @unique
-  restaurant         Restaurant @relation(fields: [restaurantId], references: [id])
+  restaurant         Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  
+  name               String     @default("Nouveau jeu")
+  startDate          DateTime?
+  endDate            DateTime?
+  rule               String     @default("purchase") // "purchase" | "daily" | "custom"
+  customRules        String?    
+  firstFree          Boolean    @default(true)
+
   isActive           Boolean    @default(true)
   dailyFreeSpins     Int        @default(3)
-  // How many bonus spins one purchase/scan (one Visit) grants.
   bonusSpinsPerVisit Int        @default(1)
+  
+  // Stores the array of segments including { label, points, color, textColor, probability }
   segments           Json
+  
+  // Stores conditions like { installApp: true, notifications: false, phone: true }
+  conditions         Json       @default("{}")
+  
   createdAt          DateTime   @default(now())
   updatedAt          DateTime   @updatedAt
 }
@@ -274,7 +284,6 @@ enum SubscriptionPlan {
   ENTERPRISE
 }
 
-
 model PushSubscription {
   id        String          @id @default(cuid())
   clientId  String
@@ -285,6 +294,7 @@ model PushSubscription {
   customer  CustomerProfile @relation(fields: [clientId], references: [id], onDelete: Cascade)
   @@index([clientId])
 }
+
 model PasswordResetToken {
   id        String   @id @default(cuid())
   userId    String
