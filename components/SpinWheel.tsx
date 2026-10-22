@@ -2,12 +2,12 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 
-// ── Types ────────────────────────────────────────────────────────────
 type Segment = {
   label: string;
   points: number;
   color: string;
   textColor: string;
+  probability?: number;
 };
 
 type SpinSource = "FREE" | "BONUS";
@@ -25,8 +25,6 @@ type SpinWheelProps = {
   cardBg?: string;
   restaurantId: string;
   customerId: string;
-  // Used only to build the share message/link — optional, the share
-  // button just hides itself if these aren't passed.
   restaurantName?: string;
   restaurantSlug?: string;
   onPointsEarned?: (points: number, newTotal: number) => void;
@@ -61,25 +59,30 @@ export default function SpinWheel({
   const [confetti, setConfetti] = useState<{ id: number; emoji: string; x: number; delay: number }[]>([]);
   const [shareState, setShareState] = useState<"idle" | "copied" | "error">("idle");
 
-  // ── Load wheel config + remaining spins ─────────────────────────
   const loadStatus = useCallback(async () => {
     try {
       const res = await fetch(`/api/customer/spin?restaurantId=${restaurantId}`);
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to load");
+      
+      if (data.segments && data.segments.length > 0) {
+        const hasProb = data.segments.every((s: any) => typeof s.probability === 'number');
+        if (!hasProb) {
+          const eq = parseFloat((100 / data.segments.length).toFixed(1));
+          data.segments = data.segments.map((s: any) => ({ ...s, probability: eq }));
+        }
+      }
+
       setStatus(data);
-      setTotalPts((prev) => prev); // keep local session tally, don't reset on reload
+      setTotalPts((prev) => prev); 
       setLoadError(null);
     } catch (err) {
       setLoadError(err instanceof Error ? err.message : "Impossible de charger la roue");
     }
   }, [restaurantId]);
 
-  useEffect(() => {
-    loadStatus();
-  }, [loadStatus]);
+  useEffect(() => { loadStatus(); }, [loadStatus]);
 
-  // ── Draw wheel (crisp on retina via devicePixelRatio) ────────────
   const drawWheel = useCallback(
     (rot: number, segments: Segment[]) => {
       const canvas = canvasRef.current;
@@ -93,12 +96,8 @@ export default function SpinWheel({
         ctx.scale(dpr, dpr);
       }
 
-      const SEG = segments.length;
-      const ARC = (2 * Math.PI) / SEG;
-
       ctx.clearRect(0, 0, WHEEL_SIZE, WHEEL_SIZE);
 
-      // Soft outer glow ring
       ctx.save();
       ctx.beginPath();
       ctx.arc(CENTER, CENTER, R + 6, 0, 2 * Math.PI);
@@ -107,10 +106,14 @@ export default function SpinWheel({
       ctx.stroke();
       ctx.restore();
 
-      for (let i = 0; i < SEG; i++) {
-        const start = rot + i * ARC - Math.PI / 2;
-        const end = start + ARC;
+      const totalProb = segments.reduce((acc, s) => acc + (s.probability || 0), 0);
+      let currentAngle = rot - Math.PI / 2;
+
+      for (let i = 0; i < segments.length; i++) {
         const seg = segments[i];
+        const arcSize = ((seg.probability || 0) / totalProb) * (2 * Math.PI);
+        const start = currentAngle;
+        const end = start + arcSize;
 
         ctx.beginPath();
         ctx.moveTo(CENTER, CENTER);
@@ -122,7 +125,6 @@ export default function SpinWheel({
         ctx.lineWidth = 2.5;
         ctx.stroke();
 
-        // subtle inner highlight for depth
         const grad = ctx.createRadialGradient(CENTER, CENTER, R * 0.2, CENTER, CENTER, R);
         grad.addColorStop(0, "rgba(255,255,255,0.18)");
         grad.addColorStop(1, "rgba(255,255,255,0)");
@@ -133,21 +135,22 @@ export default function SpinWheel({
         ctx.fillStyle = grad;
         ctx.fill();
 
-        ctx.save();
-        ctx.translate(CENTER, CENTER);
-        ctx.rotate(start + ARC / 2);
-        ctx.textAlign = "right";
-        ctx.font = seg.points >= 100
-          ? "700 14px 'Inter', sans-serif"
-          : "600 13px 'Inter', sans-serif";
-        ctx.fillStyle = seg.textColor;
-        ctx.shadowColor = "rgba(0,0,0,0.15)";
-        ctx.shadowBlur = 2;
-        ctx.fillText(seg.label, R - 14, 5);
-        ctx.restore();
+        if (arcSize > 0.2) {
+          ctx.save();
+          ctx.translate(CENTER, CENTER);
+          ctx.rotate(start + arcSize / 2);
+          ctx.textAlign = "right";
+          ctx.font = seg.points >= 100 ? "700 14px 'Inter', sans-serif" : "600 13px 'Inter', sans-serif";
+          ctx.fillStyle = seg.textColor;
+          ctx.shadowColor = "rgba(0,0,0,0.15)";
+          ctx.shadowBlur = 2;
+          const displayLabel = seg.label.length > 12 ? seg.label.substring(0, 12) + "..." : seg.label;
+          ctx.fillText(displayLabel, R - 14, 5);
+          ctx.restore();
+        }
+        currentAngle = end;
       }
 
-      // Hub
       ctx.beginPath();
       ctx.arc(CENTER, CENTER, 34, 0, 2 * Math.PI);
       ctx.fillStyle = cardBg;
@@ -171,146 +174,73 @@ export default function SpinWheel({
     if (status) drawWheel(angleRef.current, status.segments);
   }, [status, drawWheel]);
 
-  // The pointer is fixed at the top. Segment 0 starts at the top when
-  // rotation is 0, so the selected segment's CENTER must finish at the top.
-  const angleForIndex = (idx: number, segCount: number) => {
-    const arc = (2 * Math.PI) / segCount;
-    return ((-(idx + 0.5) * arc) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
+  const getTargetAngle = (targetIndex: number, segments: Segment[]) => {
+    const totalProb = segments.reduce((acc, s) => acc + (s.probability || 0), 0);
+    let angleAtStart = 0;
+    for (let i = 0; i < targetIndex; i++) angleAtStart += (segments[i].probability || 0) / totalProb;
+    const segmentSize = (segments[targetIndex].probability || 0) / totalProb;
+    const targetCenterPercent = angleAtStart + (segmentSize / 2);
+    return -(targetCenterPercent * 2 * Math.PI) % (2 * Math.PI);
   };
 
-  // API responses may contain a winningIndex that doesn't line up with the
-  // exact segment order sent to the client. Prefer the segment that matches
-  // the server-returned prize so the pointer and result card agree.
-  const getPrizeSegmentIndex = (
-    prize: Segment,
-    segments: Segment[],
-    winningIndex: unknown,
-  ): number => {
-    const normalize = (value: string) =>
-      value
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .toLowerCase()
-        .replace(/[^a-z0-9]/g, "");
-
-    const validWinningIndex =
-      Number.isInteger(Number(winningIndex)) &&
-      Number(winningIndex) >= 0 &&
-      Number(winningIndex) < segments.length
-        ? Number(winningIndex)
-        : -1;
-
+  const getPrizeSegmentIndex = (prize: Segment, segments: Segment[], winningIndex: unknown): number => {
+    const normalize = (v: string) => v.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
+    const validIdx = Number.isInteger(Number(winningIndex)) && Number(winningIndex) >= 0 && Number(winningIndex) < segments.length ? Number(winningIndex) : -1;
     const prizeLabel = normalize(prize.label || "");
-    const exactMatch = segments.findIndex(
-      (segment) =>
-        segment.points === prize.points &&
-        normalize(segment.label || "") === prizeLabel,
-    );
-    if (exactMatch >= 0) return exactMatch;
-
-    // "Réessayer" and "Pas de chance" can be different labels for the same
-    // no-prize outcome. Match the zero-point segment instead of a winning one.
+    const exact = segments.findIndex(s => s.points === prize.points && normalize(s.label || "") === prizeLabel);
+    if (exact >= 0) return exact;
     if (prize.points <= 0) {
-      const noPrizeIndex = segments.findIndex((segment) => segment.points <= 0);
-      if (noPrizeIndex >= 0) return noPrizeIndex;
+      const noPrize = segments.findIndex(s => s.points <= 0);
+      if (noPrize >= 0) return noPrize;
     }
-
-    const pointsMatch = segments.findIndex(
-      (segment) => segment.points === prize.points,
-    );
+    const pointsMatch = segments.findIndex(s => s.points === prize.points);
     if (pointsMatch >= 0) return pointsMatch;
-
-    if (validWinningIndex >= 0) return validWinningIndex;
+    if (validIdx >= 0) return validIdx;
     return 0;
   };
 
   const fireConfetti = () => {
     const emojis = ["🎉", "✨", "🎊", "⭐"];
-    const burst = Array.from({ length: 14 }, (_, i) => ({
-      id: Date.now() + i,
-      emoji: emojis[i % emojis.length],
-      x: 10 + Math.random() * 80,
-      delay: Math.random() * 0.3,
-    }));
+    const burst = Array.from({ length: 14 }, (_, i) => ({ id: Date.now() + i, emoji: emojis[i % emojis.length], x: 10 + Math.random() * 80, delay: Math.random() * 0.3 }));
     setConfetti(burst);
     window.setTimeout(() => setConfetti([]), 1600);
   };
 
-  // ── Share the result (customer's own win) ───────────────────────────
   const handleShare = async () => {
     if (!result) return;
     const name = restaurantName || "ce commerce";
-    const url = restaurantSlug
-      ? `${window.location.origin}/${restaurantSlug}`
-      : window.location.origin;
-
-    const text =
-      result.points > 0
-        ? `🎉 Je viens de gagner ${result.points} points sur la roue de la chance de ${name} ! Tente ta chance toi aussi 👇`
-        : `J'ai tenté ma chance sur la roue de ${name} 🎡 À ton tour !`;
-
-    const shareData = { title: `Roue de la chance — ${name}`, text, url };
-
+    const url = restaurantSlug ? `${window.location.origin}/${restaurantSlug}` : window.location.origin;
+    const text = result.points > 0 ? `🎉 Je viens de gagner ${result.points} points sur la roue de la chance de ${name} ! Tente ta chance toi aussi 👇` : `J'ai tenté ma chance sur la roue de ${name} 🎡 À ton tour !`;
     if (navigator.share) {
-      try {
-        await navigator.share(shareData);
-      } catch {
-        // User cancelled the native share sheet — not an error, do nothing.
-      }
+      try { await navigator.share({ title: `Roue de la chance — ${name}`, text, url }); } catch {}
       return;
     }
-
-    // Desktop / unsupported browsers: fall back to copying the message.
-    try {
-      await navigator.clipboard.writeText(`${text} ${url}`);
-      setShareState("copied");
-      window.setTimeout(() => setShareState("idle"), 2000);
-    } catch {
-      setShareState("error");
-      window.setTimeout(() => setShareState("idle"), 2000);
-    }
+    try { await navigator.clipboard.writeText(`${text} ${url}`); setShareState("copied"); window.setTimeout(() => setShareState("idle"), 2000); } 
+    catch { setShareState("error"); window.setTimeout(() => setShareState("idle"), 2000); }
   };
 
   const handleSpin = async () => {
     if (spinningRef.current || !status) return;
-    const source: SpinSource | null =
-      status.freeSpinsLeft > 0 ? "FREE" : status.bonusSpins > 0 ? "BONUS" : null;
+    const source: SpinSource | null = status.freeSpinsLeft > 0 ? "FREE" : status.bonusSpins > 0 ? "BONUS" : null;
     if (!source) return;
 
-    spinningRef.current = true;
-    setSpinning(true);
-    setShowResult(false);
-    setSpinError(null);
+    spinningRef.current = true; setSpinning(true); setShowResult(false); setSpinError(null);
 
     try {
-      const res = await fetch("/api/customer/spin", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ customerId, restaurantId, source }),
-      });
+      const res = await fetch("/api/customer/spin", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ customerId, restaurantId, source }) });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Le tour a échoué");
 
       const { winningIndex, prize, newPoints, freeSpinsLeft, bonusSpins } = data;
       const segments = status.segments;
+      if (!Array.isArray(segments) || segments.length === 0) throw new Error("La configuration de la roue est invalide.");
 
-      if (!Array.isArray(segments) || segments.length === 0) {
-        throw new Error("La configuration de la roue est invalide.");
-      }
-      if (!prize || typeof prize.points !== "number" || typeof prize.label !== "string") {
-        throw new Error("Le serveur a renvoyé un résultat de roue invalide.");
-      }
-
-      // Align the wheel with the prize returned by the server, not blindly
-      // with an index that may refer to a differently ordered segment array.
       const targetIndex = getPrizeSegmentIndex(prize as Segment, segments, winningIndex);
       const extraSpins = 6 + Math.floor(Math.random() * 4);
-      const targetNorm = angleForIndex(targetIndex, segments.length);
+      const targetNorm = getTargetAngle(targetIndex, segments);
       const startAngle = angleRef.current;
       const startNorm = ((startAngle % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
       const forwardDelta = ((targetNorm - startNorm) + 2 * Math.PI) % (2 * Math.PI);
-      // Stop at the exact center of the server-selected segment. Jitter can
-      // push the pointer into a neighboring segment and show the wrong prize.
       const target = startAngle + extraSpins * 2 * Math.PI + forwardDelta;
 
       const duration = 4200 + Math.random() * 1200;
@@ -323,270 +253,64 @@ export default function SpinWheel({
         angleRef.current = current;
         drawWheel(current, segments);
 
-        if (t < 1) {
-          requestAnimationFrame(frame);
-        } else {
-          spinningRef.current = false;
-          setSpinning(false);
-          setResult(prize);
-          setShowResult(true);
+        if (t < 1) requestAnimationFrame(frame);
+        else {
+          spinningRef.current = false; setSpinning(false); setResult(prize); setShowResult(true);
           setTotalPts((prev) => prev + prize.points);
           setStatus((prev) => (prev ? { ...prev, freeSpinsLeft, bonusSpins } : prev));
           setHistory((h) => [{ label: prize.label, pts: prize.points }, ...h].slice(0, 6));
-          if (prize.points > 0) {
-            fireConfetti();
-            onPointsEarned?.(prize.points, newPoints);
-          }
+          if (prize.points > 0) { fireConfetti(); onPointsEarned?.(prize.points, newPoints); }
         }
       };
-
       requestAnimationFrame(frame);
     } catch (err) {
-      spinningRef.current = false;
-      setSpinning(false);
+      spinningRef.current = false; setSpinning(false);
       setSpinError(err instanceof Error ? err.message : "Le tour a échoué");
     }
   };
 
-  if (loadError) {
-    return (
-      <div style={{ textAlign: "center", padding: "32px 16px" }}>
-        <p style={{ fontSize: 32, marginBottom: 8 }}>⚠️</p>
-        <p style={{ color: "#DC2626", fontSize: 13, fontWeight: 500 }}>{loadError}</p>
-      </div>
-    );
-  }
-  if (!status) {
-    return (
-      <div style={{ textAlign: "center", padding: "60px 16px" }}>
-        <div style={{
-          width: 40, height: 40, margin: "0 auto 12px",
-          border: `3px solid ${primaryColor}30`,
-          borderTopColor: primaryColor,
-          borderRadius: "50%",
-          animation: "spinLoader 0.8s linear infinite",
-        }} />
-        <p style={{ fontSize: 13, color: `${textColor}70` }}>Chargement de la roue...</p>
-        <style jsx>{`@keyframes spinLoader { to { transform: rotate(360deg); } }`}</style>
-      </div>
-    );
-  }
+  if (loadError) return <div style={{ textAlign: "center", padding: "32px 16px" }}><p style={{ fontSize: 32, marginBottom: 8 }}>⚠️</p><p style={{ color: "#DC2626", fontSize: 13, fontWeight: 500 }}>{loadError}</p></div>;
+  if (!status) return <div style={{ textAlign: "center", padding: "60px 16px" }}><div style={{ width: 40, height: 40, margin: "0 auto 12px", border: `3px solid ${primaryColor}30`, borderTopColor: primaryColor, borderRadius: "50%", animation: "spinLoader 0.8s linear infinite" }} /><p style={{ fontSize: 13, color: `${textColor}70` }}>Chargement de la roue...</p><style jsx>{`@keyframes spinLoader { to { transform: rotate(360deg); } }`}</style></div>;
 
   const noSpinsLeft = status.freeSpinsLeft + status.bonusSpins <= 0;
-  const nextSource: SpinSource | null =
-    status.freeSpinsLeft > 0 ? "FREE" : status.bonusSpins > 0 ? "BONUS" : null;
+  const nextSource: SpinSource | null = status.freeSpinsLeft > 0 ? "FREE" : status.bonusSpins > 0 ? "BONUS" : null;
 
   return (
     <div style={{ fontFamily: "'Inter', sans-serif", display: "flex", flexDirection: "column", alignItems: "center", width: "100%" }}>
-
-      {/* ── Stats row ── */}
       <div style={{ display: "flex", gap: 8, width: "100%", marginBottom: 24 }}>
-        {[
-          { label: "Points gagnés", value: totalPts, icon: "🏆" },
-          { label: "Gratuits", value: `${status.freeSpinsLeft}/${status.dailyFreeSpins}`, icon: "🎁" },
-          { label: "Bonus", value: status.bonusSpins, icon: "⚡" },
-        ].map((s) => (
-          <div
-            key={s.label}
-            style={{
-              flex: 1, textAlign: "center",
-              background: `linear-gradient(160deg, ${primaryColor}12, ${primaryColor}05)`,
-              borderRadius: 16, padding: "12px 6px",
-              border: `1px solid ${primaryColor}18`,
-            }}
-          >
-            <p style={{ fontSize: 15, marginBottom: 2 }}>{s.icon}</p>
-            <p style={{ fontSize: 19, fontWeight: 800, color: primaryColor, letterSpacing: "-0.02em" }}>{s.value}</p>
-            <p style={{ fontSize: 10, color: `${textColor}60`, fontWeight: 600, marginTop: 2, textTransform: "uppercase", letterSpacing: "0.04em" }}>{s.label}</p>
+        {[{ label: "Points gagnés", value: totalPts, icon: "🏆" }, { label: "Gratuits", value: `${status.freeSpinsLeft}/${status.dailyFreeSpins}`, icon: "🎁" }, { label: "Bonus", value: status.bonusSpins, icon: "⚡" }].map((s) => (
+          <div key={s.label} style={{ flex: 1, textAlign: "center", background: `linear-gradient(160deg, ${primaryColor}12, ${primaryColor}05)`, borderRadius: 16, padding: "12px 6px", border: `1px solid ${primaryColor}18` }}>
+            <p style={{ fontSize: 15, marginBottom: 2 }}>{s.icon}</p><p style={{ fontSize: 19, fontWeight: 800, color: primaryColor, letterSpacing: "-0.02em" }}>{s.value}</p><p style={{ fontSize: 10, color: `${textColor}60`, fontWeight: 600, marginTop: 2, textTransform: "uppercase", letterSpacing: "0.04em" }}>{s.label}</p>
           </div>
         ))}
       </div>
 
-      {/* ── Wheel ── */}
       <div style={{ position: "relative", width: WHEEL_SIZE, height: WHEEL_SIZE, marginBottom: 8 }}>
-        {confetti.map((c) => (
-          <span
-            key={c.id}
-            style={{
-              position: "absolute", top: "40%", left: `${c.x}%`,
-              fontSize: 20, zIndex: 20, pointerEvents: "none",
-              animation: `confettiFall 1.3s ease-out ${c.delay}s forwards`,
-            }}
-          >
-            {c.emoji}
-          </span>
-        ))}
-
-        <div style={{
-          position: "absolute", top: -14, left: "50%",
-          transform: "translateX(-50%)",
-          width: 0, height: 0,
-          borderLeft: "12px solid transparent",
-          borderRight: "12px solid transparent",
-          borderTop: `26px solid ${primaryColor}`,
-          zIndex: 10,
-          filter: "drop-shadow(0 3px 4px rgba(0,0,0,0.2))",
-        }} />
-
-        <canvas
-          ref={canvasRef}
-          style={{
-            display: "block", width: WHEEL_SIZE, height: WHEEL_SIZE,
-            borderRadius: "50%",
-            boxShadow: `0 10px 30px -8px ${primaryColor}50, 0 0 0 6px ${cardBg}, 0 0 0 7px ${textColor}10`,
-          }}
-        />
-
-        <button
-          onClick={handleSpin}
-          disabled={spinning || noSpinsLeft}
-          style={{
-            position: "absolute", top: "50%", left: "50%",
-            transform: "translate(-50%, -50%)",
-            width: 60, height: 60, borderRadius: "50%",
-            background: spinning || noSpinsLeft
-              ? "#9ca3af"
-              : `linear-gradient(145deg, ${primaryColor}, ${primaryColor}cc)`,
-            border: `4px solid ${cardBg}`,
-            color: "#fff", fontSize: 11, fontWeight: 800,
-            letterSpacing: "0.03em",
-            cursor: spinning || noSpinsLeft ? "not-allowed" : "pointer",
-            transition: "transform 0.15s ease, background 0.2s ease",
-            boxShadow: spinning || noSpinsLeft ? "none" : `0 4px 14px ${primaryColor}70`,
-            zIndex: 10,
-          }}
-          onMouseDown={(e) => { if (!spinning && !noSpinsLeft) e.currentTarget.style.transform = "translate(-50%, -50%) scale(0.94)"; }}
-          onMouseUp={(e) => { e.currentTarget.style.transform = "translate(-50%, -50%) scale(1)"; }}
-        >
-          {spinning ? "···" : noSpinsLeft ? "FIN" : "SPIN"}
-        </button>
+        {confetti.map((c) => (<span key={c.id} style={{ position: "absolute", top: "40%", left: `${c.x}%`, fontSize: 20, zIndex: 20, pointerEvents: "none", animation: `confettiFall 1.3s ease-out ${c.delay}s forwards` }}>{c.emoji}</span>))}
+        <div style={{ position: "absolute", top: -14, left: "50%", transform: "translateX(-50%)", width: 0, height: 0, borderLeft: "12px solid transparent", borderRight: "12px solid transparent", borderTop: `26px solid ${primaryColor}`, zIndex: 10, filter: "drop-shadow(0 3px 4px rgba(0,0,0,0.2))" }} />
+        <canvas ref={canvasRef} style={{ display: "block", width: WHEEL_SIZE, height: WHEEL_SIZE, borderRadius: "50%", boxShadow: `0 10px 30px -8px ${primaryColor}50, 0 0 0 6px ${cardBg}, 0 0 0 7px ${textColor}10` }} />
+        <button onClick={handleSpin} disabled={spinning || noSpinsLeft} style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 60, height: 60, borderRadius: "50%", background: spinning || noSpinsLeft ? "#9ca3af" : `linear-gradient(145deg, ${primaryColor}, ${primaryColor}cc)`, border: `4px solid ${cardBg}`, color: "#fff", fontSize: 11, fontWeight: 800, letterSpacing: "0.03em", cursor: spinning || noSpinsLeft ? "not-allowed" : "pointer", transition: "transform 0.15s ease, background 0.2s ease", boxShadow: spinning || noSpinsLeft ? "none" : `0 4px 14px ${primaryColor}70`, zIndex: 10 }} onMouseDown={(e) => { if (!spinning && !noSpinsLeft) e.currentTarget.style.transform = "translate(-50%, -50%) scale(0.94)"; }} onMouseUp={(e) => { e.currentTarget.style.transform = "translate(-50%, -50%) scale(1)"; }}>{spinning ? "···" : noSpinsLeft ? "FIN" : "SPIN"}</button>
       </div>
 
-      <p style={{ fontSize: 13, color: `${textColor}75`, marginTop: 10, marginBottom: 6, fontWeight: 500, textAlign: "center" }}>
-        {noSpinsLeft
-          ? "Plus de tours disponibles"
-          : nextSource === "FREE"
-          ? `🎁 ${status.freeSpinsLeft} tour${status.freeSpinsLeft > 1 ? "s" : ""} gratuit${status.freeSpinsLeft > 1 ? "s" : ""} aujourd'hui`
-          : `⚡ ${status.bonusSpins} tour${status.bonusSpins > 1 ? "s" : ""} bonus disponible${status.bonusSpins > 1 ? "s" : ""}`}
-      </p>
-      {spinError && (
-        <p style={{ fontSize: 12, color: "#DC2626", marginBottom: 8, fontWeight: 500 }}>{spinError}</p>
-      )}
+      <p style={{ fontSize: 13, color: `${textColor}75`, marginTop: 10, marginBottom: 6, fontWeight: 500, textAlign: "center" }}>{noSpinsLeft ? "Plus de tours disponibles" : nextSource === "FREE" ? `🎁 ${status.freeSpinsLeft} tour${status.freeSpinsLeft > 1 ? "s" : ""} gratuit${status.freeSpinsLeft > 1 ? "s" : ""} aujourd'hui` : `⚡ ${status.bonusSpins} tour${status.bonusSpins > 1 ? "s" : ""} bonus disponible${status.bonusSpins > 1 ? "s" : ""}`}</p>
+      {spinError && <p style={{ fontSize: 12, color: "#DC2626", marginBottom: 8, fontWeight: 500 }}>{spinError}</p>}
 
-      {noSpinsLeft && !showResult && (
-        <div style={{
-          width: "100%", padding: "22px 16px", marginTop: 14,
-          background: `${textColor}06`,
-          borderRadius: 18, textAlign: "center",
-          border: `1px dashed ${textColor}20`,
-        }}>
-          <div style={{ fontSize: 30, marginBottom: 8 }}>⏰</div>
-          <p style={{ fontWeight: 700, color: textColor, fontSize: 14, marginBottom: 4 }}>Revenez demain !</p>
-          <p style={{ color: `${textColor}65`, fontSize: 12, lineHeight: 1.5 }}>
-            Vos tours gratuits reviennent demain.<br />Faites un achat pour gagner des tours bonus.
-          </p>
-        </div>
-      )}
+      {noSpinsLeft && !showResult && (<div style={{ width: "100%", padding: "22px 16px", marginTop: 14, background: `${textColor}06`, borderRadius: 18, textAlign: "center", border: `1px dashed ${textColor}20` }}><div style={{ fontSize: 30, marginBottom: 8 }}>⏰</div><p style={{ fontWeight: 700, color: textColor, fontSize: 14, marginBottom: 4 }}>Revenez demain !</p><p style={{ color: `${textColor}65`, fontSize: 12, lineHeight: 1.5 }}>Vos tours gratuits reviennent demain.<br />Faites un achat pour gagner des tours bonus.</p></div>)}
 
       {showResult && result && (
-        <div
-          style={{
-            width: "100%", padding: "24px 16px", marginTop: 14,
-            background: result.points > 0
-              ? `linear-gradient(160deg, ${primaryColor}14, ${primaryColor}05)`
-              : `${textColor}06`,
-            borderRadius: 20, textAlign: "center",
-            border: `1.5px solid ${result.points > 0 ? primaryColor + "45" : textColor + "15"}`,
-            animation: "popIn 0.4s cubic-bezier(.34,1.56,.64,1) both",
-          }}
-        >
-          <div style={{ fontSize: 42, marginBottom: 8 }}>
-            {result.points >= 200 ? "🏆" : result.points >= 100 ? "🎉" : result.points > 0 ? "✨" : "😅"}
-          </div>
-          {result.points > 0 ? (
-            <>
-              <p style={{ fontSize: 17, fontWeight: 800, color: textColor, marginBottom: 4 }}>Félicitations !</p>
-              <p style={{ fontSize: 13, color: `${textColor}70`, marginBottom: 10 }}>Vous avez gagné</p>
-              <p style={{ fontSize: 38, fontWeight: 800, color: primaryColor, letterSpacing: "-0.02em", marginBottom: 2 }}>+{result.points}</p>
-              <p style={{ fontSize: 13, color: `${textColor}70`, marginBottom: 16 }}>points ajoutés à votre compte</p>
-            </>
-          ) : (
-            <>
-              <p style={{ fontSize: 17, fontWeight: 800, color: textColor, marginBottom: 4 }}>Pas de chance !</p>
-              <p style={{ fontSize: 13, color: `${textColor}70`, marginBottom: 16 }}>Essayez encore au prochain tour</p>
-            </>
-          )}
+        <div style={{ width: "100%", padding: "24px 16px", marginTop: 14, background: result.points > 0 ? `linear-gradient(160deg, ${primaryColor}14, ${primaryColor}05)` : `${textColor}06`, borderRadius: 20, textAlign: "center", border: `1.5px solid ${result.points > 0 ? primaryColor + "45" : textColor + "15"}`, animation: "popIn 0.4s cubic-bezier(.34,1.56,.64,1) both" }}>
+          <div style={{ fontSize: 42, marginBottom: 8 }}>{result.points >= 200 ? "🏆" : result.points >= 100 ? "🎉" : result.points > 0 ? "✨" : "😅"}</div>
+          {result.points > 0 ? (<><p style={{ fontSize: 17, fontWeight: 800, color: textColor, marginBottom: 4 }}>Félicitations !</p><p style={{ fontSize: 13, color: `${textColor}70`, marginBottom: 10 }}>Vous avez gagné</p><p style={{ fontSize: 38, fontWeight: 800, color: primaryColor, letterSpacing: "-0.02em", marginBottom: 2 }}>+{result.points}</p><p style={{ fontSize: 13, color: `${textColor}70`, marginBottom: 16 }}>points ajoutés à votre compte</p></>) : (<><p style={{ fontSize: 17, fontWeight: 800, color: textColor, marginBottom: 4 }}>Pas de chance !</p><p style={{ fontSize: 13, color: `${textColor}70`, marginBottom: 16 }}>Essayez encore au prochain tour</p></>)}
           <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
-            <button
-              onClick={handleShare}
-              style={{
-                padding: "11px 22px",
-                background: "transparent",
-                color: primaryColor, border: `1.5px solid ${primaryColor}50`,
-                borderRadius: 12, fontWeight: 700,
-                fontSize: 13, cursor: "pointer",
-                display: "flex", alignItems: "center", gap: 6,
-              }}
-            >
-              <span style={{ fontSize: 15 }}>📤</span>
-              {shareState === "copied" ? "Copié !" : shareState === "error" ? "Échec" : "Partager"}
-            </button>
-            {!noSpinsLeft && (
-              <button
-                onClick={() => setShowResult(false)}
-                style={{
-                  padding: "11px 28px",
-                  background: `linear-gradient(145deg, ${primaryColor}, ${primaryColor}cc)`,
-                  color: "#fff", border: "none",
-                  borderRadius: 12, fontWeight: 700,
-                  fontSize: 13, cursor: "pointer",
-                  boxShadow: `0 4px 14px ${primaryColor}40`,
-                }}
-              >
-                Rejouer
-              </button>
-            )}
+            <button onClick={handleShare} style={{ padding: "11px 22px", background: "transparent", color: primaryColor, border: `1.5px solid ${primaryColor}50`, borderRadius: 12, fontWeight: 700, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}><span style={{ fontSize: 15 }}>📤</span>{shareState === "copied" ? "Copié !" : shareState === "error" ? "Échec" : "Partager"}</button>
+            {!noSpinsLeft && (<button onClick={() => setShowResult(false)} style={{ padding: "11px 28px", background: `linear-gradient(145deg, ${primaryColor}, ${primaryColor}cc)`, color: "#fff", border: "none", borderRadius: 12, fontWeight: 700, fontSize: 13, cursor: "pointer", boxShadow: `0 4px 14px ${primaryColor}40` }}>Rejouer</button>)}
           </div>
         </div>
       )}
 
-      {history.length > 0 && (
-        <div style={{ width: "100%", marginTop: 20 }}>
-          <p style={{ fontSize: 11, color: `${textColor}55`, marginBottom: 8, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em" }}>
-            Historique
-          </p>
-          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            {history.map((h, i) => (
-              <div
-                key={i}
-                style={{
-                  display: "flex", alignItems: "center", justifyContent: "space-between",
-                  padding: "9px 14px",
-                  background: `${textColor}04`,
-                  borderRadius: 12,
-                  border: `1px solid ${textColor}08`,
-                }}
-              >
-                <span style={{ fontSize: 13, color: textColor, fontWeight: 500 }}>{h.label}</span>
-                <span style={{ fontSize: 13, fontWeight: 700, color: h.pts > 0 ? primaryColor : `${textColor}45` }}>
-                  {h.pts > 0 ? `+${h.pts} pts` : "0 pts"}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      {history.length > 0 && (<div style={{ width: "100%", marginTop: 20 }}><p style={{ fontSize: 11, color: `${textColor}55`, marginBottom: 8, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em" }}>Historique</p><div style={{ display: "flex", flexDirection: "column", gap: 6 }}>{history.map((h, i) => (<div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "9px 14px", background: `${textColor}04`, borderRadius: 12, border: `1px solid ${textColor}08` }}><span style={{ fontSize: 13, color: textColor, fontWeight: 500 }}>{h.label}</span><span style={{ fontSize: 13, fontWeight: 700, color: h.pts > 0 ? primaryColor : `${textColor}45` }}>{h.pts > 0 ? `+${h.pts} pts` : "0 pts"}</span></div>))}</div></div>)}
 
-      <style jsx>{`
-        @keyframes popIn {
-          from { opacity: 0; transform: scale(0.85) translateY(8px); }
-          to   { opacity: 1; transform: scale(1) translateY(0); }
-        }
-        @keyframes confettiFall {
-          0%   { opacity: 1; transform: translateY(0) rotate(0deg); }
-          100% { opacity: 0; transform: translateY(160px) rotate(360deg); }
-        }
-      `}</style>
+      <style jsx>{`@keyframes popIn { from { opacity: 0; transform: scale(0.85) translateY(8px); } to { opacity: 1; transform: scale(1) translateY(0); } } @keyframes confettiFall { 0% { opacity: 1; transform: translateY(0) rotate(0deg); } 100% { opacity: 0; transform: translateY(160px) rotate(360deg); } }`}</style>
     </div>
   );
 }
