@@ -8,6 +8,7 @@ type Segment = {
   points: number;
   color: string;
   textColor: string;
+  probability?: number; // <-- ADDED: To match Admin dashboard
 };
 
 type SpinSource = "FREE" | "BONUS";
@@ -25,8 +26,6 @@ type SpinWheelProps = {
   cardBg?: string;
   restaurantId: string;
   customerId: string;
-  // Used only to build the share message/link — optional, the share
-  // button just hides itself if these aren't passed.
   restaurantName?: string;
   restaurantSlug?: string;
   onPointsEarned?: (points: number, newTotal: number) => void;
@@ -67,8 +66,18 @@ export default function SpinWheel({
       const res = await fetch(`/api/customer/spin?restaurantId=${restaurantId}`);
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to load");
+      
+      // Ensure every segment has a probability, fallback to equal if missing
+      if (data.segments && data.segments.length > 0) {
+        const hasProbabilities = data.segments.every((s: any) => typeof s.probability === 'number');
+        if (!hasProbabilities) {
+          const equalProb = parseFloat((100 / data.segments.length).toFixed(1));
+          data.segments = data.segments.map((s: any) => ({ ...s, probability: equalProb }));
+        }
+      }
+
       setStatus(data);
-      setTotalPts((prev) => prev); // keep local session tally, don't reset on reload
+      setTotalPts((prev) => prev); 
       setLoadError(null);
     } catch (err) {
       setLoadError(err instanceof Error ? err.message : "Impossible de charger la roue");
@@ -79,7 +88,7 @@ export default function SpinWheel({
     loadStatus();
   }, [loadStatus]);
 
-  // ── Draw wheel (crisp on retina via devicePixelRatio) ────────────
+  // ── Draw wheel dynamically based on PROBABILITIES ───────────────────
   const drawWheel = useCallback(
     (rot: number, segments: Segment[]) => {
       const canvas = canvasRef.current;
@@ -93,9 +102,6 @@ export default function SpinWheel({
         ctx.scale(dpr, dpr);
       }
 
-      const SEG = segments.length;
-      const ARC = (2 * Math.PI) / SEG;
-
       ctx.clearRect(0, 0, WHEEL_SIZE, WHEEL_SIZE);
 
       // Soft outer glow ring
@@ -107,10 +113,16 @@ export default function SpinWheel({
       ctx.stroke();
       ctx.restore();
 
-      for (let i = 0; i < SEG; i++) {
-        const start = rot + i * ARC - Math.PI / 2;
-        const end = start + ARC;
+      // Calculate total probability to ensure accurate drawing
+      const totalProb = segments.reduce((acc, s) => acc + (s.probability || 0), 0);
+      let currentAngle = rot - Math.PI / 2; // Start at top
+
+      for (let i = 0; i < segments.length; i++) {
         const seg = segments[i];
+        // Calculate arc size based on probability percentage
+        const arcSize = ((seg.probability || 0) / totalProb) * (2 * Math.PI);
+        const start = currentAngle;
+        const end = start + arcSize;
 
         ctx.beginPath();
         ctx.moveTo(CENTER, CENTER);
@@ -133,18 +145,25 @@ export default function SpinWheel({
         ctx.fillStyle = grad;
         ctx.fill();
 
-        ctx.save();
-        ctx.translate(CENTER, CENTER);
-        ctx.rotate(start + ARC / 2);
-        ctx.textAlign = "right";
-        ctx.font = seg.points >= 100
-          ? "700 14px 'Inter', sans-serif"
-          : "600 13px 'Inter', sans-serif";
-        ctx.fillStyle = seg.textColor;
-        ctx.shadowColor = "rgba(0,0,0,0.15)";
-        ctx.shadowBlur = 2;
-        ctx.fillText(seg.label, R - 14, 5);
-        ctx.restore();
+        // Draw text only if the slice is big enough (prevents overlapping text on tiny slices)
+        if (arcSize > 0.2) {
+          ctx.save();
+          ctx.translate(CENTER, CENTER);
+          ctx.rotate(start + arcSize / 2);
+          ctx.textAlign = "right";
+          ctx.font = seg.points >= 100
+            ? "700 14px 'Inter', sans-serif"
+            : "600 13px 'Inter', sans-serif";
+          ctx.fillStyle = seg.textColor;
+          ctx.shadowColor = "rgba(0,0,0,0.15)";
+          ctx.shadowBlur = 2;
+          // Truncate long text if necessary
+          const displayLabel = seg.label.length > 12 ? seg.label.substring(0, 12) + "..." : seg.label;
+          ctx.fillText(displayLabel, R - 14, 5);
+          ctx.restore();
+        }
+
+        currentAngle = end;
       }
 
       // Hub
@@ -171,16 +190,24 @@ export default function SpinWheel({
     if (status) drawWheel(angleRef.current, status.segments);
   }, [status, drawWheel]);
 
-  // The pointer is fixed at the top. Segment 0 starts at the top when
-  // rotation is 0, so the selected segment's CENTER must finish at the top.
-  const angleForIndex = (idx: number, segCount: number) => {
-    const arc = (2 * Math.PI) / segCount;
-    return ((-(idx + 0.5) * arc) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
+  // Calculate exact angle for a specific segment based on its probability
+  const getTargetAngle = (targetIndex: number, segments: Segment[]) => {
+    const totalProb = segments.reduce((acc, s) => acc + (s.probability || 0), 0);
+    let angleAtStart = 0;
+    
+    // Sum probabilities up to the target segment
+    for (let i = 0; i < targetIndex; i++) {
+        angleAtStart += (segments[i].probability || 0) / totalProb;
+    }
+    
+    // Target the exact middle of the segment
+    const segmentSize = (segments[targetIndex].probability || 0) / totalProb;
+    const targetCenterPercent = angleAtStart + (segmentSize / 2);
+
+    // Convert to radians and reverse rotation so it lands at the top pointer
+    return -(targetCenterPercent * 2 * Math.PI) % (2 * Math.PI);
   };
 
-  // API responses may contain a winningIndex that doesn't line up with the
-  // exact segment order sent to the client. Prefer the segment that matches
-  // the server-returned prize so the pointer and result card agree.
   const getPrizeSegmentIndex = (
     prize: Segment,
     segments: Segment[],
@@ -208,8 +235,6 @@ export default function SpinWheel({
     );
     if (exactMatch >= 0) return exactMatch;
 
-    // "Réessayer" and "Pas de chance" can be different labels for the same
-    // no-prize outcome. Match the zero-point segment instead of a winning one.
     if (prize.points <= 0) {
       const noPrizeIndex = segments.findIndex((segment) => segment.points <= 0);
       if (noPrizeIndex >= 0) return noPrizeIndex;
@@ -236,7 +261,6 @@ export default function SpinWheel({
     window.setTimeout(() => setConfetti([]), 1600);
   };
 
-  // ── Share the result (customer's own win) ───────────────────────────
   const handleShare = async () => {
     if (!result) return;
     const name = restaurantName || "ce commerce";
@@ -255,12 +279,11 @@ export default function SpinWheel({
       try {
         await navigator.share(shareData);
       } catch {
-        // User cancelled the native share sheet — not an error, do nothing.
+        // User cancelled
       }
       return;
     }
 
-    // Desktop / unsupported browsers: fall back to copying the message.
     try {
       await navigator.clipboard.writeText(`${text} ${url}`);
       setShareState("copied");
@@ -297,20 +320,17 @@ export default function SpinWheel({
       if (!Array.isArray(segments) || segments.length === 0) {
         throw new Error("La configuration de la roue est invalide.");
       }
-      if (!prize || typeof prize.points !== "number" || typeof prize.label !== "string") {
-        throw new Error("Le serveur a renvoyé un résultat de roue invalide.");
-      }
-
-      // Align the wheel with the prize returned by the server, not blindly
-      // with an index that may refer to a differently ordered segment array.
+      
       const targetIndex = getPrizeSegmentIndex(prize as Segment, segments, winningIndex);
       const extraSpins = 6 + Math.floor(Math.random() * 4);
-      const targetNorm = angleForIndex(targetIndex, segments.length);
+      
+      // Calculate target angle using the PROBABILITY distribution
+      const targetNorm = getTargetAngle(targetIndex, segments);
+      
       const startAngle = angleRef.current;
       const startNorm = ((startAngle % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
       const forwardDelta = ((targetNorm - startNorm) + 2 * Math.PI) % (2 * Math.PI);
-      // Stop at the exact center of the server-selected segment. Jitter can
-      // push the pointer into a neighboring segment and show the wrong prize.
+      
       const target = startAngle + extraSpins * 2 * Math.PI + forwardDelta;
 
       const duration = 4200 + Math.random() * 1200;
@@ -356,6 +376,7 @@ export default function SpinWheel({
       </div>
     );
   }
+  
   if (!status) {
     return (
       <div style={{ textAlign: "center", padding: "60px 16px" }}>
