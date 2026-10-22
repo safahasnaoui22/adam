@@ -6,22 +6,21 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-
 }
 
 model User {
-  id              String           @id @default(cuid())
-  name            String?
-  email           String           @unique
-  password        String
-  phoneNumber     String?
-  role            Role             @default(RESTAURANT_OWNER)
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-  adminLogs       AdminLog[]       @relation("AdminActions")
-  customerProfile CustomerProfile?
-  restaurant      Restaurant?
-  activityLogs    ActivityLog[]
+  id                  String               @id @default(cuid())
+  name                String?
+  email               String               @unique
+  password            String
+  phoneNumber         String?
+  role                Role                 @default(RESTAURANT_OWNER)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  adminLogs           AdminLog[]           @relation("AdminActions")
+  customerProfile     CustomerProfile?
+  restaurant          Restaurant?
+  activityLogs        ActivityLog[]
   passwordResetTokens PasswordResetToken[]
 }
 
@@ -82,7 +81,7 @@ model Restaurant {
   tiktokBonusStars     Int?           @default(50)
   tiktokPageId         String? // The TikTok account ID to verify
 
-  spinConfig           SpinConfig?
+  spinConfig SpinConfig?
 }
 
 model LoyaltyProgram {
@@ -122,10 +121,10 @@ model CustomerProfile {
 
   // Spin wheel: daily free spins reset off lastSpinDate; bonusSpins accrue
   // from purchases/scans (see add-points) and never expire.
-  spinLogs                  SpinLog[]
-  freeSpinsUsedToday        Int            @default(0)
-  lastSpinDate              DateTime?
-  bonusSpins                Int            @default(0)
+  spinLogs           SpinLog[]
+  freeSpinsUsedToday Int       @default(0)
+  lastSpinDate       DateTime?
+  bonusSpins         Int       @default(0)
 }
 
 model BonusRequest {
@@ -221,29 +220,29 @@ model RestaurantStats {
 // Updated to match Stampi UI (3-step creation modal)
 
 model SpinConfig {
-  id                 String     @id @default(cuid())
-  restaurantId       String     @unique
-  restaurant         Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
-  
-  name               String     @default("Nouveau jeu")
-  startDate          DateTime?
-  endDate            DateTime?
-  rule               String     @default("purchase") // "purchase" | "daily" | "custom"
-  customRules        String?    
-  firstFree          Boolean    @default(true)
+  id           String     @id @default(cuid())
+  restaurantId String     @unique
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
 
-  isActive           Boolean    @default(true)
-  dailyFreeSpins     Int        @default(3)
-  bonusSpinsPerVisit Int        @default(1)
-  
+  name        String    @default("Nouveau jeu")
+  startDate   DateTime?
+  endDate     DateTime?
+  rule        String    @default("purchase") // "purchase" | "daily" | "custom"
+  customRules String?
+  firstFree   Boolean   @default(true)
+
+  isActive           Boolean @default(true)
+  dailyFreeSpins     Int     @default(3)
+  bonusSpinsPerVisit Int     @default(1)
+
   // Stores the array of segments including { label, points, color, textColor, probability }
-  segments           Json
-  
+  segments Json
+
   // Stores conditions like { installApp: true, notifications: false, phone: true }
-  conditions         Json       @default("{}")
-  
-  createdAt          DateTime   @default(now())
-  updatedAt          DateTime   @updatedAt
+  conditions Json @default("{}")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model SpinLog {
@@ -292,6 +291,7 @@ model PushSubscription {
   auth      String
   createdAt DateTime        @default(now())
   customer  CustomerProfile @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
   @@index([clientId])
 }
 
