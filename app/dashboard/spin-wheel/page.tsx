@@ -168,7 +168,7 @@ export default function SpinWheelConfigPage() {
   if (loading) return <div className="flex justify-center items-center min-h-screen bg-[#0B0F19]"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#3B82F6]"></div></div>;
 
   return (
-    <div className="min-h-screen bg-[#0B0F19] text-gray-200 p-8 font-sans">
+    <div className="min-h-screen bg-[#2e283d] text-gray-200 p-8 font-sans">
       <div className="max-w-6xl mx-auto">
         <div className="flex justify-between items-center mb-6">
           <div>
