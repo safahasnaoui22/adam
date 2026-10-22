@@ -1,538 +1,592 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import {
-  X,
-  Plus,
-  Settings,
-  Gift,
-  CheckCircle2,
-  Smartphone,
-  Bell,
-  PhoneCall,
-  Edit2,
-  Trash2,
-  Calendar,
-  ChevronDown,
-  ChevronRight,
-  Info,
-  ArrowRight,
-  RefreshCw,
-} from "lucide-react";
+import { useEffect, useRef, useState, useCallback } from "react";
 
-// --- Types ---
+// ── Types ────────────────────────────────────────────────────────────
 type Segment = {
-  id: number;
   label: string;
-  probability: number;
+  points: number;
   color: string;
+  textColor: string;
 };
 
-type GameConfig = {
-  name: string;
-  startDate: string;
-  endDate: string;
-  rule: "purchase" | "daily" | "custom";
-  customRules: string;
-  firstFree: boolean;
+type SpinSource = "FREE" | "BONUS";
+
+type SpinStatus = {
   segments: Segment[];
-  conditions: {
-    installApp: boolean;
-    notifications: boolean;
-    phone: boolean;
-  };
+  dailyFreeSpins: number;
+  freeSpinsLeft: number;
+  bonusSpins: number;
 };
 
-// --- Mock Data for Dashboard ---
-const INITIAL_GAMES = [
-  {
-    id: 1,
-    name: "safa",
-    status: "Active",
-    segments: [
-      { id: 1, label: "Pas de prix", probability: 10, color: "#9CA3AF" },
-      { id: 2, label: "Pas de prix", probability: 10, color: "#6B7280" },
-      { id: 3, label: "mlawi", probability: 80, color: "#8B5CF6" },
-    ],
-  },
-];
+type SpinWheelProps = {
+  primaryColor?: string;
+  textColor?: string;
+  cardBg?: string;
+  restaurantId: string;
+  customerId: string;
+  // Used only to build the share message/link — optional, the share
+  // button just hides itself if these aren't passed.
+  restaurantName?: string;
+  restaurantSlug?: string;
+  onPointsEarned?: (points: number, newTotal: number) => void;
+};
 
-const COLORS = ["#3B82F6", "#F59E0B", "#10B981", "#EF4444", "#8B5CF6", "#EC4899", "#6366F1", "#14B8A6", "#F97316", "#84CC16"];
+const WHEEL_SIZE = 300;
+const R = 138;
+const CENTER = WHEEL_SIZE / 2;
 
-export default function SpinWheelApp() {
-  const [games, setGames] = useState(INITIAL_GAMES);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [step, setStep] = useState(1);
-  
-  // Game creation state
-  const [gameConfig, setGameConfig] = useState<GameConfig>({
-    name: "",
-    startDate: "",
-    endDate: "",
-    rule: "purchase",
-    customRules: "",
-    firstFree: true,
-    segments: [
-      { id: 1, label: "Pas de prix", probability: 50, color: COLORS[0] },
-      { id: 2, label: "Pas de prix", probability: 50, color: COLORS[1] },
-    ],
-    conditions: {
-      installApp: false,
-      notifications: false,
-      phone: true,
+export default function SpinWheel({
+  primaryColor = "#fe5502",
+  textColor = "#1f2937",
+  cardBg = "#ffffff",
+  restaurantId,
+  customerId,
+  restaurantName,
+  restaurantSlug,
+  onPointsEarned,
+}: SpinWheelProps) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const angleRef = useRef(0);
+  const spinningRef = useRef(false);
+
+  const [status, setStatus] = useState<SpinStatus | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [spinning, setSpinning] = useState(false);
+  const [spinError, setSpinError] = useState<string | null>(null);
+  const [totalPts, setTotalPts] = useState(0);
+  const [history, setHistory] = useState<{ label: string; pts: number }[]>([]);
+  const [result, setResult] = useState<Segment | null>(null);
+  const [showResult, setShowResult] = useState(false);
+  const [confetti, setConfetti] = useState<{ id: number; emoji: string; x: number; delay: number }[]>([]);
+  const [shareState, setShareState] = useState<"idle" | "copied" | "error">("idle");
+
+  // ── Load wheel config + remaining spins ─────────────────────────
+  const loadStatus = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/customer/spin?restaurantId=${restaurantId}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to load");
+      setStatus(data);
+      setTotalPts((prev) => prev); // keep local session tally, don't reset on reload
+      setLoadError(null);
+    } catch (err) {
+      setLoadError(err instanceof Error ? err.message : "Impossible de charger la roue");
+    }
+  }, [restaurantId]);
+
+  useEffect(() => {
+    loadStatus();
+  }, [loadStatus]);
+
+  // ── Draw wheel (crisp on retina via devicePixelRatio) ────────────
+  const drawWheel = useCallback(
+    (rot: number, segments: Segment[]) => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      const dpr = window.devicePixelRatio || 1;
+      if (canvas.width !== WHEEL_SIZE * dpr) {
+        canvas.width = WHEEL_SIZE * dpr;
+        canvas.height = WHEEL_SIZE * dpr;
+        ctx.scale(dpr, dpr);
+      }
+
+      const SEG = segments.length;
+      const ARC = (2 * Math.PI) / SEG;
+
+      ctx.clearRect(0, 0, WHEEL_SIZE, WHEEL_SIZE);
+
+      // Soft outer glow ring
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(CENTER, CENTER, R + 6, 0, 2 * Math.PI);
+      ctx.strokeStyle = `${primaryColor}25`;
+      ctx.lineWidth = 10;
+      ctx.stroke();
+      ctx.restore();
+
+      for (let i = 0; i < SEG; i++) {
+        const start = rot + i * ARC - Math.PI / 2;
+        const end = start + ARC;
+        const seg = segments[i];
+
+        ctx.beginPath();
+        ctx.moveTo(CENTER, CENTER);
+        ctx.arc(CENTER, CENTER, R, start, end);
+        ctx.closePath();
+        ctx.fillStyle = seg.color;
+        ctx.fill();
+        ctx.strokeStyle = "rgba(255,255,255,0.9)";
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+
+        // subtle inner highlight for depth
+        const grad = ctx.createRadialGradient(CENTER, CENTER, R * 0.2, CENTER, CENTER, R);
+        grad.addColorStop(0, "rgba(255,255,255,0.18)");
+        grad.addColorStop(1, "rgba(255,255,255,0)");
+        ctx.beginPath();
+        ctx.moveTo(CENTER, CENTER);
+        ctx.arc(CENTER, CENTER, R, start, end);
+        ctx.closePath();
+        ctx.fillStyle = grad;
+        ctx.fill();
+
+        ctx.save();
+        ctx.translate(CENTER, CENTER);
+        ctx.rotate(start + ARC / 2);
+        ctx.textAlign = "right";
+        ctx.font = seg.points >= 100
+          ? "700 14px 'Inter', sans-serif"
+          : "600 13px 'Inter', sans-serif";
+        ctx.fillStyle = seg.textColor;
+        ctx.shadowColor = "rgba(0,0,0,0.15)";
+        ctx.shadowBlur = 2;
+        ctx.fillText(seg.label, R - 14, 5);
+        ctx.restore();
+      }
+
+      // Hub
+      ctx.beginPath();
+      ctx.arc(CENTER, CENTER, 34, 0, 2 * Math.PI);
+      ctx.fillStyle = cardBg;
+      ctx.shadowColor = "rgba(0,0,0,0.18)";
+      ctx.shadowBlur = 8;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = `${textColor}15`;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.arc(CENTER, CENTER, 7, 0, 2 * Math.PI);
+      ctx.fillStyle = primaryColor;
+      ctx.fill();
     },
-  });
+    [primaryColor, textColor, cardBg]
+  );
 
-  // --- Handlers ---
-  const handleCreateGame = () => {
-    const newGame = {
-      id: Date.now(),
-      name: gameConfig.name || "Nouveau jeu",
-      status: "Active",
-      segments: gameConfig.segments,
-    };
-    setGames([newGame, ...games]);
-    setIsModalOpen(false);
-    setStep(1); // Reset for next time
+  useEffect(() => {
+    if (status) drawWheel(angleRef.current, status.segments);
+  }, [status, drawWheel]);
+
+  // The pointer is fixed at the top. Segment 0 starts at the top when
+  // rotation is 0, so the selected segment's CENTER must finish at the top.
+  const angleForIndex = (idx: number, segCount: number) => {
+    const arc = (2 * Math.PI) / segCount;
+    return ((-(idx + 0.5) * arc) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
   };
 
-  const addSegment = () => {
-    if (gameConfig.segments.length >= 12) return;
-    const newProb = 100 / (gameConfig.segments.length + 1);
-    const updatedSegments = gameConfig.segments.map(s => ({ ...s, probability: parseFloat(newProb.toFixed(1)) }));
-    updatedSegments.push({
-      id: Date.now(),
-      label: "Pas de prix",
-      probability: parseFloat(newProb.toFixed(1)),
-      color: COLORS[updatedSegments.length % COLORS.length],
-    });
-    // Adjust last item to make exactly 100
-    const total = updatedSegments.reduce((acc, curr) => acc + curr.probability, 0);
-    if (total !== 100) updatedSegments[updatedSegments.length - 1].probability += (100 - total);
+  // API responses may contain a winningIndex that doesn't line up with the
+  // exact segment order sent to the client. Prefer the segment that matches
+  // the server-returned prize so the pointer and result card agree.
+  const getPrizeSegmentIndex = (
+    prize: Segment,
+    segments: Segment[],
+    winningIndex: unknown,
+  ): number => {
+    const normalize = (value: string) =>
+      value
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, "");
 
-    setGameConfig({ ...gameConfig, segments: updatedSegments });
+    const validWinningIndex =
+      Number.isInteger(Number(winningIndex)) &&
+      Number(winningIndex) >= 0 &&
+      Number(winningIndex) < segments.length
+        ? Number(winningIndex)
+        : -1;
+
+    const prizeLabel = normalize(prize.label || "");
+    const exactMatch = segments.findIndex(
+      (segment) =>
+        segment.points === prize.points &&
+        normalize(segment.label || "") === prizeLabel,
+    );
+    if (exactMatch >= 0) return exactMatch;
+
+    // "Réessayer" and "Pas de chance" can be different labels for the same
+    // no-prize outcome. Match the zero-point segment instead of a winning one.
+    if (prize.points <= 0) {
+      const noPrizeIndex = segments.findIndex((segment) => segment.points <= 0);
+      if (noPrizeIndex >= 0) return noPrizeIndex;
+    }
+
+    const pointsMatch = segments.findIndex(
+      (segment) => segment.points === prize.points,
+    );
+    if (pointsMatch >= 0) return pointsMatch;
+
+    if (validWinningIndex >= 0) return validWinningIndex;
+    return 0;
   };
 
-  const removeSegment = (id: number) => {
-    if (gameConfig.segments.length <= 2) return;
-    let updatedSegments = gameConfig.segments.filter(s => s.id !== id);
-    const newProb = 100 / updatedSegments.length;
-    updatedSegments = updatedSegments.map(s => ({ ...s, probability: parseFloat(newProb.toFixed(1)) }));
-    
-    // Fix rounding errors
-    const total = updatedSegments.reduce((acc, curr) => acc + curr.probability, 0);
-    if (total !== 100) updatedSegments[0].probability += (100 - total);
-
-    setGameConfig({ ...gameConfig, segments: updatedSegments });
+  const fireConfetti = () => {
+    const emojis = ["🎉", "✨", "🎊", "⭐"];
+    const burst = Array.from({ length: 14 }, (_, i) => ({
+      id: Date.now() + i,
+      emoji: emojis[i % emojis.length],
+      x: 10 + Math.random() * 80,
+      delay: Math.random() * 0.3,
+    }));
+    setConfetti(burst);
+    window.setTimeout(() => setConfetti([]), 1600);
   };
 
-  const updateProbability = (id: number, value: number) => {
-    // Note: A robust implementation requires complex balancing logic to keep total at 100%
-    // For this UI, we'll just update the specific value
-    const updated = gameConfig.segments.map(s => s.id === id ? { ...s, probability: value } : s);
-    setGameConfig({ ...gameConfig, segments: updated });
+  // ── Share the result (customer's own win) ───────────────────────────
+  const handleShare = async () => {
+    if (!result) return;
+    const name = restaurantName || "ce commerce";
+    const url = restaurantSlug
+      ? `${window.location.origin}/${restaurantSlug}`
+      : window.location.origin;
+
+    const text =
+      result.points > 0
+        ? `🎉 Je viens de gagner ${result.points} points sur la roue de la chance de ${name} ! Tente ta chance toi aussi 👇`
+        : `J'ai tenté ma chance sur la roue de ${name} 🎡 À ton tour !`;
+
+    const shareData = { title: `Roue de la chance — ${name}`, text, url };
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+      } catch {
+        // User cancelled the native share sheet — not an error, do nothing.
+      }
+      return;
+    }
+
+    // Desktop / unsupported browsers: fall back to copying the message.
+    try {
+      await navigator.clipboard.writeText(`${text} ${url}`);
+      setShareState("copied");
+      window.setTimeout(() => setShareState("idle"), 2000);
+    } catch {
+      setShareState("error");
+      window.setTimeout(() => setShareState("idle"), 2000);
+    }
   };
 
-  // --- Sub-components ---
+  const handleSpin = async () => {
+    if (spinningRef.current || !status) return;
+    const source: SpinSource | null =
+      status.freeSpinsLeft > 0 ? "FREE" : status.bonusSpins > 0 ? "BONUS" : null;
+    if (!source) return;
 
-  const PieChart = ({ segments, size = 120 }: { segments: Segment[], size?: number }) => {
-    let cumulativePercent = 0;
-    
-    // SVG Pie Chart generation
-    const getCoordinatesForPercent = (percent: number) => {
-      const x = Math.cos(2 * Math.PI * percent);
-      const y = Math.sin(2 * Math.PI * percent);
-      return [x, y];
-    };
+    spinningRef.current = true;
+    setSpinning(true);
+    setShowResult(false);
+    setSpinError(null);
 
+    try {
+      const res = await fetch("/api/customer/spin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ customerId, restaurantId, source }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Le tour a échoué");
+
+      const { winningIndex, prize, newPoints, freeSpinsLeft, bonusSpins } = data;
+      const segments = status.segments;
+
+      if (!Array.isArray(segments) || segments.length === 0) {
+        throw new Error("La configuration de la roue est invalide.");
+      }
+      if (!prize || typeof prize.points !== "number" || typeof prize.label !== "string") {
+        throw new Error("Le serveur a renvoyé un résultat de roue invalide.");
+      }
+
+      // Align the wheel with the prize returned by the server, not blindly
+      // with an index that may refer to a differently ordered segment array.
+      const targetIndex = getPrizeSegmentIndex(prize as Segment, segments, winningIndex);
+      const extraSpins = 6 + Math.floor(Math.random() * 4);
+      const targetNorm = angleForIndex(targetIndex, segments.length);
+      const startAngle = angleRef.current;
+      const startNorm = ((startAngle % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+      const forwardDelta = ((targetNorm - startNorm) + 2 * Math.PI) % (2 * Math.PI);
+      // Stop at the exact center of the server-selected segment. Jitter can
+      // push the pointer into a neighboring segment and show the wrong prize.
+      const target = startAngle + extraSpins * 2 * Math.PI + forwardDelta;
+
+      const duration = 4200 + Math.random() * 1200;
+      const startTime = performance.now();
+      const easeOut = (t: number) => 1 - Math.pow(1 - t, 4);
+
+      const frame = (now: number) => {
+        const t = Math.min((now - startTime) / duration, 1);
+        const current = startAngle + (target - startAngle) * easeOut(t);
+        angleRef.current = current;
+        drawWheel(current, segments);
+
+        if (t < 1) {
+          requestAnimationFrame(frame);
+        } else {
+          spinningRef.current = false;
+          setSpinning(false);
+          setResult(prize);
+          setShowResult(true);
+          setTotalPts((prev) => prev + prize.points);
+          setStatus((prev) => (prev ? { ...prev, freeSpinsLeft, bonusSpins } : prev));
+          setHistory((h) => [{ label: prize.label, pts: prize.points }, ...h].slice(0, 6));
+          if (prize.points > 0) {
+            fireConfetti();
+            onPointsEarned?.(prize.points, newPoints);
+          }
+        }
+      };
+
+      requestAnimationFrame(frame);
+    } catch (err) {
+      spinningRef.current = false;
+      setSpinning(false);
+      setSpinError(err instanceof Error ? err.message : "Le tour a échoué");
+    }
+  };
+
+  if (loadError) {
     return (
-      <div className="relative group" style={{ width: size, height: size }}>
-        <svg viewBox="-1 -1 2 2" className="transform -rotate-90 w-full h-full drop-shadow-xl">
-          {segments.map((segment, i) => {
-            const startPercent = cumulativePercent;
-            const percent = segment.probability / 100;
-            cumulativePercent += percent;
-            
-            const [startX, startY] = getCoordinatesForPercent(startPercent);
-            const [endX, endY] = getCoordinatesForPercent(cumulativePercent);
-            
-            const largeArcFlag = percent > 0.5 ? 1 : 0;
-            const pathData = [
-              `M ${startX} ${startY}`,
-              `A 1 1 0 ${largeArcFlag} 1 ${endX} ${endY}`,
-              `L 0 0`,
-            ].join(' ');
-
-            return (
-              <path
-                key={i}
-                d={pathData}
-                fill={segment.color}
-                stroke="#1F2937"
-                strokeWidth="0.02"
-              />
-            );
-          })}
-        </svg>
-        {/* Center pin */}
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full border-4 border-gray-800 shadow-sm" />
+      <div style={{ textAlign: "center", padding: "32px 16px" }}>
+        <p style={{ fontSize: 32, marginBottom: 8 }}>⚠️</p>
+        <p style={{ color: "#DC2626", fontSize: 13, fontWeight: 500 }}>{loadError}</p>
       </div>
     );
-  };
+  }
+  if (!status) {
+    return (
+      <div style={{ textAlign: "center", padding: "60px 16px" }}>
+        <div style={{
+          width: 40, height: 40, margin: "0 auto 12px",
+          border: `3px solid ${primaryColor}30`,
+          borderTopColor: primaryColor,
+          borderRadius: "50%",
+          animation: "spinLoader 0.8s linear infinite",
+        }} />
+        <p style={{ fontSize: 13, color: `${textColor}70` }}>Chargement de la roue...</p>
+        <style jsx>{`@keyframes spinLoader { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
+  }
+
+  const noSpinsLeft = status.freeSpinsLeft + status.bonusSpins <= 0;
+  const nextSource: SpinSource | null =
+    status.freeSpinsLeft > 0 ? "FREE" : status.bonusSpins > 0 ? "BONUS" : null;
 
   return (
-    <div className="min-h-screen bg-[#0B0F19] text-gray-200 p-8 font-sans">
-      
-      {/* --- DASHBOARD VIEW --- */}
-      <div className="max-w-6xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-semibold text-white">Spin & Win</h1>
-          <button 
-            onClick={() => setIsModalOpen(true)}
-            className="flex items-center gap-2 bg-[#6366F1] hover:bg-[#4F46E5] text-white px-4 py-2 rounded-lg font-medium transition-colors"
+    <div style={{ fontFamily: "'Inter', sans-serif", display: "flex", flexDirection: "column", alignItems: "center", width: "100%" }}>
+
+      {/* ── Stats row ── */}
+      <div style={{ display: "flex", gap: 8, width: "100%", marginBottom: 24 }}>
+        {[
+          { label: "Points gagnés", value: totalPts, icon: "🏆" },
+          { label: "Gratuits", value: `${status.freeSpinsLeft}/${status.dailyFreeSpins}`, icon: "🎁" },
+          { label: "Bonus", value: status.bonusSpins, icon: "⚡" },
+        ].map((s) => (
+          <div
+            key={s.label}
+            style={{
+              flex: 1, textAlign: "center",
+              background: `linear-gradient(160deg, ${primaryColor}12, ${primaryColor}05)`,
+              borderRadius: 16, padding: "12px 6px",
+              border: `1px solid ${primaryColor}18`,
+            }}
           >
-            <Plus size={18} /> Nouveau jeu
-          </button>
-        </div>
-
-        {/* Info Banner */}
-        <div className="bg-[#111827] border border-[#374151] rounded-xl p-5 mb-8 flex gap-4">
-          <div className="bg-[#1F2937] p-3 rounded-lg h-fit">
-            <Gift className="text-[#8B5CF6]" size={24} />
+            <p style={{ fontSize: 15, marginBottom: 2 }}>{s.icon}</p>
+            <p style={{ fontSize: 19, fontWeight: 800, color: primaryColor, letterSpacing: "-0.02em" }}>{s.value}</p>
+            <p style={{ fontSize: 10, color: `${textColor}60`, fontWeight: 600, marginTop: 2, textTransform: "uppercase", letterSpacing: "0.04em" }}>{s.label}</p>
           </div>
-          <div>
-            <h2 className="text-lg font-medium text-white mb-1">Qu'est-ce que Spin & Win ?</h2>
-            <p className="text-gray-400 text-sm max-w-3xl">
-              Ajoutez un jeu de roue à votre programme de fidélité. Les clients tournent après chaque tampon ou une fois par jour pour gagner des coupons, des points bonus, des tampons ou des cadeaux — pour les fidéliser et les faire revenir.
-            </p>
-          </div>
-        </div>
-
-        {/* Games Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {games.map((game) => (
-            <div key={game.id} className="bg-[#111827] border border-[#1F2937] rounded-xl p-5 hover:border-[#374151] transition-colors relative">
-              <div className="flex justify-between items-center mb-6">
-                <div className="flex items-center gap-2">
-                  <div className={`w-2 h-2 rounded-full ${game.status === 'Active' ? 'bg-green-500' : 'bg-gray-500'}`} />
-                  <span className="font-medium text-white">{game.name}</span>
-                  <span className={`text-xs px-2 py-0.5 rounded-full ${game.status === 'Active' ? 'bg-green-500/10 text-green-400' : 'bg-gray-500/10 text-gray-400'}`}>
-                    {game.status}
-                  </span>
-                </div>
-                <div className={`w-10 h-5 rounded-full relative cursor-pointer ${game.status === 'Active' ? 'bg-green-500' : 'bg-gray-600'}`}>
-                  <div className="absolute right-1 top-1 w-3 h-3 bg-white rounded-full"></div>
-                </div>
-              </div>
-              
-              <p className="text-sm text-gray-400 mb-4">{game.segments.length} segments</p>
-              
-              <div className="flex items-center gap-6 mb-6">
-                <PieChart segments={game.segments} size={80} />
-                <div className="flex-1">
-                  <p className="text-xs text-gray-500 mb-2 font-semibold uppercase tracking-wider">Lots à gagner</p>
-                  <div className="space-y-2">
-                    {game.segments.map((seg, idx) => (
-                      <div key={idx} className="flex justify-between items-center text-xs">
-                        <div className="flex items-center gap-2">
-                          {seg.label === 'Pas de prix' ? <X size={12} className="text-gray-500" /> : <Gift size={12} className="text-pink-400" />}
-                          <span className="text-gray-300">{seg.label}</span>
-                        </div>
-                        <span className="text-gray-500">{seg.probability}%</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-              
-              <div className="flex gap-4 border-t border-[#1F2937] pt-4">
-                <button className="text-sm text-gray-400 hover:text-white flex items-center gap-1">
-                  <Edit2 size={14} /> Modifier
-                </button>
-                <button className="text-sm text-red-400 hover:text-red-300 flex items-center gap-1">
-                  <Trash2 size={14} /> Supprimer
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
+        ))}
       </div>
 
-      {/* --- MODAL VIEW (STEPS 1-3) --- */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-[#111827] border border-[#1F2937] rounded-2xl w-full max-w-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-            
-            {/* Modal Header */}
-            <div className="p-6 border-b border-[#1F2937] flex justify-between items-center">
-              <div>
-                <h2 className="text-xl font-semibold text-white mb-4">Nouveau jeu roue</h2>
-                <div className="flex items-center gap-4 text-sm">
-                  <span className="text-[#3B82F6] font-medium uppercase text-xs tracking-wider">
-                    Étape {step} sur 3
-                  </span>
-                </div>
-              </div>
-              <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-white">
-                <X size={24} />
-              </button>
-            </div>
+      {/* ── Wheel ── */}
+      <div style={{ position: "relative", width: WHEEL_SIZE, height: WHEEL_SIZE, marginBottom: 8 }}>
+        {confetti.map((c) => (
+          <span
+            key={c.id}
+            style={{
+              position: "absolute", top: "40%", left: `${c.x}%`,
+              fontSize: 20, zIndex: 20, pointerEvents: "none",
+              animation: `confettiFall 1.3s ease-out ${c.delay}s forwards`,
+            }}
+          >
+            {c.emoji}
+          </span>
+        ))}
 
-            {/* Progress Bar & Tabs */}
-            <div className="px-6 pt-4">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="flex-1 h-1 bg-[#1F2937] rounded-full overflow-hidden">
-                  <div className="h-full bg-[#3B82F6] transition-all duration-300" style={{ width: `${(step / 3) * 100}%` }} />
-                </div>
-              </div>
-              <div className="flex items-center gap-6 mb-6">
-                <div className={`flex items-center gap-2 text-sm ${step >= 1 ? 'text-[#3B82F6]' : 'text-gray-500'}`}>
-                  {step > 1 ? <CheckCircle2 size={16} /> : <div className="w-5 h-5 rounded-full bg-[#3B82F6] text-white flex items-center justify-center text-xs">1</div>}
-                  Paramètres
-                </div>
-                <div className={`flex items-center gap-2 text-sm ${step >= 2 ? 'text-[#3B82F6]' : 'text-gray-500'}`}>
-                   {step > 2 ? <CheckCircle2 size={16} /> : <div className={`w-5 h-5 rounded-full flex items-center justify-center text-xs ${step >= 2 ? 'bg-[#3B82F6] text-white' : 'bg-[#1F2937] text-gray-400'}`}>2</div>}
-                  Récompenses
-                </div>
-                <div className={`flex items-center gap-2 text-sm ${step >= 3 ? 'text-[#3B82F6]' : 'text-gray-500'}`}>
-                   <div className={`w-5 h-5 rounded-full flex items-center justify-center text-xs ${step >= 3 ? 'bg-[#3B82F6] text-white' : 'bg-[#1F2937] text-gray-400'}`}>3</div>
-                  Conditions
-                </div>
-              </div>
-            </div>
+        <div style={{
+          position: "absolute", top: -14, left: "50%",
+          transform: "translateX(-50%)",
+          width: 0, height: 0,
+          borderLeft: "12px solid transparent",
+          borderRight: "12px solid transparent",
+          borderTop: `26px solid ${primaryColor}`,
+          zIndex: 10,
+          filter: "drop-shadow(0 3px 4px rgba(0,0,0,0.2))",
+        }} />
 
-            {/* Modal Body (Scrollable) */}
-            <div className="p-6 overflow-y-auto flex-1 custom-scrollbar">
-              
-              {/* STEP 1: SETTINGS */}
-              {step === 1 && (
-                <div className="space-y-6">
-                  <div className="bg-[#1F2937]/50 border border-[#374151] rounded-xl p-5">
-                    <h3 className="flex items-center gap-2 text-white font-medium mb-4">
-                      <Settings size={18} className="text-gray-400" /> Informations
-                    </h3>
-                    <p className="text-sm text-gray-400 mb-4">Nom et période de votre campagne</p>
-                    
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-1">Nom du jeu <span className="text-red-500">*</span></label>
-                        <input 
-                          type="text" 
-                          value={gameConfig.name}
-                          onChange={(e) => setGameConfig({...gameConfig, name: e.target.value})}
-                          placeholder="ex. Défi d'été"
-                          className="w-full bg-[#111827] border border-[#374151] rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-[#3B82F6]"
-                        />
-                      </div>
-                      <div>
-                        <label className="flex items-center gap-2 text-sm font-medium text-gray-300 mb-2">
-                          <Calendar size={14} /> Planification <span className="text-xs bg-gray-700 text-gray-300 px-2 py-0.5 rounded">Facultatif</span>
-                        </label>
-                        <div className="flex gap-4">
-                          <input type="date" className="w-1/2 bg-[#111827] border border-[#374151] rounded-lg px-4 py-2 text-gray-300 text-sm" />
-                          <input type="date" className="w-1/2 bg-[#111827] border border-[#374151] rounded-lg px-4 py-2 text-gray-300 text-sm" />
-                        </div>
-                        <p className="text-xs text-gray-500 mt-2">Laissez vide pour lancer immédiatement et sans fin</p>
-                      </div>
-                    </div>
-                  </div>
+        <canvas
+          ref={canvasRef}
+          style={{
+            display: "block", width: WHEEL_SIZE, height: WHEEL_SIZE,
+            borderRadius: "50%",
+            boxShadow: `0 10px 30px -8px ${primaryColor}50, 0 0 0 6px ${cardBg}, 0 0 0 7px ${textColor}10`,
+          }}
+        />
 
-                  <div className="bg-[#1F2937]/50 border border-[#374151] rounded-xl p-5">
-                    <h3 className="flex items-center gap-2 text-white font-medium mb-1">
-                      <RefreshCw size={18} className="text-gray-400" /> Règles du jeu
-                    </h3>
-                    <p className="text-sm text-gray-400 mb-4">Quand et à quelle fréquence les clients peuvent jouer</p>
-                    
-                    <div className="mb-4">
-                      <label className="block text-sm font-medium text-gray-300 mb-2">Quand peut-on tourner ?</label>
-                      <div className="grid grid-cols-3 gap-3">
-                        {['purchase', 'daily', 'custom'].map((type) => (
-                          <button
-                            key={type}
-                            onClick={() => setGameConfig({...gameConfig, rule: type as any})}
-                            className={`py-2.5 rounded-lg text-sm font-medium border transition-colors ${
-                              gameConfig.rule === type 
-                                ? 'bg-[#3B82F6] border-[#3B82F6] text-white' 
-                                : 'bg-[#111827] border-[#374151] text-gray-400 hover:border-gray-500'
-                            }`}
-                          >
-                            {type === 'purchase' && 'Après chaque achat'}
-                            {type === 'daily' && 'Une fois par jour'}
-                            {type === 'custom' && 'Personnalisé (X/jour)'}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
+        <button
+          onClick={handleSpin}
+          disabled={spinning || noSpinsLeft}
+          style={{
+            position: "absolute", top: "50%", left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 60, height: 60, borderRadius: "50%",
+            background: spinning || noSpinsLeft
+              ? "#9ca3af"
+              : `linear-gradient(145deg, ${primaryColor}, ${primaryColor}cc)`,
+            border: `4px solid ${cardBg}`,
+            color: "#fff", fontSize: 11, fontWeight: 800,
+            letterSpacing: "0.03em",
+            cursor: spinning || noSpinsLeft ? "not-allowed" : "pointer",
+            transition: "transform 0.15s ease, background 0.2s ease",
+            boxShadow: spinning || noSpinsLeft ? "none" : `0 4px 14px ${primaryColor}70`,
+            zIndex: 10,
+          }}
+          onMouseDown={(e) => { if (!spinning && !noSpinsLeft) e.currentTarget.style.transform = "translate(-50%, -50%) scale(0.94)"; }}
+          onMouseUp={(e) => { e.currentTarget.style.transform = "translate(-50%, -50%) scale(1)"; }}
+        >
+          {spinning ? "···" : noSpinsLeft ? "FIN" : "SPIN"}
+        </button>
+      </div>
 
-                    <div className="flex items-center justify-between pt-2 border-t border-[#374151] mt-4">
-                      <div>
-                        <p className="text-sm font-medium text-white">Premier tour gratuit</p>
-                        <p className="text-xs text-gray-500">Permettre aux clients de tourner une fois avant leur premier tampon</p>
-                      </div>
-                      <div 
-                        onClick={() => setGameConfig({...gameConfig, firstFree: !gameConfig.firstFree})}
-                        className={`w-11 h-6 rounded-full relative cursor-pointer transition-colors ${gameConfig.firstFree ? 'bg-[#3B82F6]' : 'bg-[#374151]'}`}
-                      >
-                        <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${gameConfig.firstFree ? 'left-6' : 'left-1'}`}></div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
+      <p style={{ fontSize: 13, color: `${textColor}75`, marginTop: 10, marginBottom: 6, fontWeight: 500, textAlign: "center" }}>
+        {noSpinsLeft
+          ? "Plus de tours disponibles"
+          : nextSource === "FREE"
+          ? `🎁 ${status.freeSpinsLeft} tour${status.freeSpinsLeft > 1 ? "s" : ""} gratuit${status.freeSpinsLeft > 1 ? "s" : ""} aujourd'hui`
+          : `⚡ ${status.bonusSpins} tour${status.bonusSpins > 1 ? "s" : ""} bonus disponible${status.bonusSpins > 1 ? "s" : ""}`}
+      </p>
+      {spinError && (
+        <p style={{ fontSize: 12, color: "#DC2626", marginBottom: 8, fontWeight: 500 }}>{spinError}</p>
+      )}
 
-              {/* STEP 2: REWARDS */}
-              {step === 2 && (
-                <div className="flex gap-8">
-                  <div className="flex-1">
-                    <div className="flex justify-between items-center mb-4 bg-[#1F2937]/50 border border-[#374151] p-3 rounded-xl">
-                      <span className="text-sm text-gray-300"><strong className="text-white">{gameConfig.segments.length}</strong>/12 cases</span>
-                      <div className="flex items-center gap-3">
-                        <span className="text-sm text-gray-300">Total <strong className="text-green-400">{gameConfig.segments.reduce((a,b)=>a+b.probability, 0).toFixed(1)}%</strong></span>
-                        <button onClick={addSegment} className="bg-[#3B82F6] hover:bg-[#2563EB] text-white px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-1">
-                          <Plus size={16} /> Ajouter
-                        </button>
-                      </div>
-                    </div>
+      {noSpinsLeft && !showResult && (
+        <div style={{
+          width: "100%", padding: "22px 16px", marginTop: 14,
+          background: `${textColor}06`,
+          borderRadius: 18, textAlign: "center",
+          border: `1px dashed ${textColor}20`,
+        }}>
+          <div style={{ fontSize: 30, marginBottom: 8 }}>⏰</div>
+          <p style={{ fontWeight: 700, color: textColor, fontSize: 14, marginBottom: 4 }}>Revenez demain !</p>
+          <p style={{ color: `${textColor}65`, fontSize: 12, lineHeight: 1.5 }}>
+            Vos tours gratuits reviennent demain.<br />Faites un achat pour gagner des tours bonus.
+          </p>
+        </div>
+      )}
 
-                    <div className="space-y-3 mb-6">
-                      {gameConfig.segments.map((seg, idx) => (
-                        <div key={seg.id} className="flex items-center gap-3 bg-[#1F2937]/50 border border-[#374151] rounded-xl p-3">
-                          <div className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-white text-sm" style={{ backgroundColor: seg.color }}>
-                            {idx + 1}
-                          </div>
-                          <div className="flex-1">
-                            <p className="text-white text-sm font-medium">{seg.label}</p>
-                            <p className="text-xs text-gray-400 flex items-center gap-1"><Gift size={12}/> {seg.probability}%</p>
-                          </div>
-                          <div className="flex items-center gap-3 text-gray-400">
-                             <Edit2 size={16} className="cursor-pointer hover:text-white" />
-                             <Trash2 size={16} className="cursor-pointer hover:text-red-400" onClick={() => removeSegment(seg.id)} />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="flex items-center gap-2 text-xs text-gray-500">
-                      <Info size={14} /> Comment fonctionnent la probabilité et le stock ?
-                    </div>
-                  </div>
-
-                  {/* Wheel Preview */}
-                  <div className="w-64 flex flex-col items-center">
-                    <div className="w-full bg-[#1F2937]/30 border border-[#374151] rounded-xl p-6 flex flex-col items-center">
-                      <PieChart segments={gameConfig.segments} size={180} />
-                      <div className="mt-4 flex flex-wrap justify-center gap-2">
-                        {gameConfig.segments.map((seg, i) => (
-                          <div key={i} className="flex items-center gap-1 text-[10px] text-gray-400">
-                            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: seg.color }}/>
-                            {seg.label}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                    <p className="text-xs text-gray-500 mt-3">Aperçu de la roue</p>
-                  </div>
-                </div>
-              )}
-
-              {/* STEP 3: CONDITIONS */}
-              {step === 3 && (
-                <div className="bg-[#1F2937]/50 border border-[#374151] rounded-xl p-5">
-                  <h3 className="flex items-center gap-2 text-white font-medium mb-1">
-                    <CheckCircle2 size={18} className="text-gray-400" /> Conditions requises
-                  </h3>
-                  <p className="text-sm text-gray-400 mb-6">Exiger que les clients complètent ces actions avant de tourner</p>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    {/* Condition 1 */}
-                    <div className="flex items-start gap-3 bg-[#111827] border border-[#374151] p-4 rounded-xl">
-                      <div className="bg-[#1F2937] p-2 rounded-lg text-blue-400">
-                        <Smartphone size={20} />
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex justify-between items-center mb-1">
-                          <h4 className="text-white font-medium text-sm">Installer l'application</h4>
-                          <div 
-                            onClick={() => setGameConfig({...gameConfig, conditions: {...gameConfig.conditions, installApp: !gameConfig.conditions.installApp}})}
-                            className={`w-9 h-5 rounded-full relative cursor-pointer transition-colors ${gameConfig.conditions.installApp ? 'bg-[#3B82F6]' : 'bg-gray-600'}`}
-                          >
-                            <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${gameConfig.conditions.installApp ? 'left-4.5' : 'left-0.5'}`}></div>
-                          </div>
-                        </div>
-                        <p className="text-xs text-gray-400">Le client doit ajouter l'application à son écran d'accueil</p>
-                      </div>
-                    </div>
-
-                    {/* Condition 2 */}
-                    <div className="flex items-start gap-3 bg-[#111827] border border-[#374151] p-4 rounded-xl">
-                      <div className="bg-[#1F2937] p-2 rounded-lg text-blue-400">
-                        <Bell size={20} />
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex justify-between items-center mb-1">
-                          <h4 className="text-white font-medium text-sm">Activer les notifications</h4>
-                          <div 
-                            onClick={() => setGameConfig({...gameConfig, conditions: {...gameConfig.conditions, notifications: !gameConfig.conditions.notifications}})}
-                            className={`w-9 h-5 rounded-full relative cursor-pointer transition-colors ${gameConfig.conditions.notifications ? 'bg-[#3B82F6]' : 'bg-gray-600'}`}
-                          >
-                            <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${gameConfig.conditions.notifications ? 'left-4.5' : 'left-0.5'}`}></div>
-                          </div>
-                        </div>
-                        <p className="text-xs text-gray-400">Le client doit activer les notifications push</p>
-                      </div>
-                    </div>
-
-                    {/* Condition 3 */}
-                    <div className="flex items-start gap-3 bg-[#111827] border border-[#3B82F6] p-4 rounded-xl col-span-2">
-                      <div className="bg-[#1F2937] p-2 rounded-lg text-blue-400">
-                        <PhoneCall size={20} />
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex justify-between items-center mb-1">
-                          <h4 className="text-white font-medium text-sm">Lier le téléphone</h4>
-                          <div 
-                            onClick={() => setGameConfig({...gameConfig, conditions: {...gameConfig.conditions, phone: !gameConfig.conditions.phone}})}
-                            className={`w-9 h-5 rounded-full relative cursor-pointer transition-colors ${gameConfig.conditions.phone ? 'bg-[#3B82F6]' : 'bg-gray-600'}`}
-                          >
-                            <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${gameConfig.conditions.phone ? 'left-4.5' : 'left-0.5'}`}></div>
-                          </div>
-                        </div>
-                        <p className="text-xs text-gray-400">Le client doit lier son numéro de téléphone et accepter le marketing SMS</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-            </div>
-
-            {/* Modal Footer */}
-            <div className="p-6 border-t border-[#1F2937] flex justify-between items-center bg-[#111827]">
-              <button 
-                onClick={() => step > 1 ? setStep(step - 1) : setIsModalOpen(false)}
-                className="text-gray-400 hover:text-white flex items-center gap-2 text-sm font-medium px-4 py-2"
+      {showResult && result && (
+        <div
+          style={{
+            width: "100%", padding: "24px 16px", marginTop: 14,
+            background: result.points > 0
+              ? `linear-gradient(160deg, ${primaryColor}14, ${primaryColor}05)`
+              : `${textColor}06`,
+            borderRadius: 20, textAlign: "center",
+            border: `1.5px solid ${result.points > 0 ? primaryColor + "45" : textColor + "15"}`,
+            animation: "popIn 0.4s cubic-bezier(.34,1.56,.64,1) both",
+          }}
+        >
+          <div style={{ fontSize: 42, marginBottom: 8 }}>
+            {result.points >= 200 ? "🏆" : result.points >= 100 ? "🎉" : result.points > 0 ? "✨" : "😅"}
+          </div>
+          {result.points > 0 ? (
+            <>
+              <p style={{ fontSize: 17, fontWeight: 800, color: textColor, marginBottom: 4 }}>Félicitations !</p>
+              <p style={{ fontSize: 13, color: `${textColor}70`, marginBottom: 10 }}>Vous avez gagné</p>
+              <p style={{ fontSize: 38, fontWeight: 800, color: primaryColor, letterSpacing: "-0.02em", marginBottom: 2 }}>+{result.points}</p>
+              <p style={{ fontSize: 13, color: `${textColor}70`, marginBottom: 16 }}>points ajoutés à votre compte</p>
+            </>
+          ) : (
+            <>
+              <p style={{ fontSize: 17, fontWeight: 800, color: textColor, marginBottom: 4 }}>Pas de chance !</p>
+              <p style={{ fontSize: 13, color: `${textColor}70`, marginBottom: 16 }}>Essayez encore au prochain tour</p>
+            </>
+          )}
+          <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
+            <button
+              onClick={handleShare}
+              style={{
+                padding: "11px 22px",
+                background: "transparent",
+                color: primaryColor, border: `1.5px solid ${primaryColor}50`,
+                borderRadius: 12, fontWeight: 700,
+                fontSize: 13, cursor: "pointer",
+                display: "flex", alignItems: "center", gap: 6,
+              }}
+            >
+              <span style={{ fontSize: 15 }}>📤</span>
+              {shareState === "copied" ? "Copié !" : shareState === "error" ? "Échec" : "Partager"}
+            </button>
+            {!noSpinsLeft && (
+              <button
+                onClick={() => setShowResult(false)}
+                style={{
+                  padding: "11px 28px",
+                  background: `linear-gradient(145deg, ${primaryColor}, ${primaryColor}cc)`,
+                  color: "#fff", border: "none",
+                  borderRadius: 12, fontWeight: 700,
+                  fontSize: 13, cursor: "pointer",
+                  boxShadow: `0 4px 14px ${primaryColor}40`,
+                }}
               >
-                {step === 1 ? 'Annuler' : '< Retour'}
+                Rejouer
               </button>
-              
-              {step < 3 ? (
-                <button 
-                  onClick={() => setStep(step + 1)}
-                  className="bg-[#3B82F6] hover:bg-[#2563EB] text-white px-6 py-2.5 rounded-lg font-medium flex items-center gap-2"
-                >
-                  Continuer <ChevronRight size={18} />
-                </button>
-              ) : (
-                <button 
-                  onClick={handleCreateGame}
-                  className="bg-[#3B82F6] hover:bg-[#2563EB] text-white px-6 py-2.5 rounded-lg font-medium"
-                >
-                  Créer le jeu
-                </button>
-              )}
-            </div>
+            )}
           </div>
         </div>
       )}
+
+      {history.length > 0 && (
+        <div style={{ width: "100%", marginTop: 20 }}>
+          <p style={{ fontSize: 11, color: `${textColor}55`, marginBottom: 8, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+            Historique
+          </p>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            {history.map((h, i) => (
+              <div
+                key={i}
+                style={{
+                  display: "flex", alignItems: "center", justifyContent: "space-between",
+                  padding: "9px 14px",
+                  background: `${textColor}04`,
+                  borderRadius: 12,
+                  border: `1px solid ${textColor}08`,
+                }}
+              >
+                <span style={{ fontSize: 13, color: textColor, fontWeight: 500 }}>{h.label}</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: h.pts > 0 ? primaryColor : `${textColor}45` }}>
+                  {h.pts > 0 ? `+${h.pts} pts` : "0 pts"}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <style jsx>{`
+        @keyframes popIn {
+          from { opacity: 0; transform: scale(0.85) translateY(8px); }
+          to   { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        @keyframes confettiFall {
+          0%   { opacity: 1; transform: translateY(0) rotate(0deg); }
+          100% { opacity: 0; transform: translateY(160px) rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { signOut } from "next-auth/react";
 import Image from "next/image";
 import { QRCodeSVG } from "qrcode.react";
 import { getPatternStyle } from "@/lib/patterns";
@@ -1063,8 +1064,10 @@ export default function ClientDashboard() {
     localStorage.removeItem("restaurantId");
     localStorage.removeItem("restaurantSlug");
 
-    router.replace(
-      `/client/login?restaurantId=${encodeURIComponent(restaurantId)}`
+    signOut({ redirect: false }).finally(() =>
+      router.replace(
+        `/client/login?restaurantId=${encodeURIComponent(restaurantId)}`
+      )
     );
     return;
   }
@@ -2027,6 +2030,19 @@ useEffect(() => {
               }}
             >
               {installButtonLabel}
+            </button>
+            <button
+              type="button"
+              onClick={async () => {
+                const slug = localStorage.getItem("restaurantSlug");
+                ["clientId","clientName","customerId","restaurantId","restaurantSlug"].forEach((k) => localStorage.removeItem(k));
+                await signOut({ redirect: false });
+                window.location.href = slug ? `/${slug}` : "/";
+              }}
+              className="w-full mt-3 py-2 text-xs font-medium underline"
+              style={{ color: `${D.text}80` }}
+            >
+              Ce n'est pas votre compte ? Changer de compte
             </button>
             <p className="text-xs text-center mt-3" style={{ color: `${D.text}50` }}>Powered by BONOO · Mentions légales</p>
           </div>

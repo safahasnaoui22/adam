@@ -1,11 +1,10 @@
 // app/[restaurantSlug]/page.tsx
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { prisma } from "@/app/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/lib/auth";
 import QRCodeScanner from "@/components/QRCodeScanner";
-import AutoLogin from "@/components/AutoLogin";
-import AutoRedirect from "@/components/AutoRedirect";
+import ReturningCustomer from "@/components/ReturningCustomer";
 
 interface PageProps {
   params: Promise<{ restaurantSlug: string }>;
@@ -83,10 +82,12 @@ export default async function RestaurantLandingPage({ params }: PageProps) {
   }
 
   const session = await getServerSession(authOptions);
-  if (session?.user?.customerProfile) {
-    // Redirect to the existing client dashboard, passing the restaurantId as a query parameter
-    redirect(`/client/dashboard?restaurantId=${restaurant.id}`);
-  }
+  // Only recognise the visitor if the saved account belongs to THIS business.
+  const profile = session?.user?.customerProfile;
+  const returning =
+    session?.user?.role === "CUSTOMER" && profile && profile.restaurantId === restaurant.id
+      ? profile
+      : null;
 
   return (
     <div className="rlp-root" style={{ minHeight: "100vh", background: "#ffffff" }}>
@@ -257,8 +258,6 @@ export default async function RestaurantLandingPage({ params }: PageProps) {
         }
       `}</style>
 
-      <AutoRedirect restaurantSlug={restaurantSlug} />
-
       <div className="rlp-container">
         {/* Restaurant Logo & Header */}
         <div className="rlp-header">
@@ -280,9 +279,17 @@ export default async function RestaurantLandingPage({ params }: PageProps) {
           <p className="rlp-subtitle">Programme de fidélité</p>
         </div>
 
-        {/* 👇 Client component that attempts auto‑login before showing the form */}
-        <AutoLogin restaurantSlug={restaurantSlug} />
-
+        {returning ? (
+          <div className="rlp-scanner-card">
+            <ReturningCustomer
+              name={returning.name}
+              customerId={returning.customerId}
+              restaurantId={restaurant.id}
+              restaurantSlug={restaurantSlug}
+            />
+          </div>
+        ) : (
+        <>
         {/* Welcome Card */}
         <div className="rlp-welcome">
           <div className="rlp-welcome-icon">👋</div>
@@ -300,6 +307,8 @@ export default async function RestaurantLandingPage({ params }: PageProps) {
             restaurantSlug={restaurantSlug}
           />
         </div>
+        </>
+        )}
 
         {/* Tip Card */}
         <div className="rlp-tip">
