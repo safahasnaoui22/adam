@@ -4,9 +4,10 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/app/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/lib/auth";
-import { restaurantPwaMetadata } from "@/app/lib/pwaMetadata";
+
 import QRCodeScanner from "@/components/QRCodeScanner";
 import ReturningCustomer from "@/components/ReturningCustomer";
+import { restaurantPwaMetadata } from "@/lib/pwaMetadata";
 
 interface PageProps {
   params: Promise<{ restaurantSlug: string }>;
