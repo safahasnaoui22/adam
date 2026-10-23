@@ -3,7 +3,8 @@ import type { Metadata } from "next";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "../../lib/auth";
-import { restaurantPwaMetadata } from "../../lib/pwaMetadata";
+import { restaurantPwaMetadata } from "@/lib/pwaMetadata";
+
 
 // The customer's restaurant decides the manifest and the icons, so the app
 // installed from this page carries the restaurant's own name and logo.
