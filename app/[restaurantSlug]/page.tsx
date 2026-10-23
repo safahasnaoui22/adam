@@ -1,13 +1,21 @@
 // app/[restaurantSlug]/page.tsx
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { prisma } from "@/app/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/lib/auth";
+import { restaurantPwaMetadata } from "@/app/lib/pwaMetadata";
 import QRCodeScanner from "@/components/QRCodeScanner";
 import ReturningCustomer from "@/components/ReturningCustomer";
 
 interface PageProps {
   params: Promise<{ restaurantSlug: string }>;
+}
+
+// Same manifest/icon as the dashboard: the install prompt can fire on this page.
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { restaurantSlug } = await params;
+  return restaurantPwaMetadata({ urlSlug: restaurantSlug });
 }
 
 export default async function RestaurantLandingPage({ params }: PageProps) {

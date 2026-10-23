@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 
@@ -39,6 +39,15 @@ export default function ReturningCustomer({
     } catch {}
     router.push(`/client/dashboard?restaurantId=${restaurantId}`);
   };
+
+  // Opened from the installed app icon: go straight to the card, no extra tap.
+  useEffect(() => {
+    const standalone =
+      window.matchMedia?.("(display-mode: standalone)").matches ||
+      (navigator as any).standalone === true;
+    if (standalone) handleContinue();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleSwitch = async () => {
     setBusy(true);

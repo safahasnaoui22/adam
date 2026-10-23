@@ -3,38 +3,18 @@ import type { Metadata } from "next";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "../../lib/auth";
-import { prisma } from "../../lib/prisma";
+import { restaurantPwaMetadata } from "../../lib/pwaMetadata";
 
 // The customer's restaurant decides the manifest and the icons, so the app
 // installed from this page carries the restaurant's own name and logo.
 export async function generateMetadata(): Promise<Metadata> {
   const session = await getServerSession(authOptions);
-  // For customers, login stores the slug of THEIR restaurant (restaurantId is
-  // only filled in for owners).
-  const slug =
-    session?.user?.role === "CUSTOMER" ? session.user.restaurantSlug : undefined;
-  if (!slug) return {};
-
-  const restaurant = await prisma.restaurant.findUnique({
-    where: { urlSlug: slug },
-    select: { id: true, name: true, appName: true, updatedAt: true },
-  });
-  if (!restaurant) return {};
-
-  const base = `/api/pwa/${restaurant.id}`;
-  const v = restaurant.updatedAt.getTime(); // changes when the logo is updated
-  const title = restaurant.appName || restaurant.name;
-
-  return {
-    title,
-    applicationName: title,
-    manifest: `${base}/manifest?v=${v}`,
-    appleWebApp: { capable: true, statusBarStyle: "black-translucent", title },
-    icons: {
-      icon: [{ url: `${base}/icon?size=192&v=${v}`, sizes: "192x192", type: "image/png" }],
-      apple: [{ url: `${base}/icon?size=180&v=${v}`, sizes: "180x180" }],
-    },
-  };
+  if (session?.user?.role !== "CUSTOMER") return {};
+  // Prefer the live profile (always right), fall back to the slug in the JWT.
+  const restaurantId = session.user.customerProfile?.restaurantId;
+  if (restaurantId) return restaurantPwaMetadata({ id: restaurantId });
+  const slug = session.user.restaurantSlug;
+  return slug ? restaurantPwaMetadata({ urlSlug: slug }) : {};
 }
 
 export default async function ClientLayout({
