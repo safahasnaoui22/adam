@@ -1,13 +1,14 @@
 // components/StatsClient.tsx
 "use client";
 
+import { StatsData , Kpi } from "@/lib/statsData";
 import { useRouter, usePathname } from "next/navigation";
 import { useTransition } from "react";
 import {
   Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Pie, PieChart,
   ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from "recharts";
-import type { StatsData, Kpi } from "@/app/lib/statsData";
+
 
 const ORANGE = "#fe5502";
 const GOLD = "#d4af6a";
