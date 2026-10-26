@@ -12,10 +12,17 @@ type Segment = {
 
 type SpinSource = "FREE" | "BONUS";
 
-type SpinStatus = {
+type Game = {
+  id: string;
+  name: string;
   segments: Segment[];
   dailyFreeSpins: number;
   freeSpinsLeft: number;
+};
+
+// Only ACTIVE games are returned by the API — a deactivated game disappears from here
+type SpinStatus = {
+  games: Game[];
   bonusSpins: number;
 };
 
@@ -49,6 +56,7 @@ export default function SpinWheel({
   const spinningRef = useRef(false);
 
   const [status, setStatus] = useState<SpinStatus | null>(null);
+  const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [spinning, setSpinning] = useState(false);
   const [spinError, setSpinError] = useState<string | null>(null);
@@ -65,15 +73,16 @@ export default function SpinWheel({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to load");
       
-      if (data.segments && data.segments.length > 0) {
-        const hasProb = data.segments.every((s: any) => typeof s.probability === 'number');
-        if (!hasProb) {
-          const eq = parseFloat((100 / data.segments.length).toFixed(1));
-          data.segments = data.segments.map((s: any) => ({ ...s, probability: eq }));
-        }
-      }
+      const games: Game[] = (data.games || []).map((g: Game) => {
+        const hasProb = g.segments.every((s: any) => typeof s.probability === "number");
+        if (hasProb) return g;
+        const eq = parseFloat((100 / g.segments.length).toFixed(1));
+        return { ...g, segments: g.segments.map((s) => ({ ...s, probability: eq })) };
+      });
 
-      setStatus(data);
+      setStatus({ games, bonusSpins: data.bonusSpins });
+      // keep the current tab if that game is still active, otherwise fall back to the first one
+      setSelectedGameId((prev) => (prev && games.some((g) => g.id === prev) ? prev : games[0]?.id ?? null));
       setTotalPts((prev) => prev); 
       setLoadError(null);
     } catch (err) {
@@ -170,9 +179,13 @@ export default function SpinWheel({
     [primaryColor, textColor, cardBg]
   );
 
+  const currentGame: Game | null = status
+    ? status.games.find((g) => g.id === selectedGameId) ?? status.games[0] ?? null
+    : null;
+
   useEffect(() => {
-    if (status) drawWheel(angleRef.current, status.segments);
-  }, [status, drawWheel]);
+    if (currentGame) drawWheel(angleRef.current, currentGame.segments);
+  }, [currentGame, drawWheel]);
 
   const getTargetAngle = (targetIndex: number, segments: Segment[]) => {
     const totalProb = segments.reduce((acc, s) => acc + (s.probability || 0), 0);
@@ -220,19 +233,19 @@ export default function SpinWheel({
   };
 
   const handleSpin = async () => {
-    if (spinningRef.current || !status) return;
-    const source: SpinSource | null = status.freeSpinsLeft > 0 ? "FREE" : status.bonusSpins > 0 ? "BONUS" : null;
+    if (spinningRef.current || !status || !currentGame) return;
+    const source: SpinSource | null = currentGame.freeSpinsLeft > 0 ? "FREE" : status.bonusSpins > 0 ? "BONUS" : null;
     if (!source) return;
 
     spinningRef.current = true; setSpinning(true); setShowResult(false); setSpinError(null);
 
     try {
-      const res = await fetch("/api/customer/spin", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ customerId, restaurantId, source }) });
+      const res = await fetch("/api/customer/spin", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ customerId, restaurantId, source, gameId: currentGame.id }) });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Le tour a échoué");
 
       const { winningIndex, prize, newPoints, freeSpinsLeft, bonusSpins } = data;
-      const segments = status.segments;
+      const segments = currentGame.segments;
       if (!Array.isArray(segments) || segments.length === 0) throw new Error("La configuration de la roue est invalide.");
 
       const targetIndex = getPrizeSegmentIndex(prize as Segment, segments, winningIndex);
@@ -257,7 +270,13 @@ export default function SpinWheel({
         else {
           spinningRef.current = false; setSpinning(false); setResult(prize); setShowResult(true);
           setTotalPts((prev) => prev + prize.points);
-          setStatus((prev) => (prev ? { ...prev, freeSpinsLeft, bonusSpins } : prev));
+          // the free-spin counter is shared by all games of the restaurant
+          const usedToday = currentGame.dailyFreeSpins - freeSpinsLeft;
+          setStatus((prev) => prev ? {
+            ...prev,
+            bonusSpins,
+            games: prev.games.map((g) => ({ ...g, freeSpinsLeft: Math.max(0, g.dailyFreeSpins - usedToday) })),
+          } : prev);
           setHistory((h) => [{ label: prize.label, pts: prize.points }, ...h].slice(0, 6));
           if (prize.points > 0) { fireConfetti(); onPointsEarned?.(prize.points, newPoints); }
         }
@@ -270,20 +289,39 @@ export default function SpinWheel({
   };
 
   if (loadError) return <div style={{ textAlign: "center", padding: "32px 16px" }}><p style={{ fontSize: 32, marginBottom: 8 }}>⚠️</p><p style={{ color: "#DC2626", fontSize: 13, fontWeight: 500 }}>{loadError}</p></div>;
-  if (!status) return <div style={{ textAlign: "center", padding: "60px 16px" }}><div style={{ width: 40, height: 40, margin: "0 auto 12px", border: `3px solid ${primaryColor}30`, borderTopColor: primaryColor, borderRadius: "50%", animation: "spinLoader 0.8s linear infinite" }} /><p style={{ fontSize: 13, color: `${textColor}70` }}>Chargement de la roue...</p><style jsx>{`@keyframes spinLoader { to { transform: rotate(360deg); } }`}</style></div>;
+  if (!status || !currentGame) return <div style={{ textAlign: "center", padding: "60px 16px" }}><div style={{ width: 40, height: 40, margin: "0 auto 12px", border: `3px solid ${primaryColor}30`, borderTopColor: primaryColor, borderRadius: "50%", animation: "spinLoader 0.8s linear infinite" }} /><p style={{ fontSize: 13, color: `${textColor}70` }}>Chargement de la roue...</p><style jsx>{`@keyframes spinLoader { to { transform: rotate(360deg); } }`}</style></div>;
 
-  const noSpinsLeft = status.freeSpinsLeft + status.bonusSpins <= 0;
-  const nextSource: SpinSource | null = status.freeSpinsLeft > 0 ? "FREE" : status.bonusSpins > 0 ? "BONUS" : null;
+  const freeSpinsLeft = currentGame.freeSpinsLeft;
+  const noSpinsLeft = freeSpinsLeft + status.bonusSpins <= 0;
+  const nextSource: SpinSource | null = freeSpinsLeft > 0 ? "FREE" : status.bonusSpins > 0 ? "BONUS" : null;
 
   return (
     <div style={{ fontFamily: "'Inter', sans-serif", display: "flex", flexDirection: "column", alignItems: "center", width: "100%" }}>
       <div style={{ display: "flex", gap: 8, width: "100%", marginBottom: 24 }}>
-        {[{ label: "Points gagnés", value: totalPts, icon: "🏆" }, { label: "Gratuits", value: `${status.freeSpinsLeft}/${status.dailyFreeSpins}`, icon: "🎁" }, { label: "Bonus", value: status.bonusSpins, icon: "⚡" }].map((s) => (
+        {[{ label: "Points gagnés", value: totalPts, icon: "🏆" }, { label: "Gratuits", value: `${freeSpinsLeft}/${currentGame.dailyFreeSpins}`, icon: "🎁" }, { label: "Bonus", value: status.bonusSpins, icon: "⚡" }].map((s) => (
           <div key={s.label} style={{ flex: 1, textAlign: "center", background: `linear-gradient(160deg, ${primaryColor}12, ${primaryColor}05)`, borderRadius: 16, padding: "12px 6px", border: `1px solid ${primaryColor}18` }}>
             <p style={{ fontSize: 15, marginBottom: 2 }}>{s.icon}</p><p style={{ fontSize: 19, fontWeight: 800, color: primaryColor, letterSpacing: "-0.02em" }}>{s.value}</p><p style={{ fontSize: 10, color: `${textColor}60`, fontWeight: 600, marginTop: 2, textTransform: "uppercase", letterSpacing: "0.04em" }}>{s.label}</p>
           </div>
         ))}
       </div>
+
+      {status.games.length > 1 && (
+        <div style={{ display: "flex", gap: 8, width: "100%", marginBottom: 20, overflowX: "auto", paddingBottom: 2 }}>
+          {status.games.map((g) => {
+            const selected = g.id === currentGame.id;
+            return (
+              <button
+                key={g.id}
+                disabled={spinning}
+                onClick={() => { setSelectedGameId(g.id); setShowResult(false); setSpinError(null); }}
+                style={{ flexShrink: 0, padding: "8px 16px", borderRadius: 999, fontSize: 13, fontWeight: 700, cursor: spinning ? "not-allowed" : "pointer", whiteSpace: "nowrap", border: `1.5px solid ${selected ? primaryColor : `${textColor}20`}`, background: selected ? primaryColor : "transparent", color: selected ? "#fff" : textColor, opacity: spinning && !selected ? 0.5 : 1, transition: "all 0.15s ease" }}
+              >
+                🎡 {g.name}
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       <div style={{ position: "relative", width: WHEEL_SIZE, height: WHEEL_SIZE, marginBottom: 8 }}>
         {confetti.map((c) => (<span key={c.id} style={{ position: "absolute", top: "40%", left: `${c.x}%`, fontSize: 20, zIndex: 20, pointerEvents: "none", animation: `confettiFall 1.3s ease-out ${c.delay}s forwards` }}>{c.emoji}</span>))}
@@ -292,7 +330,7 @@ export default function SpinWheel({
         <button onClick={handleSpin} disabled={spinning || noSpinsLeft} style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 60, height: 60, borderRadius: "50%", background: spinning || noSpinsLeft ? "#9ca3af" : `linear-gradient(145deg, ${primaryColor}, ${primaryColor}cc)`, border: `4px solid ${cardBg}`, color: "#fff", fontSize: 11, fontWeight: 800, letterSpacing: "0.03em", cursor: spinning || noSpinsLeft ? "not-allowed" : "pointer", transition: "transform 0.15s ease, background 0.2s ease", boxShadow: spinning || noSpinsLeft ? "none" : `0 4px 14px ${primaryColor}70`, zIndex: 10 }} onMouseDown={(e) => { if (!spinning && !noSpinsLeft) e.currentTarget.style.transform = "translate(-50%, -50%) scale(0.94)"; }} onMouseUp={(e) => { e.currentTarget.style.transform = "translate(-50%, -50%) scale(1)"; }}>{spinning ? "···" : noSpinsLeft ? "FIN" : "SPIN"}</button>
       </div>
 
-      <p style={{ fontSize: 13, color: `${textColor}75`, marginTop: 10, marginBottom: 6, fontWeight: 500, textAlign: "center" }}>{noSpinsLeft ? "Plus de tours disponibles" : nextSource === "FREE" ? `🎁 ${status.freeSpinsLeft} tour${status.freeSpinsLeft > 1 ? "s" : ""} gratuit${status.freeSpinsLeft > 1 ? "s" : ""} aujourd'hui` : `⚡ ${status.bonusSpins} tour${status.bonusSpins > 1 ? "s" : ""} bonus disponible${status.bonusSpins > 1 ? "s" : ""}`}</p>
+      <p style={{ fontSize: 13, color: `${textColor}75`, marginTop: 10, marginBottom: 6, fontWeight: 500, textAlign: "center" }}>{noSpinsLeft ? "Plus de tours disponibles" : nextSource === "FREE" ? `🎁 ${freeSpinsLeft} tour${freeSpinsLeft > 1 ? "s" : ""} gratuit${freeSpinsLeft > 1 ? "s" : ""} aujourd'hui` : `⚡ ${status.bonusSpins} tour${status.bonusSpins > 1 ? "s" : ""} bonus disponible${status.bonusSpins > 1 ? "s" : ""}`}</p>
       {spinError && <p style={{ fontSize: 12, color: "#DC2626", marginBottom: 8, fontWeight: 500 }}>{spinError}</p>}
 
       {noSpinsLeft && !showResult && (<div style={{ width: "100%", padding: "22px 16px", marginTop: 14, background: `${textColor}06`, borderRadius: 18, textAlign: "center", border: `1px dashed ${textColor}20` }}><div style={{ fontSize: 30, marginBottom: 8 }}>⏰</div><p style={{ fontWeight: 700, color: textColor, fontSize: 14, marginBottom: 4 }}>Revenez demain !</p><p style={{ color: `${textColor}65`, fontSize: 12, lineHeight: 1.5 }}>Vos tours gratuits reviennent demain.<br />Faites un achat pour gagner des tours bonus.</p></div>)}

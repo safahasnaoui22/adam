@@ -29,6 +29,22 @@ type GameConfig = {
 
 const PRESET_COLORS = ["#3B82F6", "#F59E0B", "#10B981", "#EF4444", "#8B5CF6", "#EC4899", "#6366F1", "#14B8A6", "#F97316", "#84CC16"];
 
+const emptyGame = (): GameConfig => ({
+  name: "",
+  startDate: "",
+  endDate: "",
+  rule: "purchase",
+  customRules: "",
+  firstFree: true,
+  segments: [
+    { id: "1", label: "Pas de prix", points: 0, probability: 50, color: PRESET_COLORS[0], textColor: "#ffffff" },
+    { id: "2", label: "Pas de prix", points: 0, probability: 50, color: PRESET_COLORS[1], textColor: "#ffffff" },
+  ],
+  conditions: { installApp: false, notifications: false, phone: true },
+});
+
+const toDateInput = (d: string | null | undefined) => (d ? new Date(d).toISOString().slice(0, 10) : "");
+
 export default function SpinWheelConfigPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -36,51 +52,94 @@ export default function SpinWheelConfigPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [step, setStep] = useState(1);
 
-  const [gameConfig, setGameConfig] = useState<GameConfig>({
-    name: "",
-    startDate: "",
-    endDate: "",
-    rule: "purchase",
-    customRules: "",
-    firstFree: true,
-    segments: [
-      { id: "1", label: "Pas de prix", points: 0, probability: 50, color: PRESET_COLORS[0], textColor: "#ffffff" },
-      { id: "2", label: "Pas de prix", points: 0, probability: 50, color: PRESET_COLORS[1], textColor: "#ffffff" },
-    ],
-    conditions: { installApp: false, notifications: false, phone: true },
-  });
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [gameConfig, setGameConfig] = useState<GameConfig>(emptyGame());
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  useEffect(() => { fetchConfig(); }, []);
+  useEffect(() => { fetchGames(); }, []);
 
-  const fetchConfig = async () => {
+  const fetchGames = async () => {
     try {
       const res = await fetch("/api/spin-config");
       const data = await res.json();
-      if (res.ok) {
-        if (data.segments && data.segments.length > 0) {
-          const formattedSegments = data.segments.map((s: any, i: number) => ({
-            id: Date.now().toString() + i,
-            label: s.label,
-            points: s.points,
-            probability: s.probability || parseFloat((100 / data.segments.length).toFixed(1)),
-            color: s.color,
-            textColor: s.textColor || "#ffffff",
-          }));
-          setGameConfig(prev => ({ ...prev, segments: formattedSegments }));
-        }
-        setGames([{
-          id: "1",
-          name: "Ma Roue Principale",
-          status: data.isActive ? "Active" : "Brouillon",
-          segments: data.segments || gameConfig.segments,
-        }]);
+      if (res.ok && Array.isArray(data)) {
+        setGames(data.map((g: any) => ({
+          id: g.id,
+          name: g.name,
+          isActive: g.isActive,
+          status: g.isActive ? "Active" : "Inactive",
+          startDate: g.startDate,
+          endDate: g.endDate,
+          rule: g.rule,
+          customRules: g.customRules,
+          firstFree: g.firstFree,
+          conditions: g.conditions,
+          segments: g.segments || [],
+        })));
       }
     } catch {
       toast.error("Erreur de connexion au serveur");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const openNewGame = () => {
+    setEditingId(null);
+    setGameConfig(emptyGame());
+    setStep(1);
+    setIsModalOpen(true);
+  };
+
+  const openEditGame = (game: any) => {
+    setEditingId(game.id);
+    setGameConfig({
+      name: game.name || "",
+      startDate: toDateInput(game.startDate),
+      endDate: toDateInput(game.endDate),
+      rule: game.rule || "purchase",
+      customRules: game.customRules || "",
+      firstFree: game.firstFree ?? true,
+      conditions: { installApp: false, notifications: false, phone: true, ...(game.conditions || {}) },
+      segments: (game.segments || []).map((s: any, i: number) => ({
+        id: Date.now().toString() + i,
+        label: s.label,
+        points: s.points,
+        probability: s.probability ?? parseFloat((100 / game.segments.length).toFixed(1)),
+        color: s.color,
+        textColor: s.textColor || "#ffffff",
+      })),
+    });
+    setStep(1);
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => { setIsModalOpen(false); setStep(1); setEditingId(null); };
+
+  // Active / Inactive switch — an inactive game disappears from the customer wheel
+  const toggleGame = async (game: any) => {
+    const next = !game.isActive;
+    setGames(prev => prev.map(g => g.id === game.id ? { ...g, isActive: next, status: next ? "Active" : "Inactive" } : g));
+    try {
+      const res = await fetch("/api/spin-config", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: game.id, isActive: next }) });
+      if (!res.ok) throw new Error();
+      toast.success(next ? "Jeu activé" : "Jeu désactivé");
+    } catch {
+      setGames(prev => prev.map(g => g.id === game.id ? { ...g, isActive: !next, status: !next ? "Active" : "Inactive" } : g));
+      toast.error("Impossible de modifier le statut");
+    }
+  };
+
+  const deleteGame = async (game: any) => {
+    if (!window.confirm(`Supprimer le jeu "${game.name}" ?`)) return;
+    try {
+      const res = await fetch(`/api/spin-config?id=${game.id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error();
+      toast.success("Jeu supprimé");
+      setGames(prev => prev.filter(g => g.id !== game.id));
+    } catch {
+      toast.error("Échec de la suppression");
     }
   };
 
@@ -141,22 +200,31 @@ export default function SpinWheelConfigPage() {
   };
 
   const handleSave = async () => {
+    if (!gameConfig.name.trim()) { setStep(1); return toast.error("Le nom du jeu est obligatoire"); }
     setSaving(true);
     try {
-      const payload = {
-        isActive: true,
-        dailyFreeSpins: 3,
-        bonusSpinsPerVisit: 1,
+      const payload: any = {
+        name: gameConfig.name.trim(),
+        startDate: gameConfig.startDate,
+        endDate: gameConfig.endDate,
+        rule: gameConfig.rule,
+        customRules: gameConfig.customRules,
+        firstFree: gameConfig.firstFree,
+        conditions: gameConfig.conditions,
         segments: gameConfig.segments.map(s => ({
           label: s.label, points: s.points, color: s.color, textColor: s.textColor, probability: s.probability
-        }))
+        })),
       };
-      const res = await fetch("/api/spin-config", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+      if (editingId) payload.id = editingId; // update the existing game
+      // new game: POST adds it beside the existing ones (active by default)
+      const res = await fetch("/api/spin-config", { method: editingId ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
       if (res.ok) {
-        toast.success("Roue mise à jour avec succès");
-        setIsModalOpen(false); setStep(1); fetchConfig();
+        toast.success(editingId ? "Jeu mis à jour" : "Jeu créé avec succès");
+        closeModal();
+        fetchGames();
       } else {
-        toast.error("Échec de l'enregistrement");
+        const err = await res.json().catch(() => null);
+        toast.error(err?.error || "Échec de l'enregistrement");
       }
     } catch {
       toast.error("Erreur de connexion au serveur");
@@ -175,19 +243,28 @@ export default function SpinWheelConfigPage() {
             <h1 className="text-2xl font-semibold text-white flex items-center gap-2">Spin & Win</h1>
             <p className="text-sm text-gray-400 mt-1">Gérez vos jeux de roue et vos campagnes</p>
           </div>
-          <button onClick={() => setIsModalOpen(true)} className="flex items-center gap-2 bg-[#6366F1] hover:bg-[#4F46E5] text-white px-4 py-2 rounded-lg font-medium transition-colors">
+          <button onClick={openNewGame} className="flex items-center gap-2 bg-[#6366F1] hover:bg-[#4F46E5] text-white px-4 py-2 rounded-lg font-medium transition-colors">
             <Plus size={18} /> Nouveau jeu
           </button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {games.map((game) => (
-            <div key={game.id} className="bg-[#111827] border border-[#1F2937] rounded-xl p-5 hover:border-[#374151] transition-colors relative">
+            <div key={game.id} className={`bg-[#111827] border border-[#1F2937] rounded-xl p-5 hover:border-[#374151] transition-all relative ${game.isActive ? "" : "opacity-60"}`}>
               <div className="flex justify-between items-center mb-6">
                 <div className="flex items-center gap-2">
                   <div className={`w-2 h-2 rounded-full ${game.status === 'Active' ? 'bg-green-500' : 'bg-gray-500'}`} />
                   <span className="font-medium text-white">{game.name}</span>
                   <span className={`text-xs px-2 py-0.5 rounded-full ${game.status === 'Active' ? 'bg-green-500/10 text-green-400' : 'bg-gray-500/10 text-gray-400'}`}>{game.status}</span>
+                </div>
+                <div
+                  role="switch"
+                  aria-checked={game.isActive}
+                  title={game.isActive ? "Désactiver" : "Activer"}
+                  onClick={() => toggleGame(game)}
+                  className={`w-11 h-6 rounded-full relative cursor-pointer transition-colors shrink-0 ${game.isActive ? 'bg-green-500' : 'bg-[#374151]'}`}
+                >
+                  <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${game.isActive ? 'left-6' : 'left-1'}`}></div>
                 </div>
               </div>
               <p className="text-sm text-gray-400 mb-4">{game.segments.length} segments</p>
@@ -215,7 +292,8 @@ export default function SpinWheelConfigPage() {
                 </div>
               </div>
               <div className="flex gap-4 border-t border-[#1F2937] pt-4">
-                <button onClick={() => setIsModalOpen(true)} className="text-sm text-gray-400 hover:text-white flex items-center gap-1"><Edit2 size={14} /> Modifier</button>
+                <button onClick={() => openEditGame(game)} className="text-sm text-gray-400 hover:text-white flex items-center gap-1"><Edit2 size={14} /> Modifier</button>
+                <button onClick={() => deleteGame(game)} className="text-sm text-gray-400 hover:text-red-400 flex items-center gap-1"><Trash2 size={14} /> Supprimer</button>
               </div>
             </div>
           ))}
@@ -226,8 +304,8 @@ export default function SpinWheelConfigPage() {
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-[#111827] border border-[#1F2937] rounded-2xl w-full max-w-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
             <div className="p-6 border-b border-[#1F2937] flex justify-between items-center">
-              <div><h2 className="text-xl font-semibold text-white mb-4">Nouveau jeu roue</h2><span className="text-[#3B82F6] font-medium uppercase text-xs tracking-wider">Étape {step} sur 3</span></div>
-              <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-white"><X size={24} /></button>
+              <div><h2 className="text-xl font-semibold text-white mb-4">{editingId ? "Modifier le jeu" : "Nouveau jeu roue"}</h2><span className="text-[#3B82F6] font-medium uppercase text-xs tracking-wider">Étape {step} sur 3</span></div>
+              <button onClick={closeModal} className="text-gray-400 hover:text-white"><X size={24} /></button>
             </div>
 
             <div className="px-6 pt-4">
@@ -299,8 +377,8 @@ export default function SpinWheelConfigPage() {
             </div>
 
             <div className="p-6 border-t border-[#1F2937] flex justify-between items-center bg-[#111827]">
-              <button onClick={() => step > 1 ? setStep(step - 1) : setIsModalOpen(false)} className="text-gray-400 hover:text-white flex items-center gap-2 text-sm font-medium px-4 py-2">{step === 1 ? 'Annuler' : '< Retour'}</button>
-              {step < 3 ? (<button onClick={() => setStep(step + 1)} className="bg-[#3B82F6] hover:bg-[#2563EB] text-white px-6 py-2.5 rounded-lg font-medium flex items-center gap-2">Continuer <ChevronRight size={18} /></button>) : (<button onClick={handleSave} disabled={saving} className="bg-[#3B82F6] hover:bg-[#2563EB] disabled:opacity-50 text-white px-6 py-2.5 rounded-lg font-medium">{saving ? "Création..." : "Créer le jeu"}</button>)}
+              <button onClick={() => step > 1 ? setStep(step - 1) : closeModal()} className="text-gray-400 hover:text-white flex items-center gap-2 text-sm font-medium px-4 py-2">{step === 1 ? 'Annuler' : '< Retour'}</button>
+              {step < 3 ? (<button onClick={() => setStep(step + 1)} className="bg-[#3B82F6] hover:bg-[#2563EB] text-white px-6 py-2.5 rounded-lg font-medium flex items-center gap-2">Continuer <ChevronRight size={18} /></button>) : (<button onClick={handleSave} disabled={saving} className="bg-[#3B82F6] hover:bg-[#2563EB] disabled:opacity-50 text-white px-6 py-2.5 rounded-lg font-medium">{saving ? "Enregistrement..." : editingId ? "Enregistrer" : "Créer le jeu"}</button>)}
             </div>
           </div>
         </div>

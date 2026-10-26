@@ -1,16 +1,21 @@
 // app/api/spin-config/route.ts
+// A restaurant can now have MANY wheel games. Each one can be activated /
+// deactivated independently (isActive).
+//   GET    -> list of games
+//   POST   -> create a new game (added beside the existing ones)
+//   PUT    -> update a game (body must contain `id`) — also used for the on/off toggle
+//   DELETE -> /api/spin-config?id=xxx
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/lib/auth";
 import { prisma } from "@/app/lib/prisma";
 
-// 1. Updated Type to include probability
-type Segment = { 
-  label: string; 
-  points: number; 
-  color: string; 
-  textColor: string; 
-  probability: number; 
+type Segment = {
+  label: string;
+  points: number;
+  color: string;
+  textColor: string;
+  probability: number;
 };
 
 const DEFAULT_SEGMENTS: Segment[] = [
@@ -24,98 +29,69 @@ const DEFAULT_SEGMENTS: Segment[] = [
   { label: "100 pts",      points: 100, probability: 12.5, color: "#4f3f60", textColor: "#ffffff" },
 ];
 
+function validateSegments(segments: unknown): string | null {
+  if (!Array.isArray(segments) || segments.length < 2) return "La roue doit avoir au moins 2 segments";
+  for (const s of segments as Segment[]) {
+    if (typeof s.label !== "string" || !s.label.trim()) return "Chaque segment doit avoir un libellé";
+    if (typeof s.points !== "number" || s.points < 0) return "Les points doivent être un nombre positif";
+    if (typeof s.probability !== "number" || s.probability < 0) return "La probabilité doit être un nombre positif";
+  }
+  return null;
+}
+
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.restaurantId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    const restaurantId = session.user.restaurantId;
 
-    let config = await prisma.spinConfig.findUnique({
-      where: { restaurantId: session.user.restaurantId },
+    let games = await prisma.spinConfig.findMany({
+      where: { restaurantId },
+      orderBy: { createdAt: "asc" },
     });
 
-    if (!config) {
-      config = await prisma.spinConfig.create({
+    // First visit: create the default wheel so there is always one "old" game
+    if (games.length === 0) {
+      const created = await prisma.spinConfig.create({
         data: {
-          restaurantId: session.user.restaurantId,
+          restaurantId,
           isActive: true,
           dailyFreeSpins: 3,
           bonusSpinsPerVisit: 1,
           segments: DEFAULT_SEGMENTS,
-          // Default new Stampi fields
           name: "Ma Roue Principale",
           rule: "purchase",
           firstFree: true,
           conditions: { installApp: false, notifications: false, phone: true },
         },
       });
+      games = [created];
     }
 
-    return NextResponse.json(config);
+    return NextResponse.json(games);
   } catch (error) {
     console.error("Failed to fetch spin config:", error);
     return NextResponse.json({ error: "Failed to fetch spin config" }, { status: 500 });
   }
 }
 
-export async function PUT(request: NextRequest) {
+// Create a NEW game (does not touch the existing ones)
+export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.restaurantId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-
     const body = await request.json();
-    
-    // 2. Destructure all the new Stampi fields from the request body
-    const { 
-      isActive, 
-      dailyFreeSpins, 
-      bonusSpinsPerVisit, 
-      segments,
-      name,
-      startDate,
-      endDate,
-      rule,
-      customRules,
-      firstFree,
-      conditions
-    } = body as {
-      isActive?: boolean;
-      dailyFreeSpins?: number;
-      bonusSpinsPerVisit?: number;
-      segments?: Segment[];
-      name?: string;
-      startDate?: string;
-      endDate?: string;
-      rule?: string;
-      customRules?: string;
-      firstFree?: boolean;
-      conditions?: any;
-    };
+    const {
+      isActive, dailyFreeSpins, bonusSpinsPerVisit, segments,
+      name, startDate, endDate, rule, customRules, firstFree, conditions,
+    } = body;
 
-    // 3. Validate segments and probabilities
-    if (segments) {
-      if (!Array.isArray(segments) || segments.length < 2) {
-        return NextResponse.json(
-          { error: "La roue doit avoir au moins 2 segments" },
-          { status: 400 }
-        );
-      }
-      for (const s of segments) {
-        if (typeof s.label !== "string" || !s.label.trim()) {
-          return NextResponse.json({ error: "Chaque segment doit avoir un libellé" }, { status: 400 });
-        }
-        if (typeof s.points !== "number" || s.points < 0) {
-          return NextResponse.json({ error: "Les points doivent être un nombre positif" }, { status: 400 });
-        }
-        if (typeof s.probability !== "number" || s.probability < 0) {
-          return NextResponse.json({ error: "La probabilité doit être un nombre positif" }, { status: 400 });
-        }
-      }
-    }
-    
+    const segError = validateSegments(segments);
+    if (segError) return NextResponse.json({ error: segError }, { status: 400 });
     if (dailyFreeSpins !== undefined && dailyFreeSpins < 0) {
       return NextResponse.json({ error: "Le nombre de tours gratuits doit être positif" }, { status: 400 });
     }
@@ -123,48 +99,98 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: "Le nombre de tours bonus doit être positif" }, { status: 400 });
     }
 
-    // 4. Prepare the data for Prisma (parse dates if they exist)
+    const game = await prisma.spinConfig.create({
+      data: {
+        restaurantId: session.user.restaurantId,
+        isActive: isActive ?? true,
+        dailyFreeSpins: dailyFreeSpins ?? 3,
+        bonusSpinsPerVisit: bonusSpinsPerVisit ?? 1,
+        segments,
+        name: (name && String(name).trim()) || "Nouveau jeu",
+        rule: rule ?? "purchase",
+        firstFree: firstFree ?? true,
+        conditions: conditions ?? { installApp: false, notifications: false, phone: true },
+        startDate: startDate ? new Date(startDate) : null,
+        endDate: endDate ? new Date(endDate) : null,
+        customRules: customRules ?? null,
+      },
+    });
+    return NextResponse.json(game, { status: 201 });
+  } catch (error) {
+    console.error("Failed to create spin game:", error);
+    return NextResponse.json({ error: "Failed to create spin game" }, { status: 500 });
+  }
+}
+
+// Update one game (also used by the Active / Inactive switch)
+export async function PUT(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.restaurantId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    const body = await request.json();
+    const {
+      id, isActive, dailyFreeSpins, bonusSpinsPerVisit, segments,
+      name, startDate, endDate, rule, customRules, firstFree, conditions,
+    } = body;
+
+    if (!id) return NextResponse.json({ error: "Missing game id" }, { status: 400 });
+
+    const existing = await prisma.spinConfig.findFirst({
+      where: { id, restaurantId: session.user.restaurantId },
+      select: { id: true },
+    });
+    if (!existing) return NextResponse.json({ error: "Game not found" }, { status: 404 });
+
+    if (segments !== undefined) {
+      const segError = validateSegments(segments);
+      if (segError) return NextResponse.json({ error: segError }, { status: 400 });
+    }
+    if (dailyFreeSpins !== undefined && dailyFreeSpins < 0) {
+      return NextResponse.json({ error: "Le nombre de tours gratuits doit être positif" }, { status: 400 });
+    }
+    if (bonusSpinsPerVisit !== undefined && bonusSpinsPerVisit < 0) {
+      return NextResponse.json({ error: "Le nombre de tours bonus doit être positif" }, { status: 400 });
+    }
+
     const updateData: any = {};
     if (isActive !== undefined) updateData.isActive = isActive;
     if (dailyFreeSpins !== undefined) updateData.dailyFreeSpins = dailyFreeSpins;
     if (bonusSpinsPerVisit !== undefined) updateData.bonusSpinsPerVisit = bonusSpinsPerVisit;
     if (segments !== undefined) updateData.segments = segments;
-    
     if (name !== undefined) updateData.name = name;
     if (rule !== undefined) updateData.rule = rule;
     if (customRules !== undefined) updateData.customRules = customRules;
     if (firstFree !== undefined) updateData.firstFree = firstFree;
     if (conditions !== undefined) updateData.conditions = conditions;
-    
-    // Convert empty strings to null for dates, otherwise parse them
     if (startDate !== undefined) updateData.startDate = startDate ? new Date(startDate) : null;
     if (endDate !== undefined) updateData.endDate = endDate ? new Date(endDate) : null;
 
-    const createData: any = {
-      restaurantId: session.user.restaurantId,
-      isActive: isActive ?? true,
-      dailyFreeSpins: dailyFreeSpins ?? 3,
-      bonusSpinsPerVisit: bonusSpinsPerVisit ?? 1,
-      segments: segments ?? DEFAULT_SEGMENTS,
-      name: name ?? "Nouveau jeu",
-      rule: rule ?? "purchase",
-      firstFree: firstFree ?? true,
-      conditions: conditions ?? { installApp: false, notifications: false, phone: true },
-      startDate: startDate ? new Date(startDate) : null,
-      endDate: endDate ? new Date(endDate) : null,
-      customRules: customRules ?? null,
-    };
-
-    // 5. Upsert the config with the new fields
-    const config = await prisma.spinConfig.upsert({
-      where: { restaurantId: session.user.restaurantId },
-      create: createData,
-      update: updateData,
-    });
-
-    return NextResponse.json(config);
+    const game = await prisma.spinConfig.update({ where: { id }, data: updateData });
+    return NextResponse.json(game);
   } catch (error) {
     console.error("Failed to update spin config:", error);
     return NextResponse.json({ error: "Failed to update spin config" }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.restaurantId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    const id = request.nextUrl.searchParams.get("id");
+    if (!id) return NextResponse.json({ error: "Missing game id" }, { status: 400 });
+
+    const result = await prisma.spinConfig.deleteMany({
+      where: { id, restaurantId: session.user.restaurantId },
+    });
+    if (result.count === 0) return NextResponse.json({ error: "Game not found" }, { status: 404 });
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Failed to delete spin game:", error);
+    return NextResponse.json({ error: "Failed to delete spin game" }, { status: 500 });
   }
 }

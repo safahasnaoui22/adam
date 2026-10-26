@@ -34,6 +34,18 @@ function isSameDay(a: Date, b: Date) {
   return a.toDateString() === b.toDateString();
 }
 
+// A game is playable only if it is switched on AND inside its optional schedule
+function isPlayable(g: { isActive: boolean; startDate: Date | null; endDate: Date | null }, now = new Date()) {
+  if (!g.isActive) return false;
+  if (g.startDate && now < g.startDate) return false;
+  if (g.endDate) {
+    const end = new Date(g.endDate);
+    end.setHours(23, 59, 59, 999);
+    if (now > end) return false;
+  }
+  return true;
+}
+
 export async function GET(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -47,15 +59,17 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Missing restaurantId" }, { status: 400 });
     }
 
-    const [config, customer] = await Promise.all([
-      prisma.spinConfig.findUnique({ where: { restaurantId } }),
+    const [configs, customer] = await Promise.all([
+      prisma.spinConfig.findMany({ where: { restaurantId }, orderBy: { createdAt: "asc" } }),
       prisma.customerProfile.findUnique({
         where: { id: customerId },
         select: { freeSpinsUsedToday: true, lastSpinDate: true, bonusSpins: true },
       }),
     ]);
 
-    if (!config || !config.isActive) {
+    // Deactivated (or out-of-schedule) games disappear from the customer wheel
+    const activeGames = configs.filter((c) => isPlayable(c));
+    if (activeGames.length === 0) {
       return NextResponse.json({ error: "Spin wheel not available" }, { status: 404 });
     }
     if (!customer) {
@@ -67,12 +81,15 @@ export async function GET(req: NextRequest) {
         ? customer.freeSpinsUsedToday
         : 0;
 
-    return NextResponse.json({
-      segments: config.segments as Segment[],
-      dailyFreeSpins: config.dailyFreeSpins,
-      freeSpinsLeft: Math.max(0, config.dailyFreeSpins - usedToday),
-      bonusSpins: customer.bonusSpins,
-    });
+    const games = activeGames.map((g) => ({
+      id: g.id,
+      name: g.name,
+      segments: g.segments as Segment[],
+      dailyFreeSpins: g.dailyFreeSpins,
+      freeSpinsLeft: Math.max(0, g.dailyFreeSpins - usedToday),
+    }));
+
+    return NextResponse.json({ games, bonusSpins: customer.bonusSpins });
   } catch (error) {
     console.error("Failed to load spin status:", error);
     return NextResponse.json({ error: "Failed to load spin wheel" }, { status: 500 });
@@ -87,7 +104,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { customerId, restaurantId, source } = await req.json();
+    const { customerId, restaurantId, source, gameId } = await req.json();
     if (customerId !== sessionCustomerId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -95,8 +112,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid request" }, { status: 400 });
     }
 
-    const config = await prisma.spinConfig.findUnique({ where: { restaurantId } });
-    if (!config || !config.isActive) {
+    const allConfigs = await prisma.spinConfig.findMany({ where: { restaurantId }, orderBy: { createdAt: "asc" } });
+    const playable = allConfigs.filter((c) => isPlayable(c));
+    const config = (gameId ? playable.find((c) => c.id === gameId) : undefined) ?? playable[0];
+    if (!config) {
       return NextResponse.json({ error: "Spin wheel not available" }, { status: 404 });
     }
     
