@@ -51,7 +51,7 @@ export default function DashboardNav() {
         <div className="text-xl font-bold text-white">
           BONOO<span className="text-[#fe5502]">.</span>
         </div>
-        <p className="text-xs text-gray-400 mt-1">Restaurant Dashboard</p>
+        <p className="text-xs text-gray-400 mt-1"> Dashboard</p>
       </div>
 
       {/* Navigation Links */}
