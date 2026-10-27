@@ -933,6 +933,25 @@ export default function ClientDashboard() {
   const [refreshing, setRefreshing] = useState(false);
   const [showQR, setShowQR] = useState(false);
   const [showSpin, setShowSpin] = useState(false);
+  // The "Roue de la chance" entry only exists while the restaurant has an ACTIVE game
+  const [spinAvailable, setSpinAvailable] = useState(false);
+  useEffect(() => {
+    const rid = restaurant?.id;
+    if (!rid) return;
+    let cancelled = false;
+    const check = async () => {
+      try {
+        const res = await fetch(`/api/customer/spin?restaurantId=${rid}`);
+        if (!cancelled) setSpinAvailable(res.ok);
+      } catch {
+        /* keep the previous value on network errors */
+      }
+    };
+    check();
+    const onVisible = () => { if (document.visibilityState === "visible") check(); };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => { cancelled = true; document.removeEventListener("visibilitychange", onVisible); };
+  }, [restaurant?.id]);
   const [showFloatingQR, setShowFloatingQR] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const [showIOSInstall, setShowIOSInstall] = useState(false);
@@ -1426,7 +1445,7 @@ useEffect(() => {
         />
       )}
 
-      {showSpin && client && restaurant && (
+      {showSpin && spinAvailable && client && restaurant && (
         <SpinWheelModal
           open={showSpin}
           onClose={() => setShowSpin(false)}
@@ -1668,6 +1687,7 @@ useEffect(() => {
             </div>
 
             {/* ── Spin wheel entry point ── */}
+            {spinAvailable && (
             <button
               onClick={() => setShowSpin(true)}
               className="w-full flex items-center gap-3 mb-5 p-4 rounded-2xl text-left transition-transform active:scale-[0.98]"
@@ -1688,6 +1708,7 @@ useEffect(() => {
                 Jouer
               </span>
             </button>
+            )}
 
             {nextReward && (
               <div className="mb-5">
