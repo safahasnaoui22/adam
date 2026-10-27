@@ -11,8 +11,10 @@ const themes = [
     name: "Lavande Douce",
     colors: {
       primary: "#A294F9",
+      secondary: "#7C6AF0",
       background: "#F5EFFF",
-      text: "#6450C8",
+      cardBackground: "#FBF8FF",
+      text: "#4C3A9E",
       accent: "#CDC1FF",
     },
   },
@@ -21,29 +23,35 @@ const themes = [
     name: "Rose Bonbon",
     colors: {
       primary: "#FF4081",
-      background: "#FFF5F8",
-      text: "#D6336C",
+      secondary: "#E0245E",
+      background: "#FFE4EC",
+      cardBackground: "#FFF5F8",
+      text: "#9D174D",
       accent: "#FFB6C1",
     },
   },
   {
-    id: "ocean",
-    name: "Bleu Océan",
+    id: "cerise",
+    name: "Rouge Cerise",
     colors: {
-      primary: "#3B82F6",
-      background: "#EFF6FF",
-      text: "#1E3A8A",
-      accent: "#93C5FD",
+      primary: "#EF4444",
+      secondary: "#DC2626",
+      background: "#FEE2E2",
+      cardBackground: "#FFF5F5",
+      text: "#7F1D1D",
+      accent: "#FCA5A5",
     },
   },
   {
-    id: "foret",
-    name: "Vert Forêt",
+    id: "corail",
+    name: "Corail",
     colors: {
-      primary: "#22C55E",
-      background: "#F0FDF4",
-      text: "#14532D",
-      accent: "#86EFAC",
+      primary: "#F43F5E",
+      secondary: "#E11D48",
+      background: "#FFE4E6",
+      cardBackground: "#FFF7F7",
+      text: "#881337",
+      accent: "#FDA4AF",
     },
   },
   {
@@ -51,9 +59,143 @@ const themes = [
     name: "Orange Soleil",
     colors: {
       primary: "#F97316",
-      background: "#FFF7ED",
+      secondary: "#EA580C",
+      background: "#FFEDD5",
+      cardBackground: "#FFF7ED",
       text: "#7C2D12",
       accent: "#FDBA74",
+    },
+  },
+  {
+    id: "citron",
+    name: "Jaune Citron",
+    colors: {
+      primary: "#CA8A04",
+      secondary: "#A16207",
+      background: "#FEF9C3",
+      cardBackground: "#FEFCE8",
+      text: "#713F12",
+      accent: "#FDE047",
+    },
+  },
+  {
+    id: "or",
+    name: "Or Doré",
+    colors: {
+      primary: "#B8860B",
+      secondary: "#8A6508",
+      background: "#FBF1D3",
+      cardBackground: "#FFFBEB",
+      text: "#4A3606",
+      accent: "#F0D78C",
+    },
+  },
+  {
+    id: "lime",
+    name: "Vert Lime",
+    colors: {
+      primary: "#65A30D",
+      secondary: "#4D7C0F",
+      background: "#ECFCCB",
+      cardBackground: "#F7FEE7",
+      text: "#365314",
+      accent: "#BEF264",
+    },
+  },
+  {
+    id: "foret",
+    name: "Vert Forêt",
+    colors: {
+      primary: "#16A34A",
+      secondary: "#15803D",
+      background: "#DCFCE7",
+      cardBackground: "#F0FDF4",
+      text: "#14532D",
+      accent: "#86EFAC",
+    },
+  },
+  {
+    id: "emeraude",
+    name: "Émeraude",
+    colors: {
+      primary: "#059669",
+      secondary: "#047857",
+      background: "#D1FAE5",
+      cardBackground: "#ECFDF5",
+      text: "#064E3B",
+      accent: "#6EE7B7",
+    },
+  },
+  {
+    id: "turquoise",
+    name: "Turquoise",
+    colors: {
+      primary: "#0D9488",
+      secondary: "#0F766E",
+      background: "#CCFBF1",
+      cardBackground: "#F0FDFA",
+      text: "#134E4A",
+      accent: "#5EEAD4",
+    },
+  },
+  {
+    id: "cyan",
+    name: "Cyan Lagon",
+    colors: {
+      primary: "#0891B2",
+      secondary: "#0E7490",
+      background: "#CFFAFE",
+      cardBackground: "#ECFEFF",
+      text: "#164E63",
+      accent: "#67E8F9",
+    },
+  },
+  {
+    id: "ocean",
+    name: "Bleu Océan",
+    colors: {
+      primary: "#3B82F6",
+      secondary: "#2563EB",
+      background: "#DBEAFE",
+      cardBackground: "#EFF6FF",
+      text: "#1E3A8A",
+      accent: "#93C5FD",
+    },
+  },
+  {
+    id: "indigo",
+    name: "Indigo",
+    colors: {
+      primary: "#6366F1",
+      secondary: "#4F46E5",
+      background: "#E0E7FF",
+      cardBackground: "#EEF2FF",
+      text: "#312E81",
+      accent: "#A5B4FC",
+    },
+  },
+  {
+    id: "violet",
+    name: "Violet Royal",
+    colors: {
+      primary: "#8B5CF6",
+      secondary: "#7C3AED",
+      background: "#EDE9FE",
+      cardBackground: "#F5F3FF",
+      text: "#4C1D95",
+      accent: "#C4B5FD",
+    },
+  },
+  {
+    id: "fuchsia",
+    name: "Fuchsia",
+    colors: {
+      primary: "#D946EF",
+      secondary: "#C026D3",
+      background: "#FAE8FF",
+      cardBackground: "#FDF4FF",
+      text: "#701A75",
+      accent: "#F0ABFC",
     },
   },
   {
@@ -61,9 +203,23 @@ const themes = [
     name: "Marron Café",
     colors: {
       primary: "#8B5A2B",
-      background: "#FDF8F5",
+      secondary: "#6F4518",
+      background: "#F3E5D8",
+      cardBackground: "#FDF8F5",
       text: "#3E2723",
       accent: "#D2B48C",
+    },
+  },
+  {
+    id: "ardoise",
+    name: "Gris Ardoise",
+    colors: {
+      primary: "#475569",
+      secondary: "#334155",
+      background: "#E2E8F0",
+      cardBackground: "#F8FAFC",
+      text: "#0F172A",
+      accent: "#CBD5E1",
     },
   },
 ];
@@ -140,6 +296,8 @@ export default function ThemeSelector({
     background: "rgb(245, 239, 255)",
     text: "rgb(100, 80, 200)",
     accent: "rgb(205, 193, 255)",
+    secondary: "rgb(124, 106, 240)",
+    cardBackground: "rgb(251, 248, 255)",
   };
 
   const safeTheme = selectedTheme && typeof selectedTheme === "object" ? selectedTheme : {};
@@ -175,7 +333,7 @@ export default function ThemeSelector({
       <div className="space-y-8">
         <div>
           <h3 className="text-lg font-semibold mb-4 text-white">🎨 Thème de couleur</h3>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {themes.map((t) => (
               <button
                 key={t.id}
@@ -198,6 +356,10 @@ export default function ThemeSelector({
                   <div
                     className="w-6 h-6 rounded-full"
                     style={{ backgroundColor: t.colors.primary }}
+                  />
+                  <div
+                    className="w-6 h-6 rounded-full"
+                    style={{ backgroundColor: t.colors.secondary }}
                   />
                   <div
                     className="w-6 h-6 rounded-full"
