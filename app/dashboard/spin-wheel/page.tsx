@@ -5,11 +5,15 @@ import { toast } from "sonner";
 import {
   Plus, Trash2, X, Settings2, Gift, Check, Smartphone, Bell, Phone, Pencil,
   Calendar, ChevronRight, ChevronLeft, ChevronDown, HelpCircle, Repeat, Gauge,
-  RotateCcw, BarChart3, Dices, ClipboardList,
+  RotateCcw, BarChart3, Dices, ClipboardList, Ticket, Coins, Zap, Trophy,
 } from "lucide-react";
+
+type PrizeType = "coupon" | "points" | "gift" | "none" | "free_spin";
 
 type Segment = {
   id: string;
+  type: PrizeType;
+  description: string;
   label: string;
   points: number;
   probability: number;
@@ -40,6 +44,26 @@ type Stats = {
 const PRESET_COLORS = ["#6366F1", "#F59E0B", "#10B981", "#EF4444", "#8B5CF6", "#EC4899", "#3B82F6", "#14B8A6", "#F97316", "#84CC16"];
 const NO_PRIZE = "Pas de prix";
 
+const PRIZE_TYPES: { type: PrizeType; label: string; icon: any }[] = [
+  { type: "coupon", label: "Coupon", icon: Ticket },
+  { type: "points", label: "Points bonus", icon: Coins },
+  { type: "gift", label: "Cadeau", icon: Gift },
+  { type: "none", label: "Pas de prix", icon: RotateCcw },
+  { type: "free_spin", label: "Tour gratuit", icon: Zap },
+];
+
+// label shown on the wheel / cards. Gift & coupon use the name typed by the owner.
+const autoLabel = (s: { type: PrizeType; points: number; label: string }) => {
+  switch (s.type) {
+    case "points": return `${s.points} pts`;
+    case "free_spin": return "Tour gratuit";
+    case "none": return NO_PRIZE;
+    default: return s.label;
+  }
+};
+const inferType = (s: any): PrizeType =>
+  s.type ?? (s.points > 0 ? "points" : /^(pas de prix|réessayer)$/i.test(s.label || "") ? "none" : "gift");
+
 const emptyGame = (): GameConfig => ({
   name: "",
   startDate: "",
@@ -48,14 +72,14 @@ const emptyGame = (): GameConfig => ({
   customRules: "",
   firstFree: true,
   segments: [
-    { id: "1", label: NO_PRIZE, points: 0, probability: 50, color: PRESET_COLORS[0], textColor: "#ffffff", stock: null },
-    { id: "2", label: NO_PRIZE, points: 0, probability: 50, color: PRESET_COLORS[1], textColor: "#ffffff", stock: null },
+    { id: "1", type: "none", description: "", label: NO_PRIZE, points: 0, probability: 50, color: PRESET_COLORS[0], textColor: "#ffffff", stock: null },
+    { id: "2", type: "none", description: "", label: NO_PRIZE, points: 0, probability: 50, color: PRESET_COLORS[1], textColor: "#ffffff", stock: null },
   ],
   conditions: { installApp: false, notifications: false, phone: true },
 });
 
 const toDateInput = (d: string | null | undefined) => (d ? new Date(d).toISOString().slice(0, 10) : "");
-const isPrize = (s: { label: string; points: number }) => s.points > 0 || (s.label !== NO_PRIZE && s.label !== "Réessayer");
+const isPrize = (s: any) => inferType(s) !== "none";
 const fmtPct = (n: number) => (Number.isInteger(n) ? `${n}` : n.toFixed(1));
 
 function Toggle({ on, onClick, size = "md" }: { on: boolean; onClick: () => void; size?: "sm" | "md" }) {
@@ -150,6 +174,8 @@ export default function SpinWheelConfigPage() {
         color: s.color,
         textColor: s.textColor || "#ffffff",
         stock: typeof s.stock === "number" ? s.stock : null,
+        type: inferType(s),
+        description: s.description || "",
       })),
     });
     setPlanOpen(Boolean(game.startDate || game.endDate));
@@ -164,15 +190,18 @@ export default function SpinWheelConfigPage() {
   /* ---------- card actions ---------- */
   const toggleGame = async (game: any) => {
     const next = !game.isActive;
-    const apply = (active: boolean) =>
-      setGames(prev => prev.map(g => g.id === game.id ? { ...g, isActive: active, status: active ? "Active" : "Brouillon" } : g));
-    apply(next);
+    // only ONE game can be active: activating this one switches all the others off
+    const snapshot = games;
+    setGames(prev => prev.map(g => {
+      const active = g.id === game.id ? next : next ? false : g.isActive;
+      return { ...g, isActive: active, status: active ? "Active" : "Brouillon" };
+    }));
     try {
       const res = await fetch("/api/spin-config", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: game.id, isActive: next }) });
       if (!res.ok) throw new Error();
-      toast.success(next ? "Jeu activé" : "Jeu désactivé");
+      toast.success(next ? "Jeu activé — les autres jeux ont été désactivés" : "Jeu désactivé");
     } catch {
-      apply(!next);
+      setGames(snapshot);
       toast.error("Impossible de modifier le statut");
     }
   };
@@ -230,7 +259,8 @@ export default function SpinWheelConfigPage() {
       if (arcSize > 0.25) {
         ctx.save(); ctx.translate(cx, cy); ctx.rotate(startAngle + arcSize / 2);
         ctx.textAlign = "right"; ctx.font = "700 10px Inter, sans-serif"; ctx.fillStyle = seg.textColor;
-        const txt = seg.label.length > 8 ? seg.label.slice(0, 7) + "…" : seg.label;
+        const full = autoLabel(seg) || "…";
+        const txt = full.length > 8 ? full.slice(0, 7) + "…" : full;
         ctx.fillText(txt, R - 10, 3); ctx.restore();
       }
       startAngle = endAngle;
@@ -264,10 +294,11 @@ export default function SpinWheelConfigPage() {
   const addSegment = () => {
     if (gameConfig.segments.length >= 12) return toast.error("Maximum 12 segments");
     const list = [...gameConfig.segments, {
-      id: Date.now().toString(), label: NO_PRIZE, points: 0, probability: 0,
+      id: Date.now().toString(), type: "none" as PrizeType, description: "", label: NO_PRIZE, points: 0, probability: 0,
       color: PRESET_COLORS[gameConfig.segments.length % PRESET_COLORS.length], textColor: "#ffffff", stock: null,
     }];
     setGameConfig({ ...gameConfig, segments: redistribute(list) });
+    setEditingSegId(list[list.length - 1].id);
   };
 
   const removeSegment = (id: string) => {
@@ -277,7 +308,43 @@ export default function SpinWheelConfigPage() {
   };
 
   const patchSegment = (id: string, patch: Partial<Segment>) =>
-    setGameConfig(g => ({ ...g, segments: g.segments.map(s => s.id === id ? { ...s, ...patch } : s) }));
+    setGameConfig(g => ({
+      ...g,
+      segments: g.segments.map(s => {
+        if (s.id !== id) return s;
+        const next = { ...s, ...patch };
+        if (patch.type && patch.type !== s.type) {
+          // switching prize type resets the fields that belong to the old type
+          next.description = "";
+          next.points = patch.type === "points" ? (s.points > 0 ? s.points : 10) : 0;
+          next.label = patch.type === "gift" || patch.type === "coupon" ? "" : "";
+          if (patch.type === "none") next.stock = null;
+        }
+        if (next.type === "points" || next.type === "free_spin" || next.type === "none") next.label = autoLabel(next);
+        return next;
+      }),
+    }));
+
+  // "Chance de gagner" slider: the other cases are rebalanced automatically so the total stays 100%
+  const setChance = (id: string, raw: number) =>
+    setGameConfig(g => {
+      const v = Math.min(100, Math.max(0, raw));
+      const others = g.segments.filter(s => s.id !== id);
+      if (others.length === 0) return g;
+      const rest = 100 - v;
+      const sumOthers = others.reduce((a, s) => a + s.probability, 0);
+      const segs = g.segments.map(s => {
+        if (s.id === id) return { ...s, probability: parseFloat(v.toFixed(1)) };
+        const share = sumOthers > 0 ? s.probability / sumOthers : 1 / others.length;
+        return { ...s, probability: parseFloat((rest * share).toFixed(1)) };
+      });
+      const diff = parseFloat((100 - segs.reduce((a, s) => a + s.probability, 0)).toFixed(1));
+      if (diff !== 0) {
+        const i = segs.findIndex(s => s.id !== id);
+        segs[i] = { ...segs[i], probability: Math.max(0, parseFloat((segs[i].probability + diff).toFixed(1))) };
+      }
+      return { ...g, segments: segs };
+    });
 
   const totalProb = gameConfig.segments.reduce((a, b) => a + b.probability, 0);
   const totalOk = Math.abs(totalProb - 100) < 0.5;
@@ -288,7 +355,13 @@ export default function SpinWheelConfigPage() {
     if (step === 1 && gameConfig.startDate && gameConfig.endDate && gameConfig.endDate < gameConfig.startDate) {
       return toast.error("La date de fin doit être après la date de début");
     }
-    if (step === 2 && !totalOk) return toast.error("Le total des probabilités doit être égal à 100%");
+    if (step === 2) {
+      const bad = gameConfig.segments.findIndex(s => (s.type === "gift" || s.type === "coupon") && !s.label.trim());
+      if (bad >= 0) { setEditingSegId(gameConfig.segments[bad].id); return toast.error(`Case ${bad + 1} : indiquez le nom du ${gameConfig.segments[bad].type === "gift" ? "cadeau" : "coupon"}`); }
+      const badPts = gameConfig.segments.findIndex(s => s.type === "points" && s.points <= 0);
+      if (badPts >= 0) { setEditingSegId(gameConfig.segments[badPts].id); return toast.error(`Case ${badPts + 1} : indiquez un nombre de points`); }
+      if (!totalOk) return toast.error("Le total des probabilités doit être égal à 100%");
+    }
     setStep(step + 1);
   };
 
@@ -306,7 +379,8 @@ export default function SpinWheelConfigPage() {
         firstFree: gameConfig.firstFree,
         conditions: gameConfig.conditions,
         segments: gameConfig.segments.map(s => ({
-          label: s.label, points: s.points, color: s.color, textColor: s.textColor, probability: s.probability, stock: s.stock,
+          label: autoLabel(s) || NO_PRIZE, points: s.type === "points" ? s.points : 0, type: s.type, description: s.description,
+          color: s.color, textColor: s.textColor, probability: s.probability, stock: s.stock,
         })),
       };
       if (editingId) payload.id = editingId;
@@ -512,52 +586,87 @@ export default function SpinWheelConfigPage() {
                     </div>
 
                     <div className="space-y-3 mb-5">
-                      {gameConfig.segments.map((seg, idx) => (
+                      {gameConfig.segments.map((seg, idx) => {
+                        const open = editingSegId === seg.id;
+                        const title = autoLabel(seg) || (seg.type === "gift" ? "Cadeau" : "Coupon");
+                        return (
                         <div key={seg.id} className="bg-[#212b3f] border border-[#2f3b52] rounded-xl overflow-hidden" style={{ borderLeft: `3px solid ${seg.color}` }}>
                           <div className="flex items-center gap-3 p-3">
                             <div className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-white text-sm shrink-0" style={{ backgroundColor: seg.color }}>{idx + 1}</div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-white font-semibold truncate">{seg.label || NO_PRIZE}</p>
-                              <p className="flex items-center gap-1 text-xs font-medium mt-0.5" style={{ color: seg.color }}>
-                                <Gauge size={12} /> {seg.probability.toFixed(1)}%
-                                {seg.stock !== null && <span className="text-gray-400 ml-2">· stock {seg.stock}</span>}
-                              </p>
+                            <div className="flex-1 min-w-0 flex items-center gap-2">
+                              <p className="text-white font-semibold truncate">{title}</p>
+                              {open && <span className="text-xs font-semibold px-2 py-0.5 rounded" style={{ color: seg.color, backgroundColor: `${seg.color}22` }}>{seg.probability.toFixed(1)}%</span>}
+                              {!open && (
+                                <span className="flex items-center gap-1 text-xs font-medium" style={{ color: seg.color }}>
+                                  <Gauge size={12} /> {seg.probability.toFixed(1)}%
+                                  {seg.stock !== null && <span className="text-gray-400 ml-2">· stock {seg.stock}</span>}
+                                </span>
+                              )}
                             </div>
-                            <button onClick={() => setEditingSegId(editingSegId === seg.id ? null : seg.id)} className={`p-1.5 rounded-md hover:bg-[#2f3b52] ${editingSegId === seg.id ? "text-white" : "text-gray-400"}`} title="Modifier"><Pencil size={16} /></button>
+                            {!open && <button onClick={() => setEditingSegId(seg.id)} className="p-1.5 rounded-md hover:bg-[#2f3b52] text-gray-400" title="Modifier"><Pencil size={16} /></button>}
+                            {open && <button onClick={() => setEditingSegId(null)} className="p-1.5 rounded-md hover:bg-[#2f3b52] text-gray-400" title="Réduire"><ChevronDown size={16} className="rotate-180" /></button>}
                             <button onClick={() => removeSegment(seg.id)} className="p-1.5 rounded-md text-gray-500 hover:text-red-400 hover:bg-[#2f3b52]" title="Supprimer"><Trash2 size={16} /></button>
                           </div>
 
-                          {editingSegId === seg.id && (
-                            <div className="px-4 pb-4 pt-3 border-t border-[#2f3b52] grid grid-cols-2 gap-3">
-                              <div className="col-span-2">
-                                <label className="block text-xs text-gray-400 mb-1">Nom du lot</label>
-                                <input type="text" value={seg.label} onChange={(e) => patchSegment(seg.id, { label: e.target.value })} className={input + " !py-2 text-sm"} />
+                          {open && (
+                            <div className="px-4 pb-4 pt-1">
+                              <p className="text-sm text-gray-400 mb-2">Type de prix</p>
+                              <div className="grid grid-cols-3 gap-2">
+                                {PRIZE_TYPES.map(({ type, label, icon: Icon }) => (
+                                  <button key={type} onClick={() => patchSegment(seg.id, { type })} className={`flex flex-col items-center gap-1.5 py-3 rounded-lg text-xs font-semibold border transition-colors ${seg.type === type ? "bg-[#3B82F6] border-[#3B82F6] text-white" : "bg-[#2a3550] border-[#3b475f] text-gray-300 hover:border-gray-400"}`}>
+                                    <Icon size={18} /> {label}
+                                  </button>
+                                ))}
                               </div>
-                              <div>
-                                <label className="block text-xs text-gray-400 mb-1">Points offerts (0 = pas de prix)</label>
-                                <input type="number" min={0} value={seg.points} onChange={(e) => patchSegment(seg.id, { points: Math.max(0, parseInt(e.target.value) || 0) })} className={input + " !py-2 text-sm"} />
-                              </div>
-                              <div>
-                                <label className="block text-xs text-gray-400 mb-1">Probabilité (%)</label>
-                                <input type="number" min={0} max={100} step={0.1} value={seg.probability} onChange={(e) => patchSegment(seg.id, { probability: Math.max(0, parseFloat(e.target.value) || 0) })} className={input + " !py-2 text-sm"} />
-                              </div>
-                              <div>
-                                <label className="block text-xs text-gray-400 mb-1">Stock (vide = illimité)</label>
-                                <input type="number" min={0} value={seg.stock ?? ""} placeholder="Illimité" onChange={(e) => patchSegment(seg.id, { stock: e.target.value === "" ? null : Math.max(0, parseInt(e.target.value) || 0) })} className={input + " !py-2 text-sm"} />
-                              </div>
-                              <div>
-                                <label className="block text-xs text-gray-400 mb-1">Couleur</label>
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  {PRESET_COLORS.map((c) => (
-                                    <button key={c} onClick={() => patchSegment(seg.id, { color: c })} className={`w-6 h-6 rounded-full border-2 ${seg.color.toLowerCase() === c.toLowerCase() ? "border-white" : "border-transparent"}`} style={{ backgroundColor: c }} />
-                                  ))}
-                                  <input type="color" value={seg.color} onChange={(e) => patchSegment(seg.id, { color: e.target.value })} className="w-6 h-6 rounded cursor-pointer bg-transparent border-none p-0" />
+
+                              {seg.type === "points" && (
+                                <div className="flex items-center gap-3 mt-4">
+                                  <input type="number" min={1} value={seg.points || ""} placeholder="0" onChange={(e) => patchSegment(seg.id, { points: Math.max(0, parseInt(e.target.value) || 0) })} className={input + " !w-32"} />
+                                  <span className="text-sm text-gray-400">pts</span>
                                 </div>
+                              )}
+
+                              {(seg.type === "gift" || seg.type === "coupon") && (
+                                <div className="mt-4 space-y-3">
+                                  <div>
+                                    <label className="block text-sm text-gray-300 mb-1.5">{seg.type === "gift" ? "Nom du cadeau" : "Nom du coupon"}</label>
+                                    <input type="text" value={seg.label} onChange={(e) => patchSegment(seg.id, { label: e.target.value })} placeholder={seg.type === "gift" ? "Nom du cadeau (ex. Café gratuit)" : "Nom du coupon (ex. -10% sur la commande)"} className={input} />
+                                  </div>
+                                  <div>
+                                    <label className="block text-sm text-gray-300 mb-1.5">{seg.type === "gift" ? "Description du cadeau" : "Description du coupon"}</label>
+                                    <textarea rows={2} value={seg.description} onChange={(e) => patchSegment(seg.id, { description: e.target.value })} placeholder={seg.type === "gift" ? "Décrivez le cadeau (ex. Café gratuit, T-shirt...)" : "Décrivez le coupon et ses conditions"} className={input + " resize-none"} />
+                                  </div>
+                                </div>
+                              )}
+
+                              {seg.type === "free_spin" && (
+                                <p className="mt-4 text-xs text-gray-400 bg-[#2a3550]/60 border border-[#3b475f] rounded-lg p-3">Le client gagne automatiquement <strong className="text-gray-200">+1 tour gratuit</strong> à ajouter à ses tours.</p>
+                              )}
+
+                              <div className="mt-4 pt-4 border-t border-[#2f3b52] grid grid-cols-1 sm:grid-cols-2 gap-5">
+                                <div>
+                                  <div className="flex items-center justify-between mb-2">
+                                    <span className="flex items-center gap-1.5 text-sm font-medium text-gray-200"><Gauge size={14} /> Chance de gagner</span>
+                                    <span className="text-sm font-bold px-2 py-0.5 rounded" style={{ color: seg.color, backgroundColor: `${seg.color}22` }}>{seg.probability.toFixed(1)}%</span>
+                                  </div>
+                                  <input type="range" min={0} max={100} step={0.1} value={seg.probability} onChange={(e) => setChance(seg.id, parseFloat(e.target.value))} className="w-full" style={{ accentColor: seg.color }} />
+                                  <p className="text-[11px] text-gray-500 mt-1">Les autres cases s&apos;ajustent automatiquement</p>
+                                </div>
+                                {seg.type !== "none" && (
+                                  <div>
+                                    <span className="flex items-center gap-1.5 text-sm font-medium text-gray-200 mb-2"><Trophy size={14} /> Stock du prix</span>
+                                    <div className="flex items-center gap-3">
+                                      <input type="number" min={0} value={seg.stock ?? ""} placeholder="Illimité" onChange={(e) => patchSegment(seg.id, { stock: e.target.value === "" ? null : Math.max(0, parseInt(e.target.value) || 0) })} className={input + " !py-2"} />
+                                      <span className="text-xs text-gray-400">{seg.stock === null ? "illimité" : "restant"}</span>
+                                    </div>
+                                  </div>
+                                )}
                               </div>
                             </div>
                           )}
                         </div>
-                      ))}
+                        );
+                      })}
                     </div>
 
                     <button onClick={() => setShowHelp(!showHelp)} className="flex items-center gap-2 text-sm text-gray-400 hover:text-gray-200"><HelpCircle size={15} /> Comment fonctionnent la probabilité et le stock ?</button>

@@ -29,6 +29,8 @@ type Segment = {
   textColor: string;
   probability?: number;
   stock?: number | null;
+  type?: "none" | "points" | "gift" | "coupon" | "free_spin";
+  description?: string;
 };
 
 function isSameDay(a: Date, b: Date) {
@@ -181,14 +183,17 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    const bonusDelta = (winner.type === "free_spin" ? 1 : 0) - (source === "BONUS" ? 1 : 0);
+
     const [updatedCustomer] = await prisma.$transaction([
       prisma.customerProfile.update({
         where: { id: customerId },
         data: {
-          points: { increment: winner.points },
+          points: { increment: winner.type === "points" || winner.type === undefined ? winner.points : 0 },
           lastSpinDate: today,
           freeSpinsUsedToday: source === "FREE" ? usedToday + 1 : usedToday,
-          bonusSpins: source === "BONUS" ? { decrement: 1 } : undefined,
+          // "Tour gratuit" prize = +1 bonus spin, added automatically
+          bonusSpins: bonusDelta !== 0 ? { increment: bonusDelta } : undefined,
         },
       }),
       prisma.spinLog.create({
@@ -199,7 +204,7 @@ export async function POST(req: NextRequest) {
           source,
           segmentIndex: winningIndex,
           prizeLabel: winner.label,
-          pointsAwarded: winner.points,
+          pointsAwarded: winner.type === "points" || winner.type === undefined ? winner.points : 0,
         },
       }),
     ]);

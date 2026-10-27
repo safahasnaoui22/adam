@@ -17,6 +17,8 @@ type Segment = {
   textColor: string;
   probability: number;
   stock?: number | null; // optional prize stock (null / undefined = unlimited)
+  type?: "none" | "points" | "gift" | "coupon" | "free_spin";
+  description?: string;
 };
 
 const DEFAULT_SEGMENTS: Segment[] = [
@@ -36,6 +38,7 @@ function validateSegments(segments: unknown): string | null {
     if (typeof s.label !== "string" || !s.label.trim()) return "Chaque segment doit avoir un libellé";
     if (typeof s.points !== "number" || s.points < 0) return "Les points doivent être un nombre positif";
     if (typeof s.probability !== "number" || s.probability < 0) return "La probabilité doit être un nombre positif";
+    if (s.type !== undefined && !["none", "points", "gift", "coupon", "free_spin"].includes(s.type)) return "Type de prix invalide";
     if (s.stock !== undefined && s.stock !== null && (typeof s.stock !== "number" || s.stock < 0)) return "Le stock doit être un nombre positif";
   }
   return null;
@@ -113,6 +116,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Le nombre de tours bonus doit être positif" }, { status: 400 });
     }
 
+    // Only ONE game can be active at a time: a new active game switches the others off
+    if (isActive ?? true) {
+      await prisma.spinConfig.updateMany({ where: { restaurantId: session.user.restaurantId, isActive: true }, data: { isActive: false } });
+    }
+
     const game = await prisma.spinConfig.create({
       data: {
         restaurantId: session.user.restaurantId,
@@ -180,6 +188,14 @@ export async function PUT(request: NextRequest) {
     if (conditions !== undefined) updateData.conditions = conditions;
     if (startDate !== undefined) updateData.startDate = startDate ? new Date(startDate) : null;
     if (endDate !== undefined) updateData.endDate = endDate ? new Date(endDate) : null;
+
+    // Only ONE game can be active at a time: activating this one switches the others off
+    if (isActive === true) {
+      await prisma.spinConfig.updateMany({
+        where: { restaurantId: session.user.restaurantId, isActive: true, NOT: { id } },
+        data: { isActive: false },
+      });
+    }
 
     const game = await prisma.spinConfig.update({ where: { id }, data: updateData });
     return NextResponse.json(game);

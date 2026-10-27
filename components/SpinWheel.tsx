@@ -8,7 +8,13 @@ type Segment = {
   color: string;
   textColor: string;
   probability?: number;
+  type?: "none" | "points" | "gift" | "coupon" | "free_spin";
+  description?: string;
 };
+
+// legacy segments (no type) are treated as points / no prize
+const prizeKind = (p: Segment) => p.type ?? (p.points > 0 ? "points" : "none");
+const isWin = (p: Segment) => prizeKind(p) !== "none";
 
 type SpinSource = "FREE" | "BONUS";
 
@@ -61,7 +67,7 @@ export default function SpinWheel({
   const [spinning, setSpinning] = useState(false);
   const [spinError, setSpinError] = useState<string | null>(null);
   const [totalPts, setTotalPts] = useState(0);
-  const [history, setHistory] = useState<{ label: string; pts: number }[]>([]);
+  const [history, setHistory] = useState<{ label: string; pts: number; win: boolean }[]>([]);
   const [result, setResult] = useState<Segment | null>(null);
   const [showResult, setShowResult] = useState(false);
   const [confetti, setConfetti] = useState<{ id: number; emoji: string; x: number; delay: number }[]>([]);
@@ -223,7 +229,9 @@ export default function SpinWheel({
     if (!result) return;
     const name = restaurantName || "ce commerce";
     const url = restaurantSlug ? `${window.location.origin}/${restaurantSlug}` : window.location.origin;
-    const text = result.points > 0 ? `🎉 Je viens de gagner ${result.points} points sur la roue de la chance de ${name} ! Tente ta chance toi aussi 👇` : `J'ai tenté ma chance sur la roue de ${name} 🎡 À ton tour !`;
+    const kind = prizeKind(result);
+    const wonText = kind === "points" ? `${result.points} points` : kind === "free_spin" ? "un tour gratuit" : result.label;
+    const text = isWin(result) ? `🎉 Je viens de gagner ${wonText} sur la roue de la chance de ${name} ! Tente ta chance toi aussi 👇` : `J'ai tenté ma chance sur la roue de ${name} 🎡 À ton tour !`;
     if (navigator.share) {
       try { await navigator.share({ title: `Roue de la chance — ${name}`, text, url }); } catch {}
       return;
@@ -269,7 +277,7 @@ export default function SpinWheel({
         if (t < 1) requestAnimationFrame(frame);
         else {
           spinningRef.current = false; setSpinning(false); setResult(prize); setShowResult(true);
-          setTotalPts((prev) => prev + prize.points);
+          setTotalPts((prev) => prev + (prizeKind(prize) === "points" ? prize.points : 0));
           // the free-spin counter is shared by all games of the restaurant
           const usedToday = currentGame.dailyFreeSpins - freeSpinsLeft;
           setStatus((prev) => prev ? {
@@ -277,8 +285,9 @@ export default function SpinWheel({
             bonusSpins,
             games: prev.games.map((g) => ({ ...g, freeSpinsLeft: Math.max(0, g.dailyFreeSpins - usedToday) })),
           } : prev);
-          setHistory((h) => [{ label: prize.label, pts: prize.points }, ...h].slice(0, 6));
-          if (prize.points > 0) { fireConfetti(); onPointsEarned?.(prize.points, newPoints); }
+          setHistory((h) => [{ label: prize.label, pts: prizeKind(prize) === "points" ? prize.points : 0, win: isWin(prize) }, ...h].slice(0, 6));
+          if (isWin(prize)) fireConfetti();
+          if (prizeKind(prize) === "points" && prize.points > 0) onPointsEarned?.(prize.points, newPoints);
         }
       };
       requestAnimationFrame(frame);
@@ -335,18 +344,25 @@ export default function SpinWheel({
 
       {noSpinsLeft && !showResult && (<div style={{ width: "100%", padding: "22px 16px", marginTop: 14, background: `${textColor}06`, borderRadius: 18, textAlign: "center", border: `1px dashed ${textColor}20` }}><div style={{ fontSize: 30, marginBottom: 8 }}>⏰</div><p style={{ fontWeight: 700, color: textColor, fontSize: 14, marginBottom: 4 }}>Revenez demain !</p><p style={{ color: `${textColor}65`, fontSize: 12, lineHeight: 1.5 }}>Vos tours gratuits reviennent demain.<br />Faites un achat pour gagner des tours bonus.</p></div>)}
 
-      {showResult && result && (
-        <div style={{ width: "100%", padding: "24px 16px", marginTop: 14, background: result.points > 0 ? `linear-gradient(160deg, ${primaryColor}14, ${primaryColor}05)` : `${textColor}06`, borderRadius: 20, textAlign: "center", border: `1.5px solid ${result.points > 0 ? primaryColor + "45" : textColor + "15"}`, animation: "popIn 0.4s cubic-bezier(.34,1.56,.64,1) both" }}>
-          <div style={{ fontSize: 42, marginBottom: 8 }}>{result.points >= 200 ? "🏆" : result.points >= 100 ? "🎉" : result.points > 0 ? "✨" : "😅"}</div>
-          {result.points > 0 ? (<><p style={{ fontSize: 17, fontWeight: 800, color: textColor, marginBottom: 4 }}>Félicitations !</p><p style={{ fontSize: 13, color: `${textColor}70`, marginBottom: 10 }}>Vous avez gagné</p><p style={{ fontSize: 38, fontWeight: 800, color: primaryColor, letterSpacing: "-0.02em", marginBottom: 2 }}>+{result.points}</p><p style={{ fontSize: 13, color: `${textColor}70`, marginBottom: 16 }}>points ajoutés à votre compte</p></>) : (<><p style={{ fontSize: 17, fontWeight: 800, color: textColor, marginBottom: 4 }}>Pas de chance !</p><p style={{ fontSize: 13, color: `${textColor}70`, marginBottom: 16 }}>Essayez encore au prochain tour</p></>)}
+      {showResult && result && (() => {
+        const kind = prizeKind(result);
+        const win = isWin(result);
+        return (
+        <div style={{ width: "100%", padding: "24px 16px", marginTop: 14, background: win ? `linear-gradient(160deg, ${primaryColor}14, ${primaryColor}05)` : `${textColor}06`, borderRadius: 20, textAlign: "center", border: `1.5px solid ${win ? primaryColor + "45" : textColor + "15"}`, animation: "popIn 0.4s cubic-bezier(.34,1.56,.64,1) both" }}>
+          <div style={{ fontSize: 42, marginBottom: 8 }}>{kind === "gift" ? "🎁" : kind === "coupon" ? "🎟️" : kind === "free_spin" ? "⚡" : result.points >= 200 ? "🏆" : result.points >= 100 ? "🎉" : win ? "✨" : "😅"}</div>
+          {kind === "points" && (<><p style={{ fontSize: 17, fontWeight: 800, color: textColor, marginBottom: 4 }}>Félicitations !</p><p style={{ fontSize: 13, color: `${textColor}70`, marginBottom: 10 }}>Vous avez gagné</p><p style={{ fontSize: 38, fontWeight: 800, color: primaryColor, letterSpacing: "-0.02em", marginBottom: 2 }}>+{result.points}</p><p style={{ fontSize: 13, color: `${textColor}70`, marginBottom: 16 }}>points ajoutés à votre compte</p></>)}
+          {kind === "free_spin" && (<><p style={{ fontSize: 17, fontWeight: 800, color: textColor, marginBottom: 4 }}>Félicitations !</p><p style={{ fontSize: 13, color: `${textColor}70`, marginBottom: 10 }}>Vous avez gagné</p><p style={{ fontSize: 28, fontWeight: 800, color: primaryColor, marginBottom: 2 }}>+1 tour gratuit</p><p style={{ fontSize: 13, color: `${textColor}70`, marginBottom: 16 }}>ajouté automatiquement à vos tours</p></>)}
+          {(kind === "gift" || kind === "coupon") && (<><p style={{ fontSize: 17, fontWeight: 800, color: textColor, marginBottom: 4 }}>Félicitations !</p><p style={{ fontSize: 13, color: `${textColor}70`, marginBottom: 10 }}>{kind === "gift" ? "Vous avez gagné un cadeau" : "Vous avez gagné un coupon"}</p><p style={{ fontSize: 24, fontWeight: 800, color: primaryColor, marginBottom: 6 }}>{result.label}</p>{result.description && <p style={{ fontSize: 13, color: `${textColor}70`, marginBottom: 6 }}>{result.description}</p>}<p style={{ fontSize: 12, color: `${textColor}60`, marginBottom: 16 }}>Présentez cet écran au commerçant pour le récupérer</p></>)}
+          {kind === "none" && (<><p style={{ fontSize: 17, fontWeight: 800, color: textColor, marginBottom: 4 }}>Pas de chance !</p><p style={{ fontSize: 13, color: `${textColor}70`, marginBottom: 16 }}>Essayez encore au prochain tour</p></>)}
           <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
             <button onClick={handleShare} style={{ padding: "11px 22px", background: "transparent", color: primaryColor, border: `1.5px solid ${primaryColor}50`, borderRadius: 12, fontWeight: 700, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}><span style={{ fontSize: 15 }}>📤</span>{shareState === "copied" ? "Copié !" : shareState === "error" ? "Échec" : "Partager"}</button>
             {!noSpinsLeft && (<button onClick={() => setShowResult(false)} style={{ padding: "11px 28px", background: `linear-gradient(145deg, ${primaryColor}, ${primaryColor}cc)`, color: "#fff", border: "none", borderRadius: 12, fontWeight: 700, fontSize: 13, cursor: "pointer", boxShadow: `0 4px 14px ${primaryColor}40` }}>Rejouer</button>)}
           </div>
         </div>
-      )}
+        );
+      })()}
 
-      {history.length > 0 && (<div style={{ width: "100%", marginTop: 20 }}><p style={{ fontSize: 11, color: `${textColor}55`, marginBottom: 8, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em" }}>Historique</p><div style={{ display: "flex", flexDirection: "column", gap: 6 }}>{history.map((h, i) => (<div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "9px 14px", background: `${textColor}04`, borderRadius: 12, border: `1px solid ${textColor}08` }}><span style={{ fontSize: 13, color: textColor, fontWeight: 500 }}>{h.label}</span><span style={{ fontSize: 13, fontWeight: 700, color: h.pts > 0 ? primaryColor : `${textColor}45` }}>{h.pts > 0 ? `+${h.pts} pts` : "0 pts"}</span></div>))}</div></div>)}
+      {history.length > 0 && (<div style={{ width: "100%", marginTop: 20 }}><p style={{ fontSize: 11, color: `${textColor}55`, marginBottom: 8, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em" }}>Historique</p><div style={{ display: "flex", flexDirection: "column", gap: 6 }}>{history.map((h, i) => (<div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "9px 14px", background: `${textColor}04`, borderRadius: 12, border: `1px solid ${textColor}08` }}><span style={{ fontSize: 13, color: textColor, fontWeight: 500 }}>{h.label}</span><span style={{ fontSize: 13, fontWeight: 700, color: h.win ? primaryColor : `${textColor}45` }}>{h.pts > 0 ? `+${h.pts} pts` : h.win ? "🎁" : "0 pts"}</span></div>))}</div></div>)}
 
       <style jsx>{`@keyframes popIn { from { opacity: 0; transform: scale(0.85) translateY(8px); } to { opacity: 1; transform: scale(1) translateY(0); } } @keyframes confettiFall { 0% { opacity: 1; transform: translateY(0) rotate(0deg); } 100% { opacity: 0; transform: translateY(160px) rotate(360deg); } }`}</style>
     </div>
