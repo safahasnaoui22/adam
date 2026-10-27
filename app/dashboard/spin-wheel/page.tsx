@@ -6,13 +6,14 @@ import { signOut } from "next-auth/react";
 import Image from "next/image";
 import { QRCodeSVG } from "qrcode.react";
 import { getPatternStyle } from "@/lib/patterns";
-import SpinWheelModal from "./spin";
+
 
 // beforeinstallprompt is now captured app-wide in app/providers.tsx
 // (see lib/pwaInstall.ts) so it isn't missed when it fires on an earlier
 // page, before the customer ever reaches this dashboard.
 import { getDeferredPrompt, promptInstall, onPwaStateChange, waitForInstallPrompt } from "@/lib/pwaInstall";
 import PwaDebug from "@/components/PwaDebug";
+import SpinWheelModal from "@/app/client/dashboard/spin";
 
 // ── useScrollReveal hook ───────────────────────────────────────────────
 function useScrollReveal(options?: IntersectionObserverInit) {
