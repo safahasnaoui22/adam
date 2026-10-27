@@ -27,7 +27,8 @@ type Segment = {
   points: number; 
   color: string; 
   textColor: string;
-  probability?: number; 
+  probability?: number;
+  stock?: number | null;
 };
 
 function isSameDay(a: Date, b: Date) {
@@ -145,37 +146,40 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No bonus spins available" }, { status: 400 });
     }
 
-    // 2. WEIGHTED RANDOM PICK based on probabilities set by Admin
-    let winningIndex = 0;
-    
-    // Check if all segments have a valid probability
-    const hasValidProbabilities = segments.every(s => typeof s.probability === 'number' && s.probability >= 0);
-    
-    if (hasValidProbabilities) {
-      const totalProbability = segments.reduce((sum, s) => sum + (s.probability || 0), 0);
-      
-      if (totalProbability > 0) {
-        // Pick a random number between 0 and totalProbability
-        let random = Math.random() * totalProbability;
-        
-        // Loop through segments and subtract their probability until we hit 0
-        for (let i = 0; i < segments.length; i++) {
-          random -= (segments[i].probability || 0);
-          if (random <= 0) {
-            winningIndex = i;
-            break;
-          }
-        }
-      } else {
-        // Fallback if all probabilities are 0
-        winningIndex = Math.floor(Math.random() * segments.length);
+    // 2. WEIGHTED RANDOM PICK based on probabilities set by Admin.
+    //    Segments whose stock is used up (stock === 0) can no longer be won.
+    const eligible = segments
+      .map((seg, index) => ({ seg, index }))
+      .filter(({ seg }) => seg.stock === undefined || seg.stock === null || seg.stock > 0);
+    if (eligible.length === 0) {
+      return NextResponse.json({ error: "Aucun lot disponible" }, { status: 409 });
+    }
+
+    let winningIndex = eligible[0].index;
+    const totalProbability = eligible.reduce((sum, { seg }) => sum + (seg.probability ?? 0), 0);
+    if (totalProbability > 0) {
+      let random = Math.random() * totalProbability;
+      for (const { seg, index } of eligible) {
+        random -= seg.probability ?? 0;
+        if (random <= 0) { winningIndex = index; break; }
       }
     } else {
-      // Fallback to uniform random if probabilities are missing
-      winningIndex = Math.floor(Math.random() * segments.length);
+      winningIndex = eligible[Math.floor(Math.random() * eligible.length)].index;
     }
 
     const winner = segments[winningIndex];
+
+    // Consume one unit of stock (optimistic lock on updatedAt so two players can't win the last one)
+    if (typeof winner.stock === "number") {
+      const newSegments = segments.map((seg, i) => (i === winningIndex ? { ...seg, stock: (seg.stock as number) - 1 } : seg));
+      const locked = await prisma.spinConfig.updateMany({
+        where: { id: config.id, updatedAt: config.updatedAt },
+        data: { segments: newSegments as any },
+      });
+      if (locked.count === 0) {
+        return NextResponse.json({ error: "Veuillez réessayer" }, { status: 409 });
+      }
+    }
 
     const [updatedCustomer] = await prisma.$transaction([
       prisma.customerProfile.update({
@@ -191,6 +195,7 @@ export async function POST(req: NextRequest) {
         data: {
           customerId,
           restaurantId,
+          gameId: config.id,
           source,
           segmentIndex: winningIndex,
           prizeLabel: winner.label,

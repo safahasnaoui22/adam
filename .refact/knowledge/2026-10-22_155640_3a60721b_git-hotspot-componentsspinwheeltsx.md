@@ -6,7 +6,7 @@ tags:
 - git
 - hotspot
 created: 2026-10-22
-updated: 2026-10-23
+updated: 2026-10-27
 filenames:
 - components/SpinWheel.tsx
 links: []
@@ -14,7 +14,7 @@ kind: code
 status: proposed
 superseded_by: null
 deprecated_at: null
-review_after: 2026-10-23
+review_after: 2026-10-27
 source_chat_id: null
 created_at: 2026-10-22T14:56:40.293726300+00:00
 summary: null

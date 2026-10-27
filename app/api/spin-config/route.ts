@@ -16,6 +16,7 @@ type Segment = {
   color: string;
   textColor: string;
   probability: number;
+  stock?: number | null; // optional prize stock (null / undefined = unlimited)
 };
 
 const DEFAULT_SEGMENTS: Segment[] = [
@@ -35,6 +36,7 @@ function validateSegments(segments: unknown): string | null {
     if (typeof s.label !== "string" || !s.label.trim()) return "Chaque segment doit avoir un libellé";
     if (typeof s.points !== "number" || s.points < 0) return "Les points doivent être un nombre positif";
     if (typeof s.probability !== "number" || s.probability < 0) return "La probabilité doit être un nombre positif";
+    if (s.stock !== undefined && s.stock !== null && (typeof s.stock !== "number" || s.stock < 0)) return "Le stock doit être un nombre positif";
   }
   return null;
 }
@@ -70,7 +72,19 @@ export async function GET() {
       games = [created];
     }
 
-    return NextResponse.json(games);
+    // number of spins played per game ("1 tours" on the card). Old logs without gameId belong to the oldest game.
+    const grouped = await prisma.spinLog.groupBy({
+      by: ["gameId"],
+      where: { restaurantId },
+      _count: { _all: true },
+    });
+    const countFor = (gid: string | null) => grouped.find((g) => g.gameId === gid)?._count._all ?? 0;
+    const withCounts = games.map((g, i) => ({
+      ...g,
+      spinCount: countFor(g.id) + (i === 0 ? countFor(null) : 0),
+    }));
+
+    return NextResponse.json(withCounts);
   } catch (error) {
     console.error("Failed to fetch spin config:", error);
     return NextResponse.json({ error: "Failed to fetch spin config" }, { status: 500 });
