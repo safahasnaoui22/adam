@@ -233,43 +233,95 @@ export default async function DashboardPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {/* Clients Inscrits */}
                 <div className="group relative bg-[var(--bg-card)] rounded-[var(--radius-md)] border border-[var(--border)] overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-orange-500/20 hover:border-orange-500/50">
-                    <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
-                    <div className="relative p-5 z-10">
-                        <div className="flex items-center justify-between">
-                            <span className="text-3xl">👥</span>
-                            <span className="text-xs text-gray-500 bg-gray-800 px-2 py-1 rounded-full">Stats</span>
-                        </div>
-                        <p className="text-gray-400 text-sm mt-3">Clients Inscrits</p>
-                        <p className="text-3xl font-bold text-white mt-1">{stats.totalCustomers}</p>
-                    </div>
-                </div>
-
+    <div className="absolute inset-0 bg-gradient-to-r from-orange-500/20 to-amber-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+    <div className="relative p-5 z-10">
+        <div className="flex items-center justify-between">
+            <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-orange-500/10 border border-orange-500/20 text-orange-400 group-hover:bg-orange-500/20 group-hover:text-orange-300 transition-colors duration-300">
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                >
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                    <circle cx="9" cy="7" r="4" />
+                    <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                </svg>
+            </div>
+            <span className="text-xs text-gray-500 bg-gray-800 px-2 py-1 rounded-full">Stats</span>
+        </div>
+        <p className="text-gray-400 text-sm mt-3">Clients Inscrits</p>
+        <p className="text-3xl font-bold text-white mt-1">{stats.totalCustomers}</p>
+    </div>
+</div>
                 {/* Stars distribués */}
-                <div className="group relative bg-[var(--bg-card)] rounded-[var(--radius-md)] border border-[var(--border)] overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-yellow-500/20 hover:border-yellow-500/50">
-                    <div className="absolute inset-0 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none">
-                    </div>
-                    <div className="relative p-5 z-10">
-                        <div className="flex items-center justify-between">
-                            <span className="text-3xl">🌟</span>
-                            <span className="text-xs text-gray-500 bg-gray-800 px-2 py-1 rounded-full">Stars</span>
-                        </div>
-                        <p className="text-gray-400 text-sm mt-3">Stars distribués</p>
-                        <p className="text-3xl font-bold text-white mt-1">{stats.totalPointsEarned}⭐</p>
-                    </div>
-                </div>
-
-                {/* Points Consommés */}
-                <div className="group relative bg-[var(--bg-card)] rounded-[var(--radius-md)] border border-[var(--border)] overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-red-500/20 hover:border-red-500/50">
-                    <div className="absolute inset-0 bg-gradient-to-r from-red-500/20 to-pink-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
-                    <div className="relative p-5 z-10">
-                        <div className="flex items-center justify-between">
-                            <span className="text-3xl">🔥</span>
-                            <span className="text-xs text-gray-500 bg-gray-800 px-2 py-1 rounded-full">Dépenses</span>
-                        </div>
-                        <p className="text-gray-400 text-sm mt-3">Points Consommés</p>
-                        <p className="text-3xl font-bold text-white mt-1">{stats.totalPointsConsumed}⭐</p>
-                    </div>
-                </div>
+<div className="group relative bg-[var(--bg-card)] rounded-[var(--radius-md)] border border-[var(--border)] overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-yellow-500/20 hover:border-yellow-500/50">
+    <div className="absolute inset-0 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none">
+    </div>
+    <div className="relative p-5 z-10">
+        <div className="flex items-center justify-between">
+            <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 group-hover:bg-yellow-500/20 group-hover:text-yellow-300 transition-colors duration-300">
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                >
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                </svg>
+            </div>
+            <span className="text-xs text-gray-500 bg-gray-800 px-2 py-1 rounded-full">Stars</span>
+        </div>
+        <p className="text-gray-400 text-sm mt-3">Stars distribués</p>
+        <p className="text-3xl font-bold text-white mt-1">
+            {stats.totalPointsEarned}
+            <span className="text-yellow-400 ml-1" aria-hidden="true">★</span>
+        </p>
+    </div>
+</div>
+            {/* Points Consommés */}
+<div className="group relative bg-[var(--bg-card)] rounded-[var(--radius-md)] border border-[var(--border)] overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-red-500/20 hover:border-red-500/50">
+    <div className="absolute inset-0 bg-gradient-to-r from-red-500/20 to-pink-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+    <div className="relative p-5 z-10">
+        <div className="flex items-center justify-between">
+            <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 group-hover:bg-red-500/20 group-hover:text-red-300 transition-colors duration-300">
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                >
+                    <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" />
+                </svg>
+            </div>
+            <span className="text-xs text-gray-500 bg-gray-800 px-2 py-1 rounded-full">Dépenses</span>
+        </div>
+        <p className="text-gray-400 text-sm mt-3">Points Consommés</p>
+        <p className="text-3xl font-bold text-white mt-1">
+            {stats.totalPointsConsumed}
+            <span className="text-yellow-400 ml-1" aria-hidden="true">★</span>
+        </p>
+    </div>
+</div>
 
              {/* Taux d'Échange */}
 <div className="group relative bg-[var(--bg-card)] rounded-[var(--radius-md)] border border-[var(--border)] overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-green-500/20 hover:border-green-500/50">
