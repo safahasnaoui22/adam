@@ -140,14 +140,16 @@ export async function PUT(request: Request) {
         theme: theme || undefined,
         backgroundPattern,
         // Add the new fields here
-       googleMapsUrl: googleMapsUrl || undefined,
-  facebookUrl: facebookUrl || undefined,
-  instagramUrl: instagramUrl || undefined,
-  twitterUrl: twitterUrl || undefined,
-  googleMapsBonusStars: googleMapsBonusStars || 50,
-  facebookBonusStars: facebookBonusStars || 50,
-  instagramBonusStars: instagramBonusStars || 50,
-  twitterBonusStars: twitterBonusStars || 50,
+       // Links: an empty string removes the link; undefined leaves it unchanged.
+       googleMapsUrl: googleMapsUrl === undefined ? undefined : googleMapsUrl?.trim() || null,
+  facebookUrl: facebookUrl === undefined ? undefined : facebookUrl?.trim() || null,
+  instagramUrl: instagramUrl === undefined ? undefined : instagramUrl?.trim() || null,
+  twitterUrl: twitterUrl === undefined ? undefined : twitterUrl?.trim() || null,
+  // Points: keep exactly what the owner wrote (including 0).
+  googleMapsBonusStars: Number.isFinite(googleMapsBonusStars) ? googleMapsBonusStars : undefined,
+  facebookBonusStars: Number.isFinite(facebookBonusStars) ? facebookBonusStars : undefined,
+  instagramBonusStars: Number.isFinite(instagramBonusStars) ? instagramBonusStars : undefined,
+  twitterBonusStars: Number.isFinite(twitterBonusStars) ? twitterBonusStars : undefined,
       },
       include: {
         subscription: true,

@@ -691,19 +691,23 @@ type BonusModalProps = {
   primaryColor: string;
   textColor: string;
   cardBg: string;
+  onStart: () => void;
   onConfirm: () => void;
   onCancel: () => void;
   loading: boolean;
 };
 
-function BonusModal({ action, pointsValue, primaryColor, textColor, cardBg, onConfirm, onCancel, loading }: BonusModalProps) {
+const BONUS_WAIT_SECONDS = 20;
+
+function BonusModal({ action, pointsValue, primaryColor, textColor, cardBg, onStart, onConfirm, onCancel, loading }: BonusModalProps) {
   const [step, setStep] = useState<"intro" | "waiting" | "confirm">("intro");
-  const [countdown, setCountdown] = useState(5);
+  const [countdown, setCountdown] = useState(BONUS_WAIT_SECONDS);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const handleOpenLink = () => {
+    onStart();
     setStep("waiting");
-    setCountdown(5);
+    setCountdown(BONUS_WAIT_SECONDS);
     timerRef.current = setInterval(() => {
       setCountdown((prev) => {
         if (prev <= 1) { clearInterval(timerRef.current!); setStep("confirm"); return 0; }
@@ -756,8 +760,7 @@ function BonusModal({ action, pointsValue, primaryColor, textColor, cardBg, onCo
               <span style={{ fontSize: 24, fontWeight: 700, color: primaryColor }}>{countdown}</span>
             </div>
             <h3 style={{ fontSize: 16, fontWeight: 700, color: textColor, margin: "0 0 8px" }}>En cours…</h3>
-            <p style={{ fontSize: 13, color: `${textColor}70`, margin: "0 0 20px" }}>Effectuez l'action sur {action.label},<br/>puis revenez ici.</p>
-            <button onClick={() => setStep("confirm")} style={{ width: "100%", padding: "13px", backgroundColor: `${primaryColor}15`, border: `1.5px solid ${primaryColor}30`, borderRadius: 14, color: primaryColor, fontWeight: 600, fontSize: 14, cursor: "pointer" }}>J'ai déjà terminé →</button>
+            <p style={{ fontSize: 13, color: `${textColor}70`, margin: "0 0 20px" }}>Effectuez l'action sur {action.label},<br/>puis revenez ici. Le bouton de confirmation apparaît dans {countdown}s.</p>
           </div>
         )}
         {step === "confirm" && (
@@ -1242,6 +1245,23 @@ useEffect(() => {
     setActiveBonusModal(action);
   };
 
+  const bonusTokenRef = useRef<string | null>(null);
+
+  // Starts the server-side timer when the customer opens the platform link.
+  const handleStartBonus = async () => {
+    if (!activeBonusModal) return;
+    bonusTokenRef.current = null;
+    try {
+      const res = await fetch("/api/customer/bonus-start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ platform: activeBonusModal.id }),
+      });
+      const data = await res.json();
+      if (res.ok) bonusTokenRef.current = data.token;
+    } catch (e) { console.error(e); }
+  };
+
   const handleConfirmBonus = async () => {
     if (!activeBonusModal) return;
     setClaimingBonus(activeBonusModal.id);
@@ -1249,7 +1269,7 @@ useEffect(() => {
       const res = await fetch("/api/customer/claim-bonus", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ platform: activeBonusModal.id, customerId: client.customerId }),
+        body: JSON.stringify({ platform: activeBonusModal.id, token: bonusTokenRef.current }),
       });
       const data = await res.json();
       if (res.ok) {
@@ -1422,6 +1442,7 @@ useEffect(() => {
           action={activeBonusModal}
           pointsValue={restaurant[activeBonusModal.starsKey] || 0}
           primaryColor={D.primary} textColor={D.text} cardBg={D.cardBg}
+          onStart={handleStartBonus}
           onConfirm={handleConfirmBonus}
           onCancel={() => setActiveBonusModal(null)}
           loading={claimingBonus === activeBonusModal.id}
