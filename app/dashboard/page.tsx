@@ -271,18 +271,36 @@ export default async function DashboardPage() {
                     </div>
                 </div>
 
-                {/* Taux d'Échange */}
-                <div className="group relative bg-[var(--bg-card)] rounded-[var(--radius-md)] border border-[var(--border)] overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-green-500/20 hover:border-green-500/50">
-                    <div className="absolute inset-0 bg-gradient-to-r from-green-500/20 to-emerald-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
-                    <div className="relative p-5 z-10">
-                        <div className="flex items-center justify-between">
-                            <span className="text-3xl">🔄</span>
-                            <span className="text-xs text-gray-500 bg-gray-800 px-2 py-1 rounded-full">Taux</span>
-                        </div>
-                        <p className="text-gray-400 text-sm mt-3">Taux d'Échange</p>
-                        <p className="text-3xl font-bold text-white mt-1">{stats.exchangeRate}%</p>
-                    </div>
-                </div>
+             {/* Taux d'Échange */}
+<div className="group relative bg-[var(--bg-card)] rounded-[var(--radius-md)] border border-[var(--border)] overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-green-500/20 hover:border-green-500/50">
+    <div className="absolute inset-0 bg-gradient-to-r from-green-500/20 to-emerald-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+    <div className="relative p-5 z-10">
+        <div className="flex items-center justify-between">
+            <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-green-500/10 border border-green-500/20 text-green-400 group-hover:bg-green-500/20 group-hover:text-green-300 transition-colors duration-300">
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                >
+                    <path d="M8 3 4 7l4 4" />
+                    <path d="M4 7h16" />
+                    <path d="m16 21 4-4-4-4" />
+                    <path d="M20 17H4" />
+                </svg>
+            </div>
+            <span className="text-xs text-gray-500 bg-gray-800 px-2 py-1 rounded-full">Taux</span>
+        </div>
+        <p className="text-gray-400 text-sm mt-3">Taux d'Échange</p>
+        <p className="text-3xl font-bold text-white mt-1">{stats.exchangeRate}%</p>
+    </div>
+</div>
             </div>
                         {/* Status Banner */}
             <div className="bg-[var(--bg-card)] shadow rounded-[var(--radius-md)] border border-[var(--border)]">
