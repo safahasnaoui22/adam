@@ -25,10 +25,10 @@ const fmtDateTime = (d: Date | string) =>
   new Date(d).toLocaleString("fr-FR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
 
 const PLAN_META: Record<string, { label: string; color: string }> = {
-  FREE: { label: "Free", color: "#94A3B8" },
-  BASIC: { label: "Basic", color: "#0EA5E9" },
-  PREMIUM: { label: "Premium", color: "#4F46E5" },
-  ENTERPRISE: { label: "Enterprise", color: "#F59E0B" },
+  FREE: { label: "1 mois", color: "#94A3B8" },
+  BASIC: { label: "3 mois", color: "#0EA5E9" },
+  PREMIUM: { label: "6 mois", color: "#4F46E5" },
+  ENTERPRISE: { label: "1 an", color: "#F59E0B" },
 };
 
 const ACTION_LABELS: Record<string, string> = {
@@ -103,7 +103,7 @@ export default async function AdminDashboardPage() {
     }),
     prisma.subscription.groupBy({ by: ["plan"], _count: { _all: true } }),
     prisma.subscription.aggregate({
-      where: { plan: { not: "FREE" }, restaurant: { accountStatus: "ACTIVE" } },
+      where: { restaurant: { accountStatus: "ACTIVE" } },
       _sum: { price: true },
     }),
     prisma.earnedReward.count({ where: { earnedAt: { gte: startMonth } } }),
@@ -141,7 +141,7 @@ export default async function AdminDashboardPage() {
       select: { id: true, name: true, accountStatus: true, createdAt: true, _count: { select: { customers: true } } },
     }),
     prisma.subscription.findMany({
-      where: { plan: { not: "FREE" }, endDate: { gte: now, lte: in14 } },
+      where: { endDate: { gte: now, lte: in14 } },
       orderBy: { endDate: "asc" },
       take: 5,
       select: { plan: true, endDate: true, restaurant: { select: { id: true, name: true } } },
@@ -263,7 +263,7 @@ export default async function AdminDashboardPage() {
   ];
 
   const secondary = [
-    { label: "Abonnements payants", value: money(paidValue._sum.price ?? 0), hint: "Somme des prix des plans payants actifs" },
+    { label: "Valeur des abonnements", value: money(paidValue._sum.price ?? 0), hint: "Somme des prix, comptes actifs" },
     { label: "Récompenses gagnées", value: nf.format(rewardsEarnedMonth), hint: "Ce mois" },
     { label: "Récompenses utilisées", value: nf.format(rewardsUsedMonth), hint: "Ce mois" },
     { label: "Clients / restaurant", value: String(avgCustomers), hint: "Moyenne" },
@@ -362,7 +362,7 @@ export default async function AdminDashboardPage() {
         </section>
         <section className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
           <h2 className="text-base font-semibold text-gray-900">Répartition des plans</h2>
-          <p className="mb-3 text-xs text-gray-500">Restaurants par abonnement</p>
+          <p className="mb-3 text-xs text-gray-500">Restaurants par durée d'abonnement</p>
           <DonutChart data={planData} />
         </section>
       </div>

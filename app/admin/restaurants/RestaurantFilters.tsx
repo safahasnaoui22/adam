@@ -44,9 +44,10 @@ export default function RestaurantFilters() {
         defaultValue={searchParams.get("plan") || ""}
       >
         <option value="">Tous les plans</option>
-        <option value="FREE">Gratuit</option>
-        <option value="PRO">Pro</option>
-        <option value="ENTERPRISE">Enterprise</option>
+        <option value="FREE">1 mois</option>
+        <option value="BASIC">3 mois</option>
+        <option value="PREMIUM">6 mois</option>
+        <option value="ENTERPRISE">1 an</option>
       </select>
     </div>
   );
