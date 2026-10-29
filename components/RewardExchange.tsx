@@ -95,12 +95,10 @@ function AddPointsModal({ onClose }: { onClose: () => void }) {
 
       const dbCustomerId = validateData.customer.id;
       const customerName = validateData.customer.name;
-      const addPointsAmount = starsToAdd / 10;
-
       const addRes = await fetch("/api/customer/add-points", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ customerId: dbCustomerId, amount: addPointsAmount }),
+        body: JSON.stringify({ customerId: dbCustomerId, amount: amountNum }),
       });
       const addData = await addRes.json();
       if (!addRes.ok) {
@@ -110,7 +108,7 @@ function AddPointsModal({ onClose }: { onClose: () => void }) {
       }
 
       setSuccess(
-        `✅ ${starsToAdd} étoile(s) ajoutée(s) pour ${customerName} (#${rawId}) ! (Addition : ${amountNum} DT)`
+        `✅ ${addData.pointsAdded ?? starsToAdd} point(s) ajouté(s) pour ${customerName} (#${rawId}) ! (Addition : ${amountNum} DT)`
       );
       setClientId("");
       setAmount("");
@@ -189,7 +187,7 @@ function AddPointsModal({ onClose }: { onClose: () => void }) {
             }}
           >
             <strong>Règle active :</strong> {spendThreshold} DT dépensé →{" "}
-            {pointsEarned} point(s) gagnée(s)
+            {pointsEarned} point(s) gagné(s)
           </div>
         )}
 
@@ -278,7 +276,7 @@ fontWeight: 600,
               border: `1px solid ${previewStars > 0 ? "rgba(52,211,153,0.3)" : "rgba(248,113,113,0.3)"}`,
             }}
           >
-            <span style={{ fontSize: "1rem" }}>⭐</span>
+            <span style={{ fontSize: "1rem" }}>🪙</span>
             <span
               style={{
                 color: previewStars > 0 ? "#34d399" : "#f87171",
@@ -287,7 +285,7 @@ fontWeight: 600,
               }}
             >
               {previewStars > 0
-                ? `= ${previewStars} point(s) seront ajoutées`
+                ? `= ${previewStars} point(s) seront ajoutés`
                 : `Montant insuffisant (palier min. : ${spendThreshold} DT)`}
             </span>
           </div>
@@ -410,12 +408,12 @@ function CustomerPopup({
       const res = await fetch("/api/customer/add-points", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ customerId: customer.id, amount: starsToAdd / 10 }),
+        body: JSON.stringify({ customerId: customer.id, amount: addAmountNum }),
       });
       const data = await res.json();
       if (res.ok) {
         setPoints(data.newPoints);
-        setMessage({ text: `+${starsToAdd} pts pour ${addAmountNum} DT — Solde : ${data.newPoints}`, type: "success" });
+        setMessage({ text: `+${data.pointsAdded ?? starsToAdd} pts pour ${addAmountNum} DT — Solde : ${data.newPoints}`, type: "success" });
         setAddAmount("");
       } else {
         setMessage({ text: data.error || "Erreur", type: "error" });
@@ -551,7 +549,7 @@ function CustomerPopup({
 
           {!loadingRules && spendThreshold !== null && pointsEarned !== null && (
             <div className="cp-rule-banner">
-              <strong>Règle active :</strong> {spendThreshold} DT dépensé → {pointsEarned} étoile(s) gagnée(s)
+              <strong>Règle active :</strong> {spendThreshold} DT dépensé → {pointsEarned} point(s) gagné(s)
             </div>
           )}
 
@@ -568,9 +566,9 @@ function CustomerPopup({
 
           {previewStars !== null && (
             <div className={`cp-preview ${previewStars > 0 ? "ok" : "warn"}`}>
-              ⭐{" "}
+              🪙{" "}
               {previewStars > 0
-                ? `= ${previewStars} étoile(s) seront ajoutées`
+                ? `= ${previewStars} point(s) seront ajoutés`
                 : `Montant insuffisant (palier min. : ${spendThreshold} DT)`}
             </div>
           )}

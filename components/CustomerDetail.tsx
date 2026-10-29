@@ -240,7 +240,7 @@ export default function CustomerDetail({
   const previewAmount = parseFloat(amount) || 0;
   const previewPoints =
     previewAmount > 0 && loyaltyRule.spendThreshold > 0
-      ? Math.floor((previewAmount / loyaltyRule.spendThreshold) * loyaltyRule.pointsEarned)
+      ? Math.floor(previewAmount / loyaltyRule.spendThreshold + 1e-9) * loyaltyRule.pointsEarned
       : 0;
 
   const handleAddPoints = async (e: React.FormEvent) => {

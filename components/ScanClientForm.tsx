@@ -46,7 +46,7 @@ export default function ScanClientForm({ customerId, currentPoints, rewards }: S
       const data = await res.json();
       if (res.ok) {
         setPoints(data.newPoints);
-        setMessage({ text: `${data.pointsAdded} points ajoutés ! Nouveau solde : ${data.newPoints} ⭐`, type: "success" });
+        setMessage({ text: `${data.pointsAdded} points ajoutés ! Nouveau solde : ${data.newPoints} pts`, type: "success" });
         setAmount("");
       } else {
         setMessage({ text: data.error || "Erreur", type: "error" });
@@ -82,7 +82,7 @@ export default function ScanClientForm({ customerId, currentPoints, rewards }: S
       const data = await res.json();
       if (res.ok) {
         setPoints(data.newPoints);
-        setMessage({ text: `${data.deducted} points déduits. Nouveau solde : ${data.newPoints} ⭐`, type: "success" });
+        setMessage({ text: `${data.deducted} points déduits. Nouveau solde : ${data.newPoints} pts`, type: "success" });
         setRedeemStars("");
       } else {
         setMessage({ text: data.error || "Erreur", type: "error" });
@@ -112,7 +112,7 @@ export default function ScanClientForm({ customerId, currentPoints, rewards }: S
       const data = await res.json();
       if (res.ok) {
         setPoints(data.newPoints);
-        setMessage({ text: `Récompense échangée ! Nouveau solde : ${data.newPoints} ⭐`, type: "success" });
+        setMessage({ text: `Récompense échangée ! Nouveau solde : ${data.newPoints} pts`, type: "success" });
       } else {
         setMessage({ text: data.error || "Erreur", type: "error" });
       }
@@ -149,7 +149,7 @@ export default function ScanClientForm({ customerId, currentPoints, rewards }: S
                 {loadingAdd ? "..." : "Ajouter"}
               </button>
             </div>
-            <p className="text-xs text-gray-500 mt-1">1 DT = 10 ⭐</p>
+            <p className="text-xs text-gray-500 mt-1">Les points sont calculés selon la règle du programme de fidélité</p>
           </div>
         </form>
       </div>
@@ -178,7 +178,7 @@ export default function ScanClientForm({ customerId, currentPoints, rewards }: S
                 {loadingRedeem ? "..." : "Déduire"}
               </button>
             </div>
-            <p className="text-xs text-gray-500 mt-1">Points disponibles : {points} ⭐</p>
+            <p className="text-xs text-gray-500 mt-1">Points disponibles : {points} pts</p>
           </div>
         </form>
       </div>
