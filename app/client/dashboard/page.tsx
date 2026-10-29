@@ -1565,7 +1565,7 @@ useEffect(() => {
           </button>
 
           <p className="mt-4 text-sm font-medium" style={{ color: `${D.text}b3` }}>
-            {clientPts === 0 k? "Votre parcours points commence ici" : "Merci pour votre fidélité 💛"}
+            {clientPts === 0 ? "Votre parcours points commence ici" : "Merci pour votre fidélité 💛"}
           </p>
         </div>
 
