@@ -25,6 +25,10 @@ function AddPointsModal({ onClose }: { onClose: () => void }) {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
+  // "Utiliser des points" (deduct) — uses the same client ID field as above
+  const [pointsToDeduct, setPointsToDeduct] = useState("");
+  const [loadingDeduct, setLoadingDeduct] = useState(false);
+
   const [spendThreshold, setSpendThreshold] = useState<number | null>(null);
   const [pointsEarned, setPointsEarned] = useState<number | null>(null);
   const [loadingRules, setLoadingRules] = useState(true);
@@ -108,7 +112,7 @@ function AddPointsModal({ onClose }: { onClose: () => void }) {
       }
 
       setSuccess(
-        `✅ ${addData.pointsAdded ?? starsToAdd} point(s) ajouté(s) pour ${customerName} (#${rawId}) ! (Addition : ${amountNum} DT)`
+        `✅ ${addData.pointsAdded ?? starsToAdd} point(s) ajouté(s) pour ${customerName} (#${rawId}) ! (Ticket : ${amountNum} DT)`
       );
       setClientId("");
       setAmount("");
@@ -117,6 +121,55 @@ function AddPointsModal({ onClose }: { onClose: () => void }) {
       setError("Erreur de connexion au serveur");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeduct = async () => {
+    const rawId = clientId.trim().replace(/^#/, "").toUpperCase();
+    const val = parseInt(pointsToDeduct, 10);
+    if (rawId.length !== 4) {
+      setError("Veuillez entrer les 4 derniers caractères de l'ID client");
+      setSuccess("");
+      return;
+    }
+    if (isNaN(val) || val <= 0) {
+      setError("Nombre de points à déduire invalide");
+      setSuccess("");
+      return;
+    }
+
+    setLoadingDeduct(true);
+    setError("");
+    setSuccess("");
+    try {
+      const validateRes = await fetch(`/api/customer/by-short-id/${encodeURIComponent(rawId)}`);
+      const validateData = await validateRes.json();
+      if (!validateRes.ok || !validateData.customer?.id) {
+        setError(validateData.error || "Client non trouvé");
+        return;
+      }
+      if (typeof validateData.customer.points === "number" && val > validateData.customer.points) {
+        setError(`Points insuffisants : ${validateData.customer.name} a ${validateData.customer.points} point(s)`);
+        return;
+      }
+
+      const res = await fetch("/api/customer/deduct-points", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ customerId: validateData.customer.id, pointsToDeduct: val }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Erreur lors de la déduction des points");
+        return;
+      }
+      setSuccess(`✅ -${data.deducted ?? val} point(s) pour ${validateData.customer.name} (#${rawId}) — Solde : ${data.newPoints}`);
+      setPointsToDeduct("");
+    } catch (err) {
+      console.error(err);
+      setError("Erreur de connexion au serveur");
+    } finally {
+      setLoadingDeduct(false);
     }
   };
 
@@ -239,11 +292,11 @@ function AddPointsModal({ onClose }: { onClose: () => void }) {
             marginBottom: "0.6rem",
           }}
         >
-          2. Montant de l'addition (DT) *
+          2. Montant du ticket *
         </label>
         <input
           type="number"
-          placeholder="Ex: 45.50"
+          placeholder="Ex: 45.50 DT"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
           step="0.01"
@@ -327,6 +380,62 @@ fontWeight: 600,
             </>
           )}
         </button>
+
+        {/* ─── Utiliser des points ─── */}
+        <div style={{ height: 1, background: "rgba(255,255,255,0.1)", margin: "1.5rem 0 1.25rem" }} />
+        <label
+          style={{
+            color: "#e5e7eb",
+            fontSize: "0.95rem",
+            fontWeight: 500,
+            display: "flex",
+            alignItems: "center",
+            gap: "0.5rem",
+            marginBottom: "0.6rem",
+          }}
+        >
+          <span style={{ fontSize: "1rem" }}>➖</span> Utiliser des points
+        </label>
+        <div style={{ display: "flex", gap: "0.6rem" }}>
+          <input
+            type="number"
+            step="10"
+            min="0"
+            placeholder="Points à déduire"
+            value={pointsToDeduct}
+            onChange={(e) => setPointsToDeduct(e.target.value)}
+            disabled={loadingDeduct}
+            style={{
+              flex: 1,
+              minWidth: 0,
+              padding: "0.9rem 1.1rem",
+              borderRadius: "0.75rem",
+              background: "#3d3b5e",
+              border: "1.5px solid #4a4870",
+              color: "#fff",
+              fontSize: "1.1rem",
+              fontWeight: 600,
+              outline: "none",
+              boxSizing: "border-box",
+            }}
+          />
+          <button
+            onClick={handleDeduct}
+            disabled={loadingDeduct}
+            style={{
+              padding: "0 1.4rem",
+              borderRadius: "0.75rem",
+              border: "none",
+              background: loadingDeduct ? "#991b1b" : "#ef4444",
+              color: "#fff",
+              fontWeight: 700,
+              fontSize: "1rem",
+              cursor: loadingDeduct ? "not-allowed" : "pointer",
+            }}
+          >
+            {loadingDeduct ? "…" : "Déduire"}
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -345,118 +454,10 @@ function CustomerPopup({
   const [points, setPoints] = useState(customer.points);
   const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
 
-  // ─ Add points (same logic/UI as AddPointsModal) ─
-  const [addAmount, setAddAmount] = useState("");
-  const [loadingAdd, setLoadingAdd] = useState(false);
-  const [spendThreshold, setSpendThreshold] = useState<number | null>(null);
-  const [pointsEarned, setPointsEarned] = useState<number | null>(null);
-  const [loadingRules, setLoadingRules] = useState(true);
-
-  // ─ Redeem points manually ─
-  const [redeemAmount, setRedeemAmount] = useState("");
-  const [loadingRedeem, setLoadingRedeem] = useState(false);
-
   // ─ Redeem reward ─
   const [loadingReward, setLoadingReward] = useState<string | null>(null);
 
   const shortId = customer.customerId.slice(-4);
-
-  useEffect(() => {
-    const fetchRules = async () => {
-      try {
-        const res = await fetch("/api/loyalty-program");
-        const data = await res.json();
-        if (res.ok) {
-          setSpendThreshold(data.spendThreshold);
-          setPointsEarned(data.pointsEarned);
-        }
-      } catch (err) {
-        console.error("Failed to fetch loyalty program rules", err);
-      } finally {
-        setLoadingRules(false);
-      }
-    };
-    fetchRules();
-  }, []);
-
-  const computeStars = (amountDT: number): number => {
-    if (!spendThreshold || !pointsEarned || amountDT <= 0) return 0;
-    return Math.floor(amountDT / spendThreshold) * pointsEarned;
-  };
-
-  const addAmountNum = parseFloat(addAmount);
-  const previewStars = !isNaN(addAmountNum) && addAmountNum > 0 ? computeStars(addAmountNum) : null;
-
-  const handleAddPoints = async () => {
-    if (isNaN(addAmountNum) || addAmountNum <= 0) {
-      setMessage({ text: "Veuillez entrer un montant valide (> 0 DT)", type: "error" });
-      return;
-    }
-    if (spendThreshold === null || pointsEarned === null) {
-      setMessage({ text: "Impossible de charger les règles du programme de fidélité", type: "error" });
-      return;
-    }
-    const starsToAdd = computeStars(addAmountNum);
-    if (starsToAdd <= 0) {
-      setMessage({ text: `Montant inférieur au palier minimum de ${spendThreshold} DT`, type: "error" });
-      return;
-    }
-
-    setLoadingAdd(true);
-    setMessage(null);
-    try {
-      const res = await fetch("/api/customer/add-points", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ customerId: customer.id, amount: addAmountNum }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setPoints(data.newPoints);
-        setMessage({ text: `+${data.pointsAdded ?? starsToAdd} pts pour ${addAmountNum} DT — Solde : ${data.newPoints}`, type: "success" });
-        setAddAmount("");
-      } else {
-        setMessage({ text: data.error || "Erreur", type: "error" });
-      }
-    } catch {
-      setMessage({ text: "Erreur de connexion", type: "error" });
-    } finally {
-      setLoadingAdd(false);
-    }
-  };
-
-  const handleRedeemPoints = async () => {
-    const val = parseInt(redeemAmount);
-    if (isNaN(val) || val <= 0) {
-      setMessage({ text: "Nombre de points invalide", type: "error" });
-      return;
-    }
-    if (val > points) {
-      setMessage({ text: "Points insuffisants", type: "error" });
-      return;
-    }
-    setLoadingRedeem(true);
-    setMessage(null);
-    try {
-      const res = await fetch("/api/customer/deduct-points", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ customerId: customer.id, pointsToDeduct: val }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setPoints(data.newPoints);
-        setMessage({ text: `-${data.deducted} pts — Solde : ${data.newPoints}`, type: "success" });
-        setRedeemAmount("");
-      } else {
-        setMessage({ text: data.error || "Erreur", type: "error" });
-      }
-    } catch {
-      setMessage({ text: "Erreur de connexion", type: "error" });
-    } finally {
-      setLoadingRedeem(false);
-    }
-  };
 
   const handleRedeemReward = async (rewardId: string, pointsRequired: number) => {
     if (points < pointsRequired) {
@@ -534,89 +535,6 @@ function CustomerPopup({
           </div>
         )}
 
-        {/* Ajouter des points — same function as AddPointsModal */}
-        <div className="cp-section" style={{ animationDelay: "0.05s" }}>
-          <div className="cp-section-header">
-            <span className="cp-section-icon cp-icon-orange">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fe5502" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10" />
-                <line x1="12" y1="8" x2="12" y2="16" />
-                <line x1="8" y1="12" x2="16" y2="12" />
-              </svg>
-            </span>
-            <h3>Ajouter des points</h3>
-          </div>
-
-          {!loadingRules && spendThreshold !== null && pointsEarned !== null && (
-            <div className="cp-rule-banner">
-              <strong>Règle active :</strong> {spendThreshold} DT dépensé → {pointsEarned} point(s) gagné(s)
-            </div>
-          )}
-
-          <input
-            type="number"
-            step="0.01"
-            min="0"
-            placeholder="Montant de l'addition (DT)"
-            value={addAmount}
-            onChange={(e) => setAddAmount(e.target.value)}
-            disabled={loadingAdd}
-            className="cp-input cp-input-full"
-          />
-
-          {previewStars !== null && (
-            <div className={`cp-preview ${previewStars > 0 ? "ok" : "warn"}`}>
-              🪙{" "}
-              {previewStars > 0
-                ? `= ${previewStars} point(s) seront ajoutés`
-                : `Montant insuffisant (palier min. : ${spendThreshold} DT)`}
-            </div>
-          )}
-
-          <button onClick={handleAddPoints} disabled={loadingAdd || loadingRules} className="cp-submit-btn">
-            {loadingAdd ? (
-              "Envoi en cours…"
-            ) : loadingRules ? (
-              "Chargement des règles…"
-            ) : (
-              <>
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-                </svg>
-                Valider et Envoyer
-              </>
-            )}
-          </button>
-        </div>
-
-        {/* Utiliser des points */}
-        <div className="cp-section" style={{ animationDelay: "0.1s" }}>
-          <div className="cp-section-header">
-            <span className="cp-section-icon cp-icon-red">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10" />
-                <line x1="8" y1="12" x2="16" y2="12" />
-              </svg>
-            </span>
-            <h3>Utiliser des points</h3>
-          </div>
-          <div className="cp-row">
-            <input
-              type="number"
-              step="10"
-              min="0"
-              placeholder="Points à déduire"
-              value={redeemAmount}
-              onChange={(e) => setRedeemAmount(e.target.value)}
-              disabled={loadingRedeem}
-              className="cp-input"
-            />
-            <button onClick={handleRedeemPoints} disabled={loadingRedeem} className="cp-btn cp-btn-red">
-              {loadingRedeem ? "…" : "Déduire"}
-            </button>
-          </div>
-        </div>
-
         {/* Récompenses disponibles */}
         {rewards.length > 0 && (
           <div className="cp-section" style={{ animationDelay: "0.15s" }}>
@@ -633,34 +551,38 @@ function CustomerPopup({
               <h3>Récompenses disponibles</h3>
             </div>
             <div className="cp-rewards">
-              {rewards.map((reward) => {
-                const isAvailable = points >= reward.pointsRequired;
-                return (
-                  <div key={reward.id} className={`cp-reward ${isAvailable ? "available" : "locked"}`}>
-                    <div>
-                      <p className="cp-reward-name">{reward.name}</p>
-                      <p className="cp-reward-points">{reward.pointsRequired} points</p>
-                      {reward.description && <p className="cp-reward-desc">{reward.description}</p>}
+              {[...rewards]
+                .sort((a, b) => a.pointsRequired - b.pointsRequired)
+                .map((reward) => {
+                  const isAvailable = points >= reward.pointsRequired;
+                  const missing = reward.pointsRequired - points;
+                  return (
+                    <div key={reward.id} className={`cp-reward ${isAvailable ? "available" : "locked"}`}>
+                      <div>
+                        <p className="cp-reward-name">{reward.name}</p>
+                        <p className="cp-reward-points">{reward.pointsRequired} points</p>
+                        {!isAvailable && <p className="cp-reward-desc">🔒 Il manque {missing} point(s)</p>}
+                        {isAvailable && reward.description && <p className="cp-reward-desc">{reward.description}</p>}
+                      </div>
+                      {isAvailable ? (
+                        <button
+                          className="cp-btn cp-btn-green"
+                          onClick={() => handleRedeemReward(reward.id, reward.pointsRequired)}
+                          disabled={loadingReward === reward.id}
+                        >
+                          {loadingReward === reward.id ? "…" : "Échanger"}
+                        </button>
+                      ) : (
+                        <span className="cp-lock" aria-label="Verrouillée">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                          </svg>
+                        </span>
+                      )}
                     </div>
-                    {isAvailable ? (
-                      <button
-                        className="cp-btn cp-btn-green"
-                        onClick={() => handleRedeemReward(reward.id, reward.pointsRequired)}
-                        disabled={loadingReward === reward.id}
-                      >
-                        {loadingReward === reward.id ? "…" : "Échanger"}
-                      </button>
-                    ) : (
-                      <span className="cp-lock">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                          <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                        </svg>
-                      </span>
-                    )}
-                  </div>
-                );
-              })}
+                  );
+                })}
             </div>
           </div>
         )}

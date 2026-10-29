@@ -323,7 +323,7 @@ export default function LoyaltyProgramPage() {
       </p>
 
       {/* How it works */}
-      <div className="bg-[#0d1f3c] rounded-xl shadow p-6 mb-8 border border-[#1e3a5f]">
+      <div className="bg-white/[0.04] rounded-xl shadow p-6 mb-8 border border-white/10">
         <h2 className="text-xl font-semibold text-white mb-4">Comment ça marche</h2>
         <div className="flex items-center space-x-4 text-sm text-gray-400">
           <div className="flex-1 text-center">
@@ -350,7 +350,7 @@ export default function LoyaltyProgramPage() {
       </div>
 
       {/* Conversion rules */}
-      <div className="bg-[#0d1f3c] rounded-xl shadow p-6 mb-8 border border-[#1e3a5f]">
+      <div className="bg-white/[0.04] rounded-xl shadow p-6 mb-8 border border-white/10">
         <h2 className="text-xl font-semibold text-white mb-4">Récompensez les clients avec des points</h2>
         <form onSubmit={handleUpdateProgram} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -363,7 +363,7 @@ export default function LoyaltyProgramPage() {
                 step="0.01"
                 value={spendThreshold}
                 onChange={(e) => setSpendThreshold(parseFloat(e.target.value))}
-                className="w-full px-3 py-2 border border-[#1e3a5f] rounded-md focus:ring-[#fe5502] focus:border-[#fe5502] bg-[#0a1628] text-white"
+                className="w-full px-3 py-2 border border-white/10 rounded-md focus:ring-[#fe5502] focus:border-[#fe5502] bg-black/20 text-white"
                 required
               />
               <p className="text-xs text-gray-500 mt-1">Montant minimum d'achat pour gagner des points</p>
@@ -376,13 +376,13 @@ export default function LoyaltyProgramPage() {
                 type="number"
                 value={pointsEarned}
                 onChange={(e) => setPointsEarned(parseInt(e.target.value))}
-                className="w-full px-3 py-2 border border-[#1e3a5f] rounded-md focus:ring-[#fe5502] focus:border-[#fe5502] bg-[#0a1628] text-white"
+                className="w-full px-3 py-2 border border-white/10 rounded-md focus:ring-[#fe5502] focus:border-[#fe5502] bg-black/20 text-white"
                 required
               />
               <p className="text-xs text-gray-500 mt-1">Points attribués à chaque palier atteint</p>
             </div>
           </div>
-          <div className="bg-[#0a1628] p-4 rounded-md border border-[#1e3a5f]">
+          <div className="bg-black/20 p-4 rounded-md border border-white/10">
             <p className="text-sm text-gray-300">
               <strong>Règle actuelle :</strong> Pour chaque {spendThreshold} DT dépensé → {pointsEarned} point(s) gagné(s)
             </p>
