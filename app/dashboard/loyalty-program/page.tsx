@@ -323,104 +323,31 @@ export default function LoyaltyProgramPage() {
       </p>
 
       {/* How it works */}
-<div className="bg-[#0d1f3c] rounded-xl shadow p-6 mb-8 border border-[#1e3a5f]">
-    <h2 className="text-xl font-semibold text-white mb-4">Comment ça marche</h2>
-    <div className="flex items-center space-x-4 text-sm text-gray-400">
-        <div className="flex-1 text-center">
+      <div className="bg-[#0d1f3c] rounded-xl shadow p-6 mb-8 border border-[#1e3a5f]">
+        <h2 className="text-xl font-semibold text-white mb-4">Comment ça marche</h2>
+        <div className="flex items-center space-x-4 text-sm text-gray-400">
+          <div className="flex-1 text-center">
             <div className="w-12 h-12 bg-[#ffd9b9] rounded-full flex items-center justify-center mx-auto mb-2">
-                <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="22"
-                    height="22"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="#fe5502"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    aria-hidden="true"
-                >
-                    <path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1" />
-                    <path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4" />
-                </svg>
+              <span className="text-[#fe5502] text-xl">💰</span>
             </div>
             <p>Le client paie</p>
-        </div>
-        <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="#fe5502"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="shrink-0"
-            aria-hidden="true"
-        >
-            <path d="M5 12h14" />
-            <path d="m12 5 7 7-7 7" />
-        </svg>
-        <div className="flex-1 text-center">
+          </div>
+          <div className="text-2xl text-[#fe5502]">→</div>
+          <div className="flex-1 text-center">
             <div className="w-12 h-12 bg-[#ffd9b9] rounded-full flex items-center justify-center mx-auto mb-2">
-                <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="22"
-                    height="22"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="#fe5502"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    aria-hidden="true"
-                >
-                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                </svg>
+              <span className="text-[#fe5502] text-xl">⭐</span>
             </div>
             <p>Points gagnés automatiquement</p>
-        </div>
-        <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="#fe5502"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="shrink-0"
-            aria-hidden="true"
-        >
-            <path d="M5 12h14" />
-            <path d="m12 5 7 7-7 7" />
-        </svg>
-        <div className="flex-1 text-center">
+          </div>
+          <div className="text-2xl text-[#fe5502]">→</div>
+          <div className="flex-1 text-center">
             <div className="w-12 h-12 bg-[#ffd9b9] rounded-full flex items-center justify-center mx-auto mb-2">
-                <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="22"
-                    height="22"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="#fe5502"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    aria-hidden="true"
-                >
-                    <rect x="3" y="8" width="18" height="4" rx="1" />
-                    <path d="M12 8v13" />
-                    <path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7" />
-                    <path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5" />
-                </svg>
+              <span className="text-[#fe5502] text-xl">🎁</span>
             </div>
             <p>Échange contre des récompenses</p>
+          </div>
         </div>
-    </div>
-</div>
+      </div>
 
       {/* Conversion rules */}
       <div className="bg-[#0d1f3c] rounded-xl shadow p-6 mb-8 border border-[#1e3a5f]">
@@ -457,7 +384,7 @@ export default function LoyaltyProgramPage() {
           </div>
           <div className="bg-[#0a1628] p-4 rounded-md border border-[#1e3a5f]">
             <p className="text-sm text-gray-300">
-              <strong>Règle actuelle :</strong> Pour chaque {spendThreshold} DT dépensé → {pointsEarned} star(s) gagnés
+              <strong>Règle actuelle :</strong> Pour chaque {spendThreshold} DT dépensé → {pointsEarned} point(s) gagné(s)
             </p>
           </div>
           <div className="flex justify-end">

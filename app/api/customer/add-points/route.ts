@@ -46,8 +46,18 @@ export async function POST(request: NextRequest) {
       where: { restaurantId: session.user.restaurantId },
     });
     const spendThreshold = loyaltyRule?.spendThreshold ?? 1;
-    const pointsEarned   = loyaltyRule?.pointsEarned   ?? 10;
-    const pointsToAdd    = Math.floor((amount / spendThreshold) * pointsEarned);
+    const pointsPerTier  = loyaltyRule?.pointsEarned   ?? 10;
+    // "Points attribués à chaque palier atteint": one reward per full tier.
+    // (+1e-9 avoids float errors such as 0.3 / 0.1 = 2.9999999)
+    const tiers = spendThreshold > 0 ? Math.floor(amount / spendThreshold + 1e-9) : 0;
+    const pointsToAdd = tiers * pointsPerTier;
+
+    if (pointsToAdd <= 0) {
+      return NextResponse.json(
+        { error: `Montant inférieur au palier minimum de ${spendThreshold} DT. Aucun point attribué.` },
+        { status: 400 }
+      );
+    }
 
     // 5. Update points + record visit
     const [updatedCustomer] = await prisma.$transaction([
