@@ -33,7 +33,7 @@ export default async function DashboardLayout({
   return (
     <div className="min-h-screen bg-[#2e283d] flex">
       <DashboardNav />
-      <main className="flex-1 overflow-auto p-6">
+      <main className="flex-1 min-w-0 overflow-x-clip p-6">
         <div className="max-w-7xl mx-auto">
           {children}
         </div>

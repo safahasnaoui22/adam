@@ -255,160 +255,57 @@ interface ThemeSelectorProps {
   spendThreshold?: number;
   pointsEarned?: number;
   bonuses?: { id: "googleMaps" | "facebook" | "instagram" | "twitter"; stars: number }[];
+  /** set to false when the phone is rendered elsewhere on the page */
+  showPreview?: boolean;
 }
 
-export default function ThemeSelector({
-  theme: initialTheme,
+const DEFAULT_PREVIEW_COLORS = {
+  primary: "rgb(162, 148, 249)",
+  background: "rgb(245, 239, 255)",
+  text: "rgb(100, 80, 200)",
+  accent: "rgb(205, 193, 255)",
+  secondary: "rgb(124, 106, 240)",
+  cardBackground: "rgb(251, 248, 255)",
+};
+
+interface ThemePhonePreviewProps {
+  theme: any;
+  pattern: string;
+  restaurantName: string;
+  restaurantLogo?: string | null;
+  rewards?: PreviewReward[];
+  spendThreshold?: number;
+  pointsEarned?: number;
+  bonuses?: { id: "googleMaps" | "facebook" | "instagram" | "twitter"; stars: number }[];
+  /** keep the phone in view while the page scrolls (default true) */
+  sticky?: boolean;
+}
+
+/** The phone showing the real client dashboard (same markup as before, now reusable). */
+export function ThemePhonePreview({
+  theme,
   pattern,
   restaurantName,
   restaurantLogo,
-  onThemeChange,
-  onPatternChange,
   rewards,
   spendThreshold,
   pointsEarned,
   bonuses,
-}: ThemeSelectorProps) {
-  const [selectedTheme, setSelectedTheme] = useState(initialTheme || themes[0]);
-  const [selectedPattern, setSelectedPattern] = useState(pattern || "none");
+  sticky = true,
+}: ThemePhonePreviewProps) {
   const [phoneScrolled, setPhoneScrolled] = useState(false);
-
-  useEffect(() => {
-    if (initialTheme) setSelectedTheme(initialTheme);
-  }, [initialTheme]);
-
-  useEffect(() => {
-    setSelectedPattern(pattern);
-  }, [pattern]);
-
-  const handleThemeChange = (t: any) => {
-    setSelectedTheme(t);
-    onThemeChange(t);
-  };
-
-  const handlePatternChange = (p: string) => {
-    setSelectedPattern(p);
-    onPatternChange(p);
-  };
-
-  const defaultColors = {
-    primary: "rgb(162, 148, 249)",
-    background: "rgb(245, 239, 255)",
-    text: "rgb(100, 80, 200)",
-    accent: "rgb(205, 193, 255)",
-    secondary: "rgb(124, 106, 240)",
-    cardBackground: "rgb(251, 248, 255)",
-  };
-
-  const safeTheme = selectedTheme && typeof selectedTheme === "object" ? selectedTheme : {};
+  const safeTheme = theme && typeof theme === "object" ? theme : {};
   const colors =
     safeTheme.colors && typeof safeTheme.colors === "object"
       ? safeTheme.colors
-      : defaultColors;
-
+      : DEFAULT_PREVIEW_COLORS;
   const currentPattern =
-    patternEntries.find((p) => p.id === selectedPattern) || patternEntries[0];
-
-  // Same colour keys the real client dashboard reads (theme.colors.*)
+    patternEntries.find((p) => p.id === (pattern || "none")) || patternEntries[0];
   const previewColors: Record<string, string | undefined> = colors;
   const statusColor = colors.text || "#1f2937";
 
-  const getPatternPreviewStyle = (p: (typeof patternEntries)[0]) => {
-    if (p.id === "none") {
-      return { backgroundColor: "#e5e7eb" };
-    }
-    return {
-      ...p.style,
-      backgroundColor: colors.background,
-      width: "100%",
-      height: "60px",
-      borderRadius: "0.5rem",
-      marginBottom: "0.5rem",
-    };
-  };
-
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-      {/* Left: Controls */}
-      <div className="space-y-8">
-        <div>
-          <h3 className="text-lg font-semibold mb-4 text-white">🎨 Thème de couleur</h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {themes.map((t) => (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => handleThemeChange(t)}
-                className={`p-3 rounded-xl border-2 transition-all ${
-                  selectedTheme.id === t.id
-                    ? "shadow-md ring-2"
-                    : "border-gray-200 hover:border-gray-300"
-                }`}
-                style={{
-                  backgroundColor: t.colors.background,
-                  borderColor:
-                    selectedTheme.id === t.id ? t.colors.primary : undefined,
-                  // @ts-ignore
-                  "--tw-ring-color": selectedTheme.id === t.id ? t.colors.primary + "80" : undefined,
-                }}
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <div
-                    className="w-6 h-6 rounded-full"
-                    style={{ backgroundColor: t.colors.primary }}
-                  />
-                  <div
-                    className="w-6 h-6 rounded-full"
-                    style={{ backgroundColor: t.colors.secondary }}
-                  />
-                  <div
-                    className="w-6 h-6 rounded-full"
-                    style={{ backgroundColor: t.colors.accent }}
-                  />
-                </div>
-                <span className="text-sm font-medium" style={{ color: t.colors.text }}>
-                  {t.name}
-                </span>
-              </button>
-            ))}
-          </div>
-        </div>
-{/*
-        <div>
-          <h3 className="text-lg font-semibold mb-4 text-white">🖼️ Motif d'arrière‑plan</h3>
-          <div className="grid grid-cols-3 gap-3">
-            {patternEntries.map((p) => (
-              <button
-                key={p.id}
-                type="button"
-                onClick={() => handlePatternChange(p.id)}
-                className={`p-2 rounded-lg border-2 transition ${
-                  selectedPattern === p.id
-                    ? "bg-white/10"
-                    : "border-gray-200 hover:border-gray-300"
-                }`}
-                style={{
-                  borderColor:
-                    selectedPattern === p.id ? colors.primary : undefined,
-                }}
-              >
-                <div
-                  className="h-12 rounded-md mb-1 overflow-hidden"
-                  style={getPatternPreviewStyle(p)}
-                />
-                <span className="text-xs text-gray-600">{p.name}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-
-
-        */}
-      </div>
-
-      {/* Right: realistic phone showing the real client dashboard */}
-      <div className="sticky top-8">
+      <div className={sticky ? "sticky top-8" : ""}>
         <h3 className="text-lg font-semibold mb-4 text-white">📱 Aperçu (carte client)</h3>
 
         <style>{`.bonoo-phone-scroll{scrollbar-width:none;-ms-overflow-style:none}.bonoo-phone-scroll::-webkit-scrollbar{display:none}`}</style>
@@ -576,6 +473,173 @@ export default function ThemeSelector({
           Aperçu fidèle de la carte client (faites défiler dans le téléphone). Le logo, le nom, les récompenses, les couleurs et le motif viennent de votre commerce.
         </p>
       </div>
+  );
+}
+
+export default function ThemeSelector({
+  theme: initialTheme,
+  pattern,
+  restaurantName,
+  restaurantLogo,
+  onThemeChange,
+  onPatternChange,
+  rewards,
+  spendThreshold,
+  pointsEarned,
+  bonuses,
+  showPreview = true,
+}: ThemeSelectorProps) {
+  const [selectedTheme, setSelectedTheme] = useState(initialTheme || themes[0]);
+  const [selectedPattern, setSelectedPattern] = useState(pattern || "none");
+  const [phoneScrolled, setPhoneScrolled] = useState(false);
+
+  useEffect(() => {
+    if (initialTheme) setSelectedTheme(initialTheme);
+  }, [initialTheme]);
+
+  useEffect(() => {
+    setSelectedPattern(pattern);
+  }, [pattern]);
+
+  const handleThemeChange = (t: any) => {
+    setSelectedTheme(t);
+    onThemeChange(t);
+  };
+
+  const handlePatternChange = (p: string) => {
+    setSelectedPattern(p);
+    onPatternChange(p);
+  };
+
+  const defaultColors = {
+    primary: "rgb(162, 148, 249)",
+    background: "rgb(245, 239, 255)",
+    text: "rgb(100, 80, 200)",
+    accent: "rgb(205, 193, 255)",
+    secondary: "rgb(124, 106, 240)",
+    cardBackground: "rgb(251, 248, 255)",
+  };
+
+  const safeTheme = selectedTheme && typeof selectedTheme === "object" ? selectedTheme : {};
+  const colors =
+    safeTheme.colors && typeof safeTheme.colors === "object"
+      ? safeTheme.colors
+      : defaultColors;
+
+  const currentPattern =
+    patternEntries.find((p) => p.id === selectedPattern) || patternEntries[0];
+
+  // Same colour keys the real client dashboard reads (theme.colors.*)
+  const previewColors: Record<string, string | undefined> = colors;
+  const statusColor = colors.text || "#1f2937";
+
+  const getPatternPreviewStyle = (p: (typeof patternEntries)[0]) => {
+    if (p.id === "none") {
+      return { backgroundColor: "#e5e7eb" };
+    }
+    return {
+      ...p.style,
+      backgroundColor: colors.background,
+      width: "100%",
+      height: "60px",
+      borderRadius: "0.5rem",
+      marginBottom: "0.5rem",
+    };
+  };
+
+  return (
+    <div className={showPreview ? "grid grid-cols-1 lg:grid-cols-2 gap-8" : ""}>
+      {/* Left: Controls */}
+      <div className="space-y-8">
+        <div>
+          <h3 className="text-lg font-semibold mb-4 text-white">🎨 Thème de couleur</h3>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {themes.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => handleThemeChange(t)}
+                className={`p-3 rounded-xl border-2 transition-all ${
+                  selectedTheme.id === t.id
+                    ? "shadow-md ring-2"
+                    : "border-gray-200 hover:border-gray-300"
+                }`}
+                style={{
+                  backgroundColor: t.colors.background,
+                  borderColor:
+                    selectedTheme.id === t.id ? t.colors.primary : undefined,
+                  // @ts-ignore
+                  "--tw-ring-color": selectedTheme.id === t.id ? t.colors.primary + "80" : undefined,
+                }}
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <div
+                    className="w-6 h-6 rounded-full"
+                    style={{ backgroundColor: t.colors.primary }}
+                  />
+                  <div
+                    className="w-6 h-6 rounded-full"
+                    style={{ backgroundColor: t.colors.secondary }}
+                  />
+                  <div
+                    className="w-6 h-6 rounded-full"
+                    style={{ backgroundColor: t.colors.accent }}
+                  />
+                </div>
+                <span className="text-sm font-medium" style={{ color: t.colors.text }}>
+                  {t.name}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+{/*
+        <div>
+          <h3 className="text-lg font-semibold mb-4 text-white">🖼️ Motif d'arrière‑plan</h3>
+          <div className="grid grid-cols-3 gap-3">
+            {patternEntries.map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => handlePatternChange(p.id)}
+                className={`p-2 rounded-lg border-2 transition ${
+                  selectedPattern === p.id
+                    ? "bg-white/10"
+                    : "border-gray-200 hover:border-gray-300"
+                }`}
+                style={{
+                  borderColor:
+                    selectedPattern === p.id ? colors.primary : undefined,
+                }}
+              >
+                <div
+                  className="h-12 rounded-md mb-1 overflow-hidden"
+                  style={getPatternPreviewStyle(p)}
+                />
+                <span className="text-xs text-gray-600">{p.name}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+
+
+        */}
+      </div>
+
+      {/* Right: realistic phone showing the real client dashboard */}
+      {showPreview && (
+        <ThemePhonePreview
+          theme={selectedTheme}
+          pattern={selectedPattern}
+          restaurantName={restaurantName}
+          restaurantLogo={restaurantLogo}
+          rewards={rewards}
+          spendThreshold={spendThreshold}
+          pointsEarned={pointsEarned}
+          bonuses={bonuses}
+        />
+      )}
     </div>
   );
 }

@@ -27,9 +27,9 @@ export default function SocialMedia({ value, onChange }: SocialMediaProps) {
   ];
 
   return (
-    <div className="bg-gradient-to-br from-[#0d1f3c] to-[#0a1628] rounded-2xl shadow-2xl border border-[#1e3a5f]/40 p-6 md:p-8 transition-all duration-300">
+    <div className="bg-gradient-to-br from-[#3b3350] to-[#2f2843] rounded-2xl shadow-2xl border border-[#4a3f60]/40 p-6 md:p-8 transition-all duration-300">
       {/* Header */}
-      <div className="flex items-center gap-3 pb-4 mb-6 border-b border-[#1e3a5f]/60">
+      <div className="flex items-center gap-3 pb-4 mb-6 border-b border-[#4a3f60]/60">
         <div className="p-2 bg-[#fe5502]/10 rounded-lg">
           <svg className="w-6 h-6 text-[#fe5502]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 7.5l-9-5.25L3 7.5m9 5.25L21 7.5M12 21v-8.25M21 7.5v9m-18-9v9m18 0l-9 5.25-9-5.25" />
@@ -46,7 +46,7 @@ export default function SocialMedia({ value, onChange }: SocialMediaProps) {
         {platforms.map((platform) => (
           <div
             key={platform.id}
-            className={`bg-gradient-to-r ${platform.gradient} rounded-xl border border-[#1e3a5f] p-5 transition-all duration-200 hover:border-[#fe5502]/30 hover:shadow-lg`}
+            className={`bg-gradient-to-r ${platform.gradient} rounded-xl border border-[#4a3f60] p-5 transition-all duration-200 hover:border-[#fe5502]/30 hover:shadow-lg`}
           >
             <div className="flex items-center gap-3 mb-4">
               <span className="text-2xl">{platform.icon}</span>
@@ -61,7 +61,7 @@ export default function SocialMedia({ value, onChange }: SocialMediaProps) {
                 value={social[platform.id] || ""}
                 onChange={(e) => updateField(platform.id, e.target.value)}
                 placeholder={platform.placeholder}
-                className="w-full pl-8 pr-4 py-2.5 bg-[#0a1628] border border-[#1e3a5f] rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#fe5502]/50 focus:border-[#fe5502] transition-all duration-200"
+                className="w-full pl-8 pr-4 py-2.5 bg-[#2f2843] border border-[#4a3f60] rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#fe5502]/50 focus:border-[#fe5502] transition-all duration-200"
               />
             </div>
             <p className="text-xs text-gray-500 mt-2">

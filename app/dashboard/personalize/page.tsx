@@ -8,7 +8,7 @@ import SocialMedia from "@/components/SocialMedia";
 import TermsConditions from "@/components/TermsConditions";
 import RevenueSettings from "@/components/RevenueSettings";
 import BrandIdentity from "@/components/BrandIdentity";
-import ThemeSelector from "@/components/ThemeSelector";
+import ThemeSelector, { ThemePhonePreview } from "@/components/ThemeSelector";
 
 // ── Professional SVG icon components ─────────────────────────────────
 
@@ -113,42 +113,6 @@ const IconGenerate = ({ size = 14, color = "currentColor" }: { size?: number; co
   </svg>
 );
 
-// ── Tab definitions ───────────────────────────────────────────────────
-const TABS = [
-  { id: "business", label: "Contact & Business", icon: <IconBuilding size={15}/> },
-  { id: "hours",    label: "Horaires",            icon: (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
-    </svg>
-  )},
-  { id: "social",   label: "Réseaux sociaux",     icon: (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
-      <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
-    </svg>
-  )},
-  { id: "legal",    label: "Conditions",          icon: (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/>
-      <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
-    </svg>
-  )},
-  { id: "revenue",  label: "Revenus",             icon: (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
-    </svg>
-  )},
-  { id: "brand",    label: "Brand & Identity",    icon: (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-    </svg>
-  )},
-  { id: "theme",    label: "Thème",               icon: (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/>
-    </svg>
-  )},
-];
 
 // ── Social platform config ─────────────────────────────────────────────
 const SOCIAL_PLATFORMS = [
@@ -213,7 +177,6 @@ export default function PersonalizePage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState("business");
   const [restaurant, setRestaurant] = useState<any>(null);
 
   const [formData, setFormData] = useState<FormData>({
@@ -328,41 +291,21 @@ export default function PersonalizePage() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto py-8 px-4">
+    <div className="max-w-7xl mx-auto py-8 px-4">
       <h1 className="text-3xl font-bold text-white mb-1">Personnalisez votre carte</h1>
       <p className="text-gray-400 text-sm mb-8">
         Rendez votre carte de fidélité unique. Ces paramètres aident les clients à reconnaître votre commerce.
       </p>
 
-      {/* ── Tabs ── */}
-      <div className="flex flex-wrap gap-2 mb-8">
-        {TABS.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`
-              flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200
-              ${activeTab === tab.id
-                ? "bg-[#fe5502] text-white shadow-md shadow-orange-500/20"
-                : "bg-[#0a1628] text-gray-400 hover:text-white hover:bg-[#1e3a5f] border border-[#1e3a5f]"
-              }
-            `}
-          >
-            <span className={activeTab === tab.id ? "text-white" : "text-gray-500"}>
-              {tab.icon}
-            </span>
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit}>
+        <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_400px] gap-8 items-start">
+        <div className="space-y-6 min-w-0">
 
         {/* ── Business Tab ── */}
-        {activeTab === "business" && (
-          <div className="bg-[#0d1f3c] rounded-2xl border border-[#1e3a5f]/50 p-6 md:p-8">
+        {(
+          <div className="bg-[#3b3350] rounded-2xl border border-[#4a3f60]/50 p-6 md:p-8">
             {/* Section header */}
-            <div className="flex items-center gap-3 mb-6 pb-5 border-b border-[#1e3a5f]/50">
+            <div className="flex items-center gap-3 mb-6 pb-5 border-b border-[#4a3f60]/50">
               <div className="w-9 h-9 rounded-lg bg-[#fe5502]/10 flex items-center justify-center text-[#fe5502]">
                 <IconBuilding size={18} color="#fe5502"/>
               </div>
@@ -384,7 +327,7 @@ export default function PersonalizePage() {
                     required
                     value={formData.name}
                     onChange={(e) => patch({ name: e.target.value })}
-                    className="w-full px-3.5 py-2.5 bg-[#0a1628] border border-[#1e3a5f] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#fe5502] focus:border-[#fe5502] text-white text-sm placeholder-gray-600 transition"
+                    className="w-full px-3.5 py-2.5 bg-[#2f2843] border border-[#4a3f60] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#fe5502] focus:border-[#fe5502] text-white text-sm placeholder-gray-600 transition"
                     placeholder="Ex: Café Central"
                   />
                 </div>
@@ -395,11 +338,11 @@ export default function PersonalizePage() {
                   </label>
                   <div className="flex items-start gap-4">
                     {formData.logo && (
-                      <div className="w-16 h-16 rounded-xl overflow-hidden border border-[#1e3a5f] flex-shrink-0">
+                      <div className="w-16 h-16 rounded-xl overflow-hidden border border-[#4a3f60] flex-shrink-0">
                         <Image src={formData.logo} alt="Logo" width={64} height={64} className="object-cover w-full h-full"/>
                       </div>
                     )}
-                    <div className="flex-1 border border-dashed border-[#1e3a5f] rounded-lg p-4 text-center hover:border-[#fe5502]/50 transition cursor-pointer bg-[#0a1628]/50">
+                    <div className="flex-1 border border-dashed border-[#4a3f60] rounded-lg p-4 text-center hover:border-[#fe5502]/50 transition cursor-pointer bg-[#2f2843]/50">
                       <input type="file" accept="image/*" className="hidden" id="logo-upload"
                         onChange={async (e) => {
                           const file = e.target.files?.[0];
@@ -427,7 +370,7 @@ export default function PersonalizePage() {
                     value={formData.description}
                     onChange={(e) => patch({ description: e.target.value })}
                     placeholder="Présentez votre commerce à vos clients..."
-                    className="w-full px-3.5 py-2.5 bg-[#0a1628] border border-[#1e3a5f] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#fe5502] focus:border-[#fe5502] text-white text-sm placeholder-gray-600 transition resize-none"
+                    className="w-full px-3.5 py-2.5 bg-[#2f2843] border border-[#4a3f60] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#fe5502] focus:border-[#fe5502] text-white text-sm placeholder-gray-600 transition resize-none"
                   />
                 </div>
               </div>
@@ -461,7 +404,7 @@ export default function PersonalizePage() {
                         value={formData[field.key] as string}
                         onChange={(e) => patch({ [field.key]: e.target.value } as any)}
                         placeholder={field.placeholder}
-                        className="w-full pl-9 pr-3.5 py-2.5 bg-[#0a1628] border border-[#1e3a5f] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#fe5502] focus:border-[#fe5502] text-white text-sm placeholder-gray-600 transition"
+                        className="w-full pl-9 pr-3.5 py-2.5 bg-[#2f2843] border border-[#4a3f60] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#fe5502] focus:border-[#fe5502] text-white text-sm placeholder-gray-600 transition"
                       />
                     </div>
                   </div>
@@ -471,7 +414,7 @@ export default function PersonalizePage() {
 
             {/* ── Bonus clients ── */}
             {/* ── Bonus clients ── */}
-<div className="border-t border-[#1e3a5f]/50 pt-6 mt-6">
+<div className="border-t border-[#4a3f60]/50 pt-6 mt-6">
   <div className="flex items-center gap-3 mb-5">
     <div className="w-9 h-9 rounded-lg bg-[#fe5502]/10 flex items-center justify-center text-[#fe5502]">
       <IconGift size={18} color="#fe5502"/>
@@ -488,12 +431,12 @@ export default function PersonalizePage() {
   </div>
 
   {/* Google Maps row */}
-  <div className="mb-4 p-4 bg-[#0a1628] rounded-xl border border-[#1e3a5f] hover:border-[#1e3a5f]/80 transition">
+  <div className="mb-4 p-4 bg-[#2f2843] rounded-xl border border-[#4a3f60] hover:border-[#4a3f60]/80 transition">
     <div className="flex items-center justify-between mb-3">
       <div className="flex items-center gap-2.5">
         <IconGoogleMaps size={20}/>
         <span className="text-sm font-medium text-white">Google Maps</span>
-        <span className="text-[10px] text-gray-500 bg-[#1e3a5f]/60 px-2 py-0.5 rounded">Avis + suivi</span>
+        <span className="text-[10px] text-gray-500 bg-[#4a3f60]/60 px-2 py-0.5 rounded">Avis + suivi</span>
       </div>
       <div className="flex items-center gap-2">
         <IconStar size={13} color="#fe5502"/>
@@ -501,7 +444,7 @@ export default function PersonalizePage() {
           type="number"
           value={formData.googleMapsBonusStars}
           onChange={(e) => patch({ googleMapsBonusStars: parseInt(e.target.value) || 0 })}
-          className="w-16 px-2 py-1 bg-[#1e3a5f]/50 border border-[#1e3a5f] rounded-md text-white text-sm text-center focus:outline-none focus:ring-1 focus:ring-[#fe5502]"
+          className="w-16 px-2 py-1 bg-[#4a3f60]/50 border border-[#4a3f60] rounded-md text-white text-sm text-center focus:outline-none focus:ring-1 focus:ring-[#fe5502]"
         />
         <span className="text-xs text-gray-500">pts</span>
       </div>
@@ -511,14 +454,14 @@ export default function PersonalizePage() {
       value={formData.googleMapsUrl || ""}
       onChange={(e) => patch({ googleMapsUrl: e.target.value })}
       placeholder="https://maps.app.goo.gl/..."
-      className="w-full px-3.5 py-2 bg-[#0a1628] border border-[#1e3a5f] rounded-lg text-white text-sm placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-[#fe5502] focus:border-[#fe5502] transition"
+      className="w-full px-3.5 py-2 bg-[#2f2843] border border-[#4a3f60] rounded-lg text-white text-sm placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-[#fe5502] focus:border-[#fe5502] transition"
     />
   </div>
 
   {/* Facebook / Instagram / TikTok */}
   <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
     {SOCIAL_PLATFORMS.map((platform) => (
-      <div key={platform.key} className="p-4 bg-[#0a1628] rounded-xl border border-[#1e3a5f] hover:border-[#1e3a5f]/80 transition">
+      <div key={platform.key} className="p-4 bg-[#2f2843] rounded-xl border border-[#4a3f60] hover:border-[#4a3f60]/80 transition">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             {platform.icon}
@@ -530,7 +473,7 @@ export default function PersonalizePage() {
               type="number"
               value={formData[platform.starsKey]}
               onChange={(e) => patch({ [platform.starsKey]: parseInt(e.target.value) || 0 } as any)}
-              className="w-14 px-2 py-1 bg-[#1e3a5f]/50 border border-[#1e3a5f] rounded-md text-white text-xs text-center focus:outline-none focus:ring-1 focus:ring-[#fe5502]"
+              className="w-14 px-2 py-1 bg-[#4a3f60]/50 border border-[#4a3f60] rounded-md text-white text-xs text-center focus:outline-none focus:ring-1 focus:ring-[#fe5502]"
             />
             <span className="text-[10px] text-gray-500">pts</span>
           </div>
@@ -540,7 +483,7 @@ export default function PersonalizePage() {
           value={formData[platform.urlKey]}
           onChange={(e) => patch({ [platform.urlKey]: e.target.value } as any)}
           placeholder={platform.placeholder}
-          className="w-full px-3 py-2 bg-[#0a1628] border border-[#1e3a5f] rounded-lg text-white text-xs placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-[#fe5502] focus:border-[#fe5502] transition"
+          className="w-full px-3 py-2 bg-[#2f2843] border border-[#4a3f60] rounded-lg text-white text-xs placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-[#fe5502] focus:border-[#fe5502] transition"
         />
         <p className="text-[10px] text-gray-600 mt-1.5">{platform.hint}</p>
       </div>
@@ -551,13 +494,13 @@ export default function PersonalizePage() {
         )}
 
         {/* ── Other tabs ── */}
-        {activeTab === "hours" && (
+        {(
           <OpeningHours value={formData.openingHours} onChange={(hours) => patch({ openingHours: hours })}/>
         )}
-        {activeTab === "social" && (
+        {(
           <SocialMedia value={formData.socialMedia} onChange={(social) => patch({ socialMedia: social })}/>
         )}
-        {activeTab === "legal" && (
+        {(
           <TermsConditions
             terms={formData.termsConditions}
             howToUse={formData.howToUse}
@@ -565,10 +508,10 @@ export default function PersonalizePage() {
             onHowToUseChange={(howToUse) => patch({ howToUse })}
           />
         )}
-        {activeTab === "revenue" && (
+        {(
           <RevenueSettings value={formData.revenueSettings} onChange={(s) => patch({ revenueSettings: s })}/>
         )}
-        {activeTab === "brand" && (
+        {(
           <BrandIdentity
             appName={formData.appName}
             urlSlug={formData.urlSlug}
@@ -576,9 +519,10 @@ export default function PersonalizePage() {
             onUrlSlugChange={(urlSlug) => patch({ urlSlug })}
           />
         )}
-        {activeTab === "theme" && (
-          <div className="bg-[#0d1f3c] rounded-2xl border border-[#1e3a5f]/50 p-6">
+        {(
+          <div className="bg-[#3b3350] rounded-2xl border border-[#4a3f60]/50 p-6">
             <ThemeSelector
+              showPreview={false}
               theme={formData.theme}
               pattern={formData.backgroundPattern}
               restaurantName={formData.name}
@@ -609,7 +553,7 @@ export default function PersonalizePage() {
           <button
             type="button"
             onClick={() => router.back()}
-            className="flex items-center gap-2 px-5 py-2.5 border border-[#1e3a5f] rounded-lg text-sm text-gray-400 hover:bg-[#1e3a5f] hover:text-white transition-all"
+            className="flex items-center gap-2 px-5 py-2.5 border border-[#4a3f60] rounded-lg text-sm text-gray-400 hover:bg-[#4a3f60] hover:text-white transition-all"
           >
             <IconChevronLeft size={15} color="currentColor"/>
             Annuler
@@ -631,6 +575,34 @@ export default function PersonalizePage() {
               </>
             )}
           </button>
+        </div>
+        </div>
+
+        {/* ── Phone preview: stays in view while you scroll ── */}
+        <div className="xl:sticky xl:top-6 self-start">
+          <ThemePhonePreview
+            sticky={false}
+            theme={formData.theme}
+            pattern={formData.backgroundPattern}
+            restaurantName={formData.name}
+            restaurantLogo={formData.logo}
+            rewards={(restaurant?.loyaltyProgram?.rewards ?? [])
+              .filter((r: any) => r.isActive)
+              .map((r: any) => ({ id: r.id, name: r.name, pts: r.pointsRequired }))}
+            spendThreshold={restaurant?.loyaltyProgram?.spendThreshold ?? 1}
+            pointsEarned={restaurant?.loyaltyProgram?.pointsEarned ?? 10}
+            bonuses={(
+              [
+                { id: "googleMaps", url: formData.googleMapsUrl, stars: formData.googleMapsBonusStars },
+                { id: "facebook", url: formData.facebookUrl, stars: formData.facebookBonusStars },
+                { id: "instagram", url: formData.instagramUrl, stars: formData.instagramBonusStars },
+                { id: "twitter", url: formData.twitterUrl, stars: formData.twitterBonusStars },
+              ] as const
+            )
+              .filter((b) => b.url)
+              .map((b) => ({ id: b.id, stars: b.stars }))}
+          />
+        </div>
         </div>
       </form>
     </div>
