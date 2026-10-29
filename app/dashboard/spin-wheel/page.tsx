@@ -28,6 +28,7 @@ type GameConfig = {
   endDate: string;
   rule: "purchase" | "daily" | "custom";
   customRules: string;
+  spinsPerDay: string; // free spins per customer per day (used by the "custom" rule)
   firstFree: boolean;
   segments: Segment[];
   conditions: { installApp: boolean; notifications: boolean; phone: boolean };
@@ -70,6 +71,7 @@ const emptyGame = (): GameConfig => ({
   endDate: "",
   rule: "purchase",
   customRules: "",
+  spinsPerDay: "3",
   firstFree: true,
   segments: [
     { id: "1", type: "none", description: "", label: NO_PRIZE, points: 0, probability: 50, color: PRESET_COLORS[0], textColor: "#ffffff", stock: null },
@@ -132,6 +134,7 @@ export default function SpinWheelConfigPage() {
           endDate: g.endDate,
           rule: g.rule,
           customRules: g.customRules,
+          dailyFreeSpins: g.dailyFreeSpins,
           firstFree: g.firstFree,
           conditions: g.conditions,
           spinCount: g.spinCount ?? 0,
@@ -164,6 +167,7 @@ export default function SpinWheelConfigPage() {
       endDate: toDateInput(game.endDate),
       rule: game.rule || "purchase",
       customRules: game.customRules || "",
+      spinsPerDay: String(game.dailyFreeSpins ?? 3),
       firstFree: game.firstFree ?? true,
       conditions: { installApp: false, notifications: false, phone: true, ...(game.conditions || {}) },
       segments: (game.segments || []).map((s: any, i: number) => ({
@@ -368,6 +372,11 @@ export default function SpinWheelConfigPage() {
   const handleSave = async () => {
     if (!gameConfig.name.trim()) { setStep(1); return toast.error("Le nom du jeu est obligatoire"); }
     if (!totalOk) { setStep(2); return toast.error("Le total des probabilités doit être égal à 100%"); }
+    const spinsPerDay = parseInt(gameConfig.spinsPerDay, 10);
+    if (gameConfig.rule === "custom" && (!Number.isInteger(spinsPerDay) || spinsPerDay < 1 || spinsPerDay > 20)) {
+      setStep(1);
+      return toast.error("Le nombre de tours par jour doit être entre 1 et 20");
+    }
     setSaving(true);
     try {
       const payload: any = {
@@ -376,6 +385,8 @@ export default function SpinWheelConfigPage() {
         endDate: gameConfig.endDate,
         rule: gameConfig.rule,
         customRules: gameConfig.customRules,
+        // "daily" = 1 spin/day, "custom" = the number typed by the owner
+        ...(gameConfig.rule === "daily" ? { dailyFreeSpins: 1 } : gameConfig.rule === "custom" ? { dailyFreeSpins: spinsPerDay } : {}),
         firstFree: gameConfig.firstFree,
         conditions: gameConfig.conditions,
         segments: gameConfig.segments.map(s => ({
@@ -568,6 +579,24 @@ export default function SpinWheelConfigPage() {
                         </button>
                       ))}
                     </div>
+                    {gameConfig.rule === "custom" && (
+                      <div className="mt-4 p-4 rounded-lg bg-[#2a3550] border border-[#3b475f]">
+                        <label className="block text-sm font-medium text-gray-200 mb-1.5">Nombre de tours par jour et par client</label>
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="number" min={1} max={20} step={1} inputMode="numeric"
+                            value={gameConfig.spinsPerDay}
+                            onChange={(e) => setGameConfig({ ...gameConfig, spinsPerDay: e.target.value })}
+                            className={`${input} !w-28 text-center`}
+                          />
+                          <span className="text-sm text-gray-300">tour(s) / jour</span>
+                        </div>
+                        <p className="text-xs text-gray-400 mt-2">Chaque client peut tourner la roue ce nombre de fois par jour (entre 1 et 20). Le compteur repart à zéro chaque jour.</p>
+                      </div>
+                    )}
+                    {gameConfig.rule === "daily" && (
+                      <p className="text-xs text-gray-400 mt-3">Chaque client peut tourner la roue 1 fois par jour.</p>
+                    )}
                     <div className="flex items-center justify-between mt-4 pl-4 border-l-2 border-[#3B82F6]/60">
                       <div><p className="text-sm font-medium text-white">Premier tour gratuit</p><p className="text-xs text-gray-400">Permettre aux clients de tourner une fois avant leur premier tampon</p></div>
                       <Toggle size="md" on={gameConfig.firstFree} onClick={() => setGameConfig({ ...gameConfig, firstFree: !gameConfig.firstFree })} />
