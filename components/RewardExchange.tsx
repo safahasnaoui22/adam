@@ -287,7 +287,7 @@ fontWeight: 600,
               }}
             >
               {previewStars > 0
-                ? `= ${previewStars} étoile(s) seront ajoutées`
+                ? `= ${previewStars} point(s) seront ajoutées`
                 : `Montant insuffisant (palier min. : ${spendThreshold} DT)`}
             </span>
           </div>
