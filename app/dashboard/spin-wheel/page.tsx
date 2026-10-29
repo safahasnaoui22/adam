@@ -6,6 +6,7 @@ import {
   Plus, Trash2, X, Settings2, Gift, Check, Smartphone, Bell, Phone, Pencil,
   Calendar, ChevronRight, ChevronLeft, ChevronDown, HelpCircle, Repeat, Gauge,
   RotateCcw, BarChart3, Dices, ClipboardList, Ticket, Coins, Zap, Trophy,
+  Eye, Link2, Copy,
 } from "lucide-react";
 
 type PrizeType = "coupon" | "points" | "gift" | "none" | "free_spin";
@@ -42,7 +43,7 @@ type Stats = {
   prizes: { label: string; count: number }[];
 };
 
-const PRESET_COLORS = ["#6366F1", "#F59E0B", "#10B981", "#EF4444", "#8B5CF6", "#EC4899", "#3B82F6", "#14B8A6", "#F97316", "#84CC16"];
+const PRESET_COLORS = ["#8B5CF6", "#F59E0B", "#10B981", "#EF4444", "#8B5CF6", "#EC4899", "#8B5CF6", "#14B8A6", "#F97316", "#84CC16"];
 const NO_PRIZE = "Pas de prix";
 
 const PRIZE_TYPES: { type: PrizeType; label: string; icon: any }[] = [
@@ -93,7 +94,7 @@ function Toggle({ on, onClick, size = "md" }: { on: boolean; onClick: () => void
       role="switch"
       aria-checked={on}
       onClick={onClick}
-      className={`${w} rounded-full relative cursor-pointer transition-colors shrink-0 ${on ? (size === "md" ? "bg-green-500" : "bg-[#3B82F6]") : "bg-[#3b475f]"}`}
+      className={`${w} rounded-full relative cursor-pointer transition-colors shrink-0 ${on ? (size === "md" ? "bg-green-500" : "bg-[#8B5CF6]") : "bg-[#54496b]"}`}
     >
       <div className={`absolute ${knob} ${left} bg-white rounded-full transition-all`} />
     </div>
@@ -111,6 +112,16 @@ export default function SpinWheelConfigPage() {
   const [planOpen, setPlanOpen] = useState(false);
   const [editingSegId, setEditingSegId] = useState<string | null>(null);
   const [showHelp, setShowHelp] = useState(false);
+
+  // UI only: which game is shown in the big central panel + the public link
+  const [featuredId, setFeaturedId] = useState<string | null>(null);
+  const [slug, setSlug] = useState("");
+  useEffect(() => {
+    fetch("/api/restaurant/profile")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (d?.urlSlug) setSlug(d.urlSlug); })
+      .catch(() => {});
+  }, []);
 
   const [statsGame, setStatsGame] = useState<any | null>(null);
   const [stats, setStats] = useState<Stats | null>(null);
@@ -250,7 +261,7 @@ export default function SpinWheelConfigPage() {
     // outer dark ring
     ctx.beginPath(); ctx.arc(cx, cy, R + 8, 0, 2 * Math.PI);
     ctx.fillStyle = "#1e1b4b"; ctx.fill();
-    ctx.strokeStyle = "#312e81"; ctx.lineWidth = 2; ctx.stroke();
+    ctx.strokeStyle = "#4b3a7a"; ctx.lineWidth = 2; ctx.stroke();
 
     const total = gameConfig.segments.reduce((a, s) => a + s.probability, 0) || 100;
     let startAngle = -Math.PI / 2;
@@ -274,7 +285,7 @@ export default function SpinWheelConfigPage() {
     ctx.beginPath(); ctx.arc(cx, cy, 14, 0, 2 * Math.PI);
     ctx.fillStyle = "#ffffff"; ctx.fill();
     ctx.beginPath(); ctx.arc(cx, cy, 8, 0, 2 * Math.PI);
-    ctx.fillStyle = "#6366F1"; ctx.fill();
+    ctx.fillStyle = "#8B5CF6"; ctx.fill();
 
     // pointer
     ctx.beginPath(); ctx.moveTo(cx - 9, 4); ctx.lineTo(cx + 9, 4); ctx.lineTo(cx, 22); ctx.closePath();
@@ -411,38 +422,67 @@ export default function SpinWheelConfigPage() {
     }
   };
 
-  if (loading) return <div className="flex justify-center items-center min-h-screen bg-[#0f172a]"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#6366F1]"></div></div>;
+  if (loading) return <div className="flex justify-center items-center min-h-screen bg-transparent"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#8B5CF6]"></div></div>;
 
-  const input = "w-full bg-[#2a3550] border border-[#3b475f] rounded-lg px-4 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:border-[#3B82F6]";
-  const sectionCard = "bg-[#212b3f] border border-[#2f3b52] rounded-xl p-5";
-  const iconBox = "w-9 h-9 rounded-lg bg-[#2f3b52] text-gray-300 flex items-center justify-center shrink-0";
+  const input = "w-full bg-[#2f2843] border border-[#54496b] rounded-lg px-4 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:border-[#8B5CF6]";
+  const sectionCard = "bg-[#3b3350] border border-[#4a3f60] rounded-xl p-5";
+  const iconBox = "w-9 h-9 rounded-lg bg-[#4a3f60] text-gray-300 flex items-center justify-center shrink-0";
+
+  // ---- display helpers for the new layout (no logic change) ----
+  const featured = games.find((g) => g.id === featuredId) ?? games.find((g) => g.isActive) ?? games[0] ?? null;
+  const wheelGradient = (g: any) => {
+    const total = g.segments.reduce((a: number, b: any) => a + (b.probability || 0), 0) || 100;
+    let acc = 0;
+    return g.segments.map((sg: any) => {
+      const start = (acc / total) * 100; acc += sg.probability || 0;
+      return `${sg.color} ${start}% ${(acc / total) * 100}%`;
+    }).join(", ");
+  };
+  const wheelMids = (g: any) => {
+    const total = g.segments.reduce((a: number, b: any) => a + (b.probability || 0), 0) || 100;
+    let acc = 0;
+    return g.segments.map((sg: any) => { const mid = ((acc + (sg.probability || 0) / 2) / total) * 360; acc += sg.probability || 0; return mid; });
+  };
+  const ruleText = (g: any) =>
+    g.rule === "daily" ? "Une fois par jour"
+    : g.rule === "custom" ? `Personnalisé · ${g.dailyFreeSpins ?? 3} tour(s) / jour`
+    : "Après chaque achat";
+  const typeLabel = (sg: any) => PRIZE_TYPES.find((t) => t.type === inferType(sg))?.label ?? "";
+  const fmtDay = (d: string | null | undefined) => (d ? new Date(d).toLocaleDateString("fr-FR") : "");
+  const socialLink = slug && typeof window !== "undefined" ? `${window.location.origin}/${slug}` : "";
+  const copyLink = async () => {
+    try { await navigator.clipboard.writeText(socialLink); toast.success("Lien copié"); }
+    catch { toast.error("Impossible de copier le lien"); }
+  };
+  const cardCls = "bg-[#3b3350] border border-[#4a3f60] rounded-2xl";
+  const cardHead = "flex items-center gap-3 px-6 py-4 border-b border-[#4a3f60]";
 
   const stepItem = (n: number, label: string) => {
     const done = step > n, current = step === n;
     return (
-      <div className={`flex items-center gap-2 text-sm font-medium ${done ? "text-green-400" : current ? "text-[#3B82F6]" : "text-gray-500"}`}>
+      <div className={`flex items-center gap-2 text-sm font-medium ${done ? "text-green-400" : current ? "text-[#8B5CF6]" : "text-gray-500"}`}>
         {done
           ? <div className="w-6 h-6 rounded-full bg-green-500 text-white flex items-center justify-center"><Check size={14} strokeWidth={3} /></div>
-          : <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${current ? "bg-[#3B82F6] text-white" : "bg-[#2f3b52] text-gray-400"}`}>{n}</div>}
+          : <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${current ? "bg-[#8B5CF6] text-white" : "bg-[#4a3f60] text-gray-400"}`}>{n}</div>}
         {label}
       </div>
     );
   };
 
   return (
-    <div className="min-h-screen bg-[#0f172a] text-gray-200 p-8 font-sans">
+    <div className="min-h-screen bg-transparent text-gray-200 p-8 font-sans">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-semibold text-white">Spin &amp; Win</h1>
-          <button onClick={openNewGame} className="flex items-center gap-2 bg-[#6366F1] hover:bg-[#4F46E5] text-white px-4 py-2 rounded-lg font-medium transition-colors">
+          <button onClick={openNewGame} className="flex items-center gap-2 bg-[#8B5CF6] hover:bg-[#7C3AED] text-white px-4 py-2 rounded-lg font-medium transition-colors">
             <Plus size={18} /> Nouveau jeu
           </button>
         </div>
 
         {/* Info banner */}
-        <div className="flex items-start gap-4 rounded-xl border border-indigo-500/30 bg-gradient-to-r from-indigo-950/70 to-purple-950/60 p-5 mb-6">
-          <div className="w-11 h-11 rounded-xl bg-indigo-500/20 text-indigo-300 flex items-center justify-center shrink-0"><Dices size={22} /></div>
+        <div className="flex items-start gap-4 rounded-xl border border-violet-400/30 bg-gradient-to-r from-[#4b3a7a]/70 to-[#5a2f72]/60 p-5 mb-6">
+          <div className="w-11 h-11 rounded-xl bg-violet-400/20 text-violet-200 flex items-center justify-center shrink-0"><Dices size={22} /></div>
           <div>
             <h2 className="text-white font-semibold mb-1">Qu&apos;est-ce que Spin &amp; Win ?</h2>
             <p className="text-sm text-gray-300 leading-relaxed">
@@ -451,7 +491,141 @@ export default function SpinWheelConfigPage() {
           </div>
         </div>
 
-        {/* Games */}
+        {/* ===== Featured (active) game : details in the middle, wheel + link on the right ===== */}
+        {featured && (
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-10 items-start">
+            {/* Middle: colors, rules, rewards, conditions */}
+            <div className={`xl:col-span-2 ${cardCls} overflow-hidden`}>
+              <div className={`${cardHead} justify-between`}>
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-10 h-10 rounded-xl bg-orange-500/15 text-orange-400 flex items-center justify-center shrink-0"><Settings2 size={20} /></div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h2 className="text-lg font-semibold text-white truncate">{featured.name}</h2>
+                      <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${featured.isActive ? "bg-green-500/15 text-green-400" : "bg-gray-500/20 text-gray-300"}`}>{featured.status}</span>
+                    </div>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      {featured.segments.length} segments{featured.spinCount > 0 && <span> · {featured.spinCount} tours</span>}
+                      {(featured.startDate || featured.endDate) && <span> · {fmtDay(featured.startDate) || "…"} → {fmtDay(featured.endDate) || "…"}</span>}
+                    </p>
+                  </div>
+                </div>
+                <Toggle on={featured.isActive} onClick={() => toggleGame(featured)} />
+              </div>
+
+              <div className="p-6 space-y-6">
+                {/* Rules */}
+                <div>
+                  <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2"><Repeat size={15} className="text-violet-300" /> Règles du jeu</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="bg-[#2f2843] border border-[#4a3f60] rounded-xl px-4 py-3">
+                      <p className="text-[11px] uppercase tracking-wider text-gray-400 font-semibold mb-1">Quand peut-on tourner ?</p>
+                      <p className="text-white text-sm font-medium">{ruleText(featured)}</p>
+                    </div>
+                    <div className="bg-[#2f2843] border border-[#4a3f60] rounded-xl px-4 py-3">
+                      <p className="text-[11px] uppercase tracking-wider text-gray-400 font-semibold mb-1">Premier tour gratuit</p>
+                      <p className="text-white text-sm font-medium">{featured.firstFree ? "Oui" : "Non"}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Rewards */}
+                <div>
+                  <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2"><Gift size={15} className="text-violet-300" /> Récompenses</h3>
+                  <div className="space-y-2">
+                    {featured.segments.map((seg: any, idx: number) => (
+                      <div key={idx} className="flex items-center gap-3 bg-[#2f2843] border border-[#4a3f60] rounded-xl px-3 py-2.5" style={{ borderLeft: `4px solid ${seg.color}` }}>
+                        <span className="text-xs font-bold text-gray-400 w-5 text-center">{idx + 1}</span>
+                        <span className="w-6 h-6 rounded-md shrink-0 border border-white/20" style={{ backgroundColor: seg.color }} />
+                        <span className={`w-7 h-7 rounded-md flex items-center justify-center shrink-0 ${isPrize(seg) ? "bg-pink-500/15 text-pink-400" : "bg-[#3b3350] text-gray-400"}`}>
+                          {isPrize(seg) ? <Gift size={14} /> : <RotateCcw size={14} />}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-white text-sm font-medium truncate">{seg.label}</p>
+                          <p className="text-[11px] text-gray-400 truncate">{typeLabel(seg)}{typeof seg.stock === "number" && ` · stock ${seg.stock}`}</p>
+                        </div>
+                        <span className="flex items-center gap-1 text-sm font-semibold shrink-0" style={{ color: seg.color }}><Gauge size={13} /> {fmtPct(seg.probability || 0)}%</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Conditions */}
+                <div>
+                  <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2"><ClipboardList size={15} className="text-violet-300" /> Conditions</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {([
+                      { key: "installApp", icon: <Smartphone size={16} />, title: "Installer l'application" },
+                      { key: "notifications", icon: <Bell size={16} />, title: "Activer les notifications" },
+                      { key: "phone", icon: <Phone size={16} />, title: "Lier le téléphone" },
+                    ] as const).map((c) => {
+                      const on = !!featured.conditions?.[c.key];
+                      return (
+                        <div key={c.key} className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl border ${on ? "bg-violet-500/15 border-violet-400/60" : "bg-[#2f2843] border-[#4a3f60]"}`}>
+                          <span className={`p-1.5 rounded-lg shrink-0 ${on ? "bg-[#8B5CF6] text-white" : "bg-[#4a3f60] text-violet-300"}`}>{c.icon}</span>
+                          <span className="text-xs font-medium text-white flex-1">{c.title}</span>
+                          <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${on ? "bg-green-500/20 text-green-400" : "bg-gray-500/20 text-gray-400"}`}>{on ? "Oui" : "Non"}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-5 border-t border-[#4a3f60] pt-4">
+                  {featured.isActive && (
+                    <button onClick={() => openStats(featured)} className="text-sm text-gray-300 hover:text-white flex items-center gap-1.5"><BarChart3 size={15} /> Voir les stats</button>
+                  )}
+                  <button onClick={() => openEditGame(featured)} className="text-sm text-gray-300 hover:text-white flex items-center gap-1.5"><Pencil size={14} /> Modifier</button>
+                  {!featured.isActive && (
+                    <button onClick={() => deleteGame(featured)} className="text-sm text-red-400 hover:text-red-300 flex items-center gap-1.5"><Trash2 size={14} /> Supprimer</button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Right: wheel + social link */}
+            <div className="space-y-6">
+              <div className={`${cardCls} overflow-hidden`}>
+                <div className={cardHead}>
+                  <Eye size={20} className="text-violet-300" />
+                  <h3 className="text-white font-semibold">Rendu visuel client</h3>
+                </div>
+                <div className="p-6 flex justify-center">
+                  <div className="relative w-60 h-60 mt-3">
+                    <div className="w-full h-full rounded-full border-4 border-white/90 shadow-xl" style={{ background: `conic-gradient(${wheelGradient(featured)})` }} />
+                    {wheelMids(featured).map((mid: number, idx: number) => (
+                      <div key={idx} className="absolute inset-0 pointer-events-none" style={{ transform: `rotate(${mid - 90}deg)` }}>
+                        <span className="absolute top-1/2 left-1/2 -translate-y-1/2 pl-6 text-[11px] font-extrabold uppercase tracking-wide truncate max-w-[110px]" style={{ color: featured.segments[idx].textColor || "#fff", textShadow: "0 1px 2px rgba(0,0,0,0.45)" }}>
+                          {featured.segments[idx].label}
+                        </span>
+                      </div>
+                    ))}
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[10px] border-r-[10px] border-t-[16px] border-l-transparent border-r-transparent border-t-white" />
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-9 h-9 bg-white rounded-full border-4 border-[#4b3a7a]" />
+                  </div>
+                </div>
+              </div>
+
+              <div className={`${cardCls} overflow-hidden`}>
+                <div className={cardHead}>
+                  <span className="w-8 h-8 rounded-lg bg-red-500/15 text-red-400 flex items-center justify-center"><Link2 size={16} /></span>
+                  <h3 className="text-white font-semibold">Audience &amp; Diffusion</h3>
+                </div>
+                <div className="p-6">
+                  <p className="text-sm font-semibold text-white mb-3 flex items-center gap-2"><Link2 size={15} className="text-violet-300" /> Lien Social Media (Trafic &amp; Acquisition)</p>
+                  <div className="flex items-center gap-2 bg-[#2f2843] border border-[#4a3f60] rounded-xl p-1.5">
+                    <input readOnly value={socialLink || "Définissez votre lien dans « Personnaliser »"} onFocus={(e) => e.currentTarget.select()} className="flex-1 min-w-0 bg-transparent px-3 py-2 text-sm text-gray-200 outline-none truncate" />
+                    <button onClick={copyLink} disabled={!socialLink} className="flex items-center gap-1.5 bg-[#8B5CF6] hover:bg-[#7C3AED] disabled:opacity-50 text-white text-sm font-semibold px-3 py-2 rounded-lg shrink-0"><Copy size={15} /> Copier</button>
+                  </div>
+                  <p className="text-xs text-gray-400 mt-3">Partagez ce lien sur Instagram, Facebook ou WhatsApp pour que vos clients découvrent la roue.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ===== All games ===== */}
+        {games.length > 0 && <h2 className="text-lg font-semibold text-white mb-4">Tous vos jeux</h2>}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
           {games.map((game) => {
             const total = game.segments.reduce((a: number, b: any) => a + (b.probability || 0), 0) || 100;
@@ -461,7 +635,7 @@ export default function SpinWheelConfigPage() {
               return `${s.color} ${start}% ${(acc / total) * 100}%`;
             }).join(", ");
             return (
-              <div key={game.id} className={`rounded-xl p-5 transition-colors border ${game.isActive ? "bg-[#0f1c2e] border-green-600/60" : "bg-[#111a2e] border-[#243049] hover:border-[#334566]"}`}>
+              <div key={game.id} onClick={() => setFeaturedId(game.id)} className={`rounded-xl p-5 transition-colors border cursor-pointer ${featured?.id === game.id ? "ring-2 ring-violet-400/70" : ""} ${game.isActive ? "bg-[#3b3350] border-green-600/60" : "bg-[#342c47] border-[#4a3f60] hover:border-[#6b5b8a]"}`}>
                 <div className="flex justify-between items-center mb-3">
                   <div className="flex items-center gap-2 min-w-0">
                     <div className={`w-2 h-2 rounded-full shrink-0 ${game.isActive ? "bg-green-500" : "bg-gray-500"}`} />
@@ -487,7 +661,7 @@ export default function SpinWheelConfigPage() {
                       {game.segments.slice(0, 3).map((seg: any, idx: number) => (
                         <div key={idx} className="flex justify-between items-center text-sm gap-2">
                           <div className="flex items-center gap-2 min-w-0">
-                            <span className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 ${isPrize(seg) ? "bg-pink-500/15 text-pink-400" : "bg-[#1e293b] text-gray-400"}`}>
+                            <span className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 ${isPrize(seg) ? "bg-pink-500/15 text-pink-400" : "bg-[#2f2843] text-gray-400"}`}>
                               {isPrize(seg) ? <Gift size={13} /> : <RotateCcw size={13} />}
                             </span>
                             <span className="text-gray-200 truncate">{seg.label}</span>
@@ -500,7 +674,7 @@ export default function SpinWheelConfigPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-5 border-t border-[#243049] pt-4">
+                <div className="flex items-center gap-5 border-t border-[#4a3f60] pt-4">
                   {game.isActive && (
                     <button onClick={() => openStats(game)} className="text-sm text-gray-300 hover:text-white flex items-center gap-1.5"><BarChart3 size={15} /> Voir les stats</button>
                   )}
@@ -518,18 +692,18 @@ export default function SpinWheelConfigPage() {
       {/* ================= Create / edit modal ================= */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-[#1c2536] border border-[#2f3b52] rounded-2xl w-full max-w-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+          <div className="bg-[#352d49] border border-[#4a3f60] rounded-2xl w-full max-w-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
             <div className="px-6 pt-6 pb-4 flex justify-between items-start">
               <div>
                 <h2 className="text-xl font-semibold text-white mb-3">{editingId ? "Modifier le jeu" : "Nouveau jeu roue"}</h2>
-                <span className="text-[#3B82F6] font-semibold uppercase text-xs tracking-wider">Étape {step} sur 3</span>
+                <span className="text-[#8B5CF6] font-semibold uppercase text-xs tracking-wider">Étape {step} sur 3</span>
               </div>
               <button onClick={closeModal} className="text-gray-400 hover:text-white"><X size={22} /></button>
             </div>
 
             <div className="px-6">
-              <div className="h-1 bg-[#2f3b52] rounded-full overflow-hidden mb-4"><div className="h-full bg-[#3B82F6] transition-all duration-300" style={{ width: `${(step / 3) * 100}%` }} /></div>
-              <div className="flex items-center gap-6 pb-4 border-b border-[#2f3b52]">
+              <div className="h-1 bg-[#4a3f60] rounded-full overflow-hidden mb-4"><div className="h-full bg-[#8B5CF6] transition-all duration-300" style={{ width: `${(step / 3) * 100}%` }} /></div>
+              <div className="flex items-center gap-6 pb-4 border-b border-[#4a3f60]">
                 {stepItem(1, "Paramètres")}{stepItem(2, "Récompenses")}{stepItem(3, "Conditions")}
               </div>
             </div>
@@ -546,11 +720,11 @@ export default function SpinWheelConfigPage() {
                     <label className="block text-sm font-medium text-gray-200 mb-1.5">Nom du jeu <span className="text-red-500">*</span></label>
                     <input type="text" value={gameConfig.name} onChange={(e) => setGameConfig({ ...gameConfig, name: e.target.value })} placeholder="ex. Défi d'été" className={input} />
 
-                    <div className="mt-4 pt-3 border-t border-[#2f3b52]">
+                    <div className="mt-4 pt-3 border-t border-[#4a3f60]">
                       <button type="button" onClick={() => setPlanOpen(!planOpen)} className="w-full flex items-center justify-between text-left">
                         <span className="flex items-center gap-2 text-sm font-medium text-white">
                           <Calendar size={16} className="text-gray-400" /> Planification
-                          <span className="text-[11px] bg-[#2f3b52] text-gray-300 px-2 py-0.5 rounded">Facultatif</span>
+                          <span className="text-[11px] bg-[#4a3f60] text-gray-300 px-2 py-0.5 rounded">Facultatif</span>
                         </span>
                         <ChevronDown size={16} className={`text-gray-400 transition-transform ${planOpen ? "rotate-180" : ""}`} />
                       </button>
@@ -574,13 +748,13 @@ export default function SpinWheelConfigPage() {
                     <label className="block text-sm font-medium text-gray-200 mb-2">Quand peut-on tourner ?</label>
                     <div className="grid grid-cols-3 gap-3">
                       {(["purchase", "daily", "custom"] as const).map((type) => (
-                        <button key={type} onClick={() => setGameConfig({ ...gameConfig, rule: type })} className={`py-2.5 rounded-lg text-sm font-medium border transition-colors ${gameConfig.rule === type ? "bg-[#3B82F6] border-[#3B82F6] text-white" : "bg-[#2a3550] border-[#3b475f] text-gray-300 hover:border-gray-400"}`}>
+                        <button key={type} onClick={() => setGameConfig({ ...gameConfig, rule: type })} className={`py-2.5 rounded-lg text-sm font-medium border transition-colors ${gameConfig.rule === type ? "bg-[#8B5CF6] border-[#8B5CF6] text-white" : "bg-[#2f2843] border-[#54496b] text-gray-300 hover:border-gray-400"}`}>
                           {type === "purchase" && "Après chaque achat"}{type === "daily" && "Une fois par jour"}{type === "custom" && "Personnalisé (X/jour)"}
                         </button>
                       ))}
                     </div>
                     {gameConfig.rule === "custom" && (
-                      <div className="mt-4 p-4 rounded-lg bg-[#2a3550] border border-[#3b475f]">
+                      <div className="mt-4 p-4 rounded-lg bg-[#2f2843] border border-[#54496b]">
                         <label className="block text-sm font-medium text-gray-200 mb-1.5">Nombre de tours par jour et par client</label>
                         <div className="flex items-center gap-3">
                           <input
@@ -597,7 +771,7 @@ export default function SpinWheelConfigPage() {
                     {gameConfig.rule === "daily" && (
                       <p className="text-xs text-gray-400 mt-3">Chaque client peut tourner la roue 1 fois par jour.</p>
                     )}
-                    <div className="flex items-center justify-between mt-4 pl-4 border-l-2 border-[#3B82F6]/60">
+                    <div className="flex items-center justify-between mt-4 pl-4 border-l-2 border-[#8B5CF6]/60">
                       <div><p className="text-sm font-medium text-white">Premier tour gratuit</p><p className="text-xs text-gray-400">Permettre aux clients de tourner une fois avant leur premier tampon</p></div>
                       <Toggle size="md" on={gameConfig.firstFree} onClick={() => setGameConfig({ ...gameConfig, firstFree: !gameConfig.firstFree })} />
                     </div>
@@ -609,9 +783,9 @@ export default function SpinWheelConfigPage() {
               {step === 2 && (
                 <div className="flex gap-8 flex-col md:flex-row">
                   <div className="flex-1 min-w-0">
-                    <div className="flex justify-between items-center mb-4 bg-[#212b3f] border border-[#2f3b52] px-4 py-3 rounded-xl">
+                    <div className="flex justify-between items-center mb-4 bg-[#3b3350] border border-[#4a3f60] px-4 py-3 rounded-xl">
                       <span className="text-sm text-gray-300"><strong className="text-white">{gameConfig.segments.length}</strong>/12 cases <span className="mx-1">·</span> <span className={`font-semibold ${totalOk ? "text-green-400" : "text-amber-400"}`}>Total {fmtPct(parseFloat(totalProb.toFixed(1)))}%</span></span>
-                      <button onClick={addSegment} className="bg-[#3B82F6] hover:bg-[#2563EB] text-white px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-1"><Plus size={16} /> Ajouter</button>
+                      <button onClick={addSegment} className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-1"><Plus size={16} /> Ajouter</button>
                     </div>
 
                     <div className="space-y-3 mb-5">
@@ -619,7 +793,7 @@ export default function SpinWheelConfigPage() {
                         const open = editingSegId === seg.id;
                         const title = autoLabel(seg) || (seg.type === "gift" ? "Cadeau" : "Coupon");
                         return (
-                        <div key={seg.id} className="bg-[#212b3f] border border-[#2f3b52] rounded-xl overflow-hidden" style={{ borderLeft: `3px solid ${seg.color}` }}>
+                        <div key={seg.id} className="bg-[#3b3350] border border-[#4a3f60] rounded-xl overflow-hidden" style={{ borderLeft: `3px solid ${seg.color}` }}>
                           <div className="flex items-center gap-3 p-3">
                             <div className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-white text-sm shrink-0" style={{ backgroundColor: seg.color }}>{idx + 1}</div>
                             <div className="flex-1 min-w-0 flex items-center gap-2">
@@ -632,9 +806,9 @@ export default function SpinWheelConfigPage() {
                                 </span>
                               )}
                             </div>
-                            {!open && <button onClick={() => setEditingSegId(seg.id)} className="p-1.5 rounded-md hover:bg-[#2f3b52] text-gray-400" title="Modifier"><Pencil size={16} /></button>}
-                            {open && <button onClick={() => setEditingSegId(null)} className="p-1.5 rounded-md hover:bg-[#2f3b52] text-gray-400" title="Réduire"><ChevronDown size={16} className="rotate-180" /></button>}
-                            <button onClick={() => removeSegment(seg.id)} className="p-1.5 rounded-md text-gray-500 hover:text-red-400 hover:bg-[#2f3b52]" title="Supprimer"><Trash2 size={16} /></button>
+                            {!open && <button onClick={() => setEditingSegId(seg.id)} className="p-1.5 rounded-md hover:bg-[#4a3f60] text-gray-400" title="Modifier"><Pencil size={16} /></button>}
+                            {open && <button onClick={() => setEditingSegId(null)} className="p-1.5 rounded-md hover:bg-[#4a3f60] text-gray-400" title="Réduire"><ChevronDown size={16} className="rotate-180" /></button>}
+                            <button onClick={() => removeSegment(seg.id)} className="p-1.5 rounded-md text-gray-500 hover:text-red-400 hover:bg-[#4a3f60]" title="Supprimer"><Trash2 size={16} /></button>
                           </div>
 
                           {open && (
@@ -642,7 +816,7 @@ export default function SpinWheelConfigPage() {
                               <p className="text-sm text-gray-400 mb-2">Type de prix</p>
                               <div className="grid grid-cols-3 gap-2">
                                 {PRIZE_TYPES.map(({ type, label, icon: Icon }) => (
-                                  <button key={type} onClick={() => patchSegment(seg.id, { type })} className={`flex flex-col items-center gap-1.5 py-3 rounded-lg text-xs font-semibold border transition-colors ${seg.type === type ? "bg-[#3B82F6] border-[#3B82F6] text-white" : "bg-[#2a3550] border-[#3b475f] text-gray-300 hover:border-gray-400"}`}>
+                                  <button key={type} onClick={() => patchSegment(seg.id, { type })} className={`flex flex-col items-center gap-1.5 py-3 rounded-lg text-xs font-semibold border transition-colors ${seg.type === type ? "bg-[#8B5CF6] border-[#8B5CF6] text-white" : "bg-[#2f2843] border-[#54496b] text-gray-300 hover:border-gray-400"}`}>
                                     <Icon size={18} /> {label}
                                   </button>
                                 ))}
@@ -669,10 +843,10 @@ export default function SpinWheelConfigPage() {
                               )}
 
                               {seg.type === "free_spin" && (
-                                <p className="mt-4 text-xs text-gray-400 bg-[#2a3550]/60 border border-[#3b475f] rounded-lg p-3">Le client gagne automatiquement <strong className="text-gray-200">+1 tour gratuit</strong> à ajouter à ses tours.</p>
+                                <p className="mt-4 text-xs text-gray-400 bg-[#2f2843]/60 border border-[#54496b] rounded-lg p-3">Le client gagne automatiquement <strong className="text-gray-200">+1 tour gratuit</strong> à ajouter à ses tours.</p>
                               )}
 
-                              <div className="mt-4 pt-4 border-t border-[#2f3b52] grid grid-cols-1 sm:grid-cols-2 gap-5">
+                              <div className="mt-4 pt-4 border-t border-[#4a3f60] grid grid-cols-1 sm:grid-cols-2 gap-5">
                                 <div>
                                   <div className="flex items-center justify-between mb-2">
                                     <span className="flex items-center gap-1.5 text-sm font-medium text-gray-200"><Gauge size={14} /> Chance de gagner</span>
@@ -700,7 +874,7 @@ export default function SpinWheelConfigPage() {
 
                     <button onClick={() => setShowHelp(!showHelp)} className="flex items-center gap-2 text-sm text-gray-400 hover:text-gray-200"><HelpCircle size={15} /> Comment fonctionnent la probabilité et le stock ?</button>
                     {showHelp && (
-                      <p className="mt-2 text-xs text-gray-400 leading-relaxed bg-[#212b3f] border border-[#2f3b52] rounded-lg p-3">
+                      <p className="mt-2 text-xs text-gray-400 leading-relaxed bg-[#3b3350] border border-[#4a3f60] rounded-lg p-3">
                         La <strong className="text-gray-200">probabilité</strong> est la chance (en %) qu&apos;un client tombe sur cette case — le total doit faire 100%. Le <strong className="text-gray-200">stock</strong> limite le nombre de fois qu&apos;un lot peut être gagné : quand il atteint 0, la case n&apos;est plus tirée. Laissez le stock vide pour un lot illimité.
                       </p>
                     )}
@@ -728,8 +902,8 @@ export default function SpinWheelConfigPage() {
                     ] as const).map((c) => {
                       const on = gameConfig.conditions[c.key];
                       return (
-                        <div key={c.key} className={`flex items-start gap-3 p-4 rounded-xl bg-[#2a3550]/60 border ${on ? "border-[#3B82F6]" : "border-[#3b475f]"}`}>
-                          <div className={`p-2 rounded-lg shrink-0 ${on ? "bg-[#3B82F6] text-white" : "bg-[#2f3b52] text-blue-300"}`}>{c.icon}</div>
+                        <div key={c.key} className={`flex items-start gap-3 p-4 rounded-xl bg-[#2f2843]/60 border ${on ? "border-[#8B5CF6]" : "border-[#54496b]"}`}>
+                          <div className={`p-2 rounded-lg shrink-0 ${on ? "bg-[#8B5CF6] text-white" : "bg-[#4a3f60] text-violet-300"}`}>{c.icon}</div>
                           <div className="flex-1 min-w-0">
                             <div className="flex justify-between items-start gap-2">
                               <h4 className="text-white font-semibold text-sm">{c.title}</h4>
@@ -745,14 +919,14 @@ export default function SpinWheelConfigPage() {
               )}
             </div>
 
-            <div className="px-6 py-4 border-t border-[#2f3b52] flex justify-between items-center">
+            <div className="px-6 py-4 border-t border-[#4a3f60] flex justify-between items-center">
               <button onClick={() => (step > 1 ? setStep(step - 1) : closeModal())} className="text-gray-300 hover:text-white flex items-center gap-1 text-sm font-medium px-2 py-2">
                 {step === 1 ? "Annuler" : <><ChevronLeft size={16} /> Retour</>}
               </button>
               {step < 3 ? (
-                <button onClick={goNext} className="bg-[#3B82F6] hover:bg-[#2563EB] text-white px-6 py-2.5 rounded-lg font-semibold flex items-center gap-2">Continuer <ChevronRight size={18} /></button>
+                <button onClick={goNext} className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white px-6 py-2.5 rounded-lg font-semibold flex items-center gap-2">Continuer <ChevronRight size={18} /></button>
               ) : (
-                <button onClick={handleSave} disabled={saving} className="bg-[#3B82F6] hover:bg-[#2563EB] disabled:opacity-50 text-white px-6 py-2.5 rounded-lg font-semibold">
+                <button onClick={handleSave} disabled={saving} className="bg-[#8B5CF6] hover:bg-[#7C3AED] disabled:opacity-50 text-white px-6 py-2.5 rounded-lg font-semibold">
                   {saving ? "Enregistrement..." : editingId ? "Enregistrer" : "Créer le jeu"}
                 </button>
               )}
@@ -764,14 +938,14 @@ export default function SpinWheelConfigPage() {
       {/* ================= Stats modal ================= */}
       {statsGame && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={(e) => { if (e.target === e.currentTarget) setStatsGame(null); }}>
-          <div className="bg-[#1c2536] border border-[#2f3b52] rounded-2xl w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto">
+          <div className="bg-[#352d49] border border-[#4a3f60] rounded-2xl w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto">
             <div className="p-6 flex justify-between items-start">
               <div><h2 className="text-xl font-semibold text-white">Statistiques</h2><p className="text-sm text-gray-400 mt-1">{statsGame.name}</p></div>
               <button onClick={() => setStatsGame(null)} className="text-gray-400 hover:text-white"><X size={22} /></button>
             </div>
             <div className="px-6 pb-6">
               {statsLoading || !stats ? (
-                <div className="flex justify-center py-10"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#6366F1]" /></div>
+                <div className="flex justify-center py-10"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#8B5CF6]" /></div>
               ) : (
                 <>
                   <div className="grid grid-cols-2 gap-3 mb-5">
@@ -781,7 +955,7 @@ export default function SpinWheelConfigPage() {
                       { label: "Joueurs uniques", value: stats.uniquePlayers },
                       { label: "Points distribués", value: stats.pointsAwarded },
                     ].map((s) => (
-                      <div key={s.label} className="bg-[#212b3f] border border-[#2f3b52] rounded-xl p-4">
+                      <div key={s.label} className="bg-[#3b3350] border border-[#4a3f60] rounded-xl p-4">
                         <p className="text-2xl font-bold text-white">{s.value}</p>
                         <p className="text-xs text-gray-400 mt-1">{s.label}</p>
                       </div>
@@ -795,7 +969,7 @@ export default function SpinWheelConfigPage() {
                       {stats.prizes.map((p) => (
                         <div key={p.label}>
                           <div className="flex justify-between text-sm mb-1"><span className="text-gray-200 truncate">{p.label}</span><span className="text-gray-400">{p.count}</span></div>
-                          <div className="h-1.5 bg-[#2f3b52] rounded-full overflow-hidden"><div className="h-full bg-[#6366F1]" style={{ width: `${(p.count / stats.totalSpins) * 100}%` }} /></div>
+                          <div className="h-1.5 bg-[#4a3f60] rounded-full overflow-hidden"><div className="h-full bg-[#8B5CF6]" style={{ width: `${(p.count / stats.totalSpins) * 100}%` }} /></div>
                         </div>
                       ))}
                     </div>
