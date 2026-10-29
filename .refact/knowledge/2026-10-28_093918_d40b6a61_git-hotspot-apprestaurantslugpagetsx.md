@@ -6,7 +6,7 @@ tags:
 - git
 - hotspot
 created: 2026-10-28
-updated: 2026-10-28
+updated: 2026-10-29
 filenames:
 - app/[restaurantSlug]/page.tsx
 links: []
@@ -14,7 +14,7 @@ kind: code
 status: proposed
 superseded_by: null
 deprecated_at: null
-review_after: 2026-10-28
+review_after: 2026-10-29
 source_chat_id: null
 created_at: 2026-10-28T08:39:18.986122800+00:00
 summary: null

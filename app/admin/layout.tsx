@@ -2,6 +2,7 @@
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "../lib/auth";
+import { prisma } from "@/app/lib/prisma";
 import AdminNav from "@/components/AdminNav";
 
 export default async function AdminLayout({
@@ -19,7 +20,7 @@ export default async function AdminLayout({
   // Only ADMIN can access admin routes
   if (session.user.role !== "ADMIN") {
     console.log("⚠️ Non-admin tried to access admin area");
-    
+
     // Redirect based on their actual role
     if (session.user.role === "RESTAURANT_OWNER") {
       redirect("/dashboard");
@@ -30,15 +31,19 @@ export default async function AdminLayout({
     }
   }
 
-  // Only admins reach here
+  // Badge in the sidebar: restaurants waiting for approval
+  const pendingCount = await prisma.restaurant.count({
+    where: { accountStatus: "PENDING" },
+  });
+
   return (
-    <div className="min-h-screen bg-gray-100">
-      <AdminNav session={session} />
-      <main className="py-10">
-        <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50">
+      <AdminNav session={session} pendingCount={pendingCount} />
+      <div className="lg:pl-64">
+        <main className="mx-auto max-w-[1400px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
           {children}
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
   );
 }
