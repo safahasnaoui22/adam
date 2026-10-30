@@ -6,6 +6,8 @@ import { redirect } from "next/navigation";
 import { authOptions } from "../lib/auth";
 import { AccountStatus, SubscriptionPlan } from "@prisma/client";
 import RewardExchange from "@/components/RewardExchange";
+import LoyaltyPerformance, { LoyaltyPerformanceData } from "@/components/dashboard/LoyaltyPerformance";
+import { Users, Sparkles, Flame, RefreshCw, TrendingUp } from "lucide-react";
 
 async function getRestaurantData(userId: string) {
     const user = await prisma.user.findUnique({
@@ -118,6 +120,90 @@ async function getRewardTrends(restaurantId: string) {
     return { items, totalLast30 };
 }
 
+// Loyalty performance: last 30 days vs the 30 days before, from real visits.
+async function getLoyaltyPerformance(restaurantId: string, rawSettings: any): Promise<LoyaltyPerformanceData> {
+    const DAY = 24 * 60 * 60 * 1000;
+    const TUNIS_OFFSET = 60 * 60 * 1000; // Africa/Tunis = UTC+1, no DST
+    const now = Date.now();
+    const start30 = now - 30 * DAY;
+    const start60 = now - 60 * DAY;
+
+    const settings = {
+        avgSpend: Number(rawSettings?.avgSpend) > 0 ? Number(rawSettings.avgSpend) : 10,
+        baseVisits: Number(rawSettings?.baseVisits) > 0 ? Number(rawSettings.baseVisits) : 1,
+        inactiveDays: Number(rawSettings?.inactiveDays) > 0 ? Number(rawSettings.inactiveDays) : 90,
+    };
+
+    const [visits, customers] = await Promise.all([
+        prisma.visit.findMany({
+            where: { date: { gte: new Date(start60) }, customer: { restaurantId } },
+            select: { date: true, amount: true, customerId: true },
+        }),
+        prisma.customerProfile.findMany({
+            where: { restaurantId },
+            select: { id: true, createdAt: true, lastVisit: true },
+        }),
+    ]);
+
+    const cur = visits.filter((v) => v.date.getTime() >= start30);
+    const prev = visits.filter((v) => v.date.getTime() < start30);
+
+    const money = (list: typeof visits) => list.reduce((sum, v) => sum + (v.amount ?? settings.avgSpend), 0);
+    const countBy = (list: typeof visits) => {
+        const m = new Map<string, number>();
+        for (const v of list) m.set(v.customerId, (m.get(v.customerId) ?? 0) + 1);
+        return m;
+    };
+    const curBy = countBy(cur);
+    const prevBy = countBy(prev);
+
+    const activeCur = curBy.size;
+    const activePrev = prevBy.size;
+    const recurring = Array.from(curBy.values()).filter((n) => n >= 2).length;
+    let returned = 0;
+    prevBy.forEach((_, id) => { if (curBy.has(id)) returned += 1; });
+
+    const withAmount = cur.filter((v) => v.amount != null);
+    const avgTicket = withAmount.length > 0 ? withAmount.reduce((a, v) => a + (v.amount as number), 0) / withAmount.length : null;
+
+    // Visits above the reference rhythm (baseVisits per active customer per month) = extra visits
+    const extraVisits = Math.max(0, cur.length - settings.baseVisits * activeCur);
+
+    // Daily series (30 entries each) + weekday distribution (Mon..Sun)
+    const dailyCur = new Array(30).fill(0);
+    const dailyPrev = new Array(30).fill(0);
+    for (const v of cur) dailyCur[Math.min(29, Math.floor((v.date.getTime() - start30) / DAY))] += 1;
+    for (const v of prev) dailyPrev[Math.min(29, Math.floor((v.date.getTime() - start60) / DAY))] += 1;
+    const labels = Array.from({ length: 30 }, (_, i) => {
+        const d = new Date(start30 + i * DAY + TUNIS_OFFSET);
+        return `${String(d.getUTCDate()).padStart(2, "0")}/${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+    });
+    const weekdays = new Array(7).fill(0);
+    for (const v of cur) {
+        const js = new Date(v.date.getTime() + TUNIS_OFFSET).getUTCDay(); // 0 = Sunday
+        weekdays[(js + 6) % 7] += 1;
+    }
+
+    const inactiveLimit = now - settings.inactiveDays * DAY;
+    const inactiveCount = customers.filter((c) => (c.lastVisit ?? c.createdAt).getTime() < inactiveLimit).length;
+
+    return {
+        settings,
+        visits: { cur: cur.length, prev: prev.length },
+        revenue: { cur: money(cur), prev: money(prev) },
+        extra: { visits: extraVisits, revenue: extraVisits * settings.avgSpend },
+        active: { cur: activeCur, prev: activePrev },
+        recurring: { count: recurring, rate: activeCur > 0 ? Math.round((recurring / activeCur) * 100) : 0 },
+        retention: activePrev > 0 ? Math.round((returned / activePrev) * 100) : null,
+        frequency: activeCur > 0 ? Math.round((cur.length / activeCur) * 10) / 10 : 0,
+        avgTicket,
+        inactiveCount,
+        totalCustomers: customers.length,
+        daily: { cur: dailyCur, prev: dailyPrev, labels },
+        weekdays,
+    };
+}
+
 export default async function DashboardPage() {
     const session = await getServerSession(authOptions);
 
@@ -188,6 +274,7 @@ export default async function DashboardPage() {
     // Fetch additional stats
     const stats = await getDashboardStats(restaurant.id);
     const rewardTrends = await getRewardTrends(restaurant.id);
+    const performance = await getLoyaltyPerformance(restaurant.id, (restaurant as any).revenueSettings);
     const maxTrendCount = Math.max(1, ...rewardTrends.items.map((r) => r.last30));
 
     const steps = [
@@ -199,9 +286,9 @@ export default async function DashboardPage() {
     const stepsCompleted = steps.filter(Boolean).length;
 
     const getStatusDisplay = () => {
-        if (accountStatus === "ACTIVE") return "✓ Compte Actif";
-        if (accountStatus === "PENDING") return "⏳ En attente d'approbation";
-        if (accountStatus === "SUSPENDED") return "⚠️ Compte Suspendu";
+        if (accountStatus === "ACTIVE") return "Compte actif";
+        if (accountStatus === "PENDING") return "En attente d'approbation";
+        if (accountStatus === "SUSPENDED") return "Compte suspendu";
         return "";
     };
 
@@ -236,7 +323,7 @@ export default async function DashboardPage() {
                     <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
                     <div className="relative p-5 z-10">
                         <div className="flex items-center justify-between">
-                            <span className="text-3xl">👥</span>
+                            <span className="w-11 h-11 rounded-xl bg-orange-500/15 text-orange-400 flex items-center justify-center"><Users size={22} /></span>
                             <span className="text-xs text-gray-500 bg-gray-800 px-2 py-1 rounded-full">Stats</span>
                         </div>
                         <p className="text-gray-400 text-sm mt-3">Clients Inscrits</p>
@@ -250,11 +337,11 @@ export default async function DashboardPage() {
                     </div>
                     <div className="relative p-5 z-10">
                         <div className="flex items-center justify-between">
-                            <span className="text-3xl">🌟</span>
+                            <span className="w-11 h-11 rounded-xl bg-yellow-500/15 text-yellow-400 flex items-center justify-center"><Sparkles size={22} /></span>
                             <span className="text-xs text-gray-500 bg-gray-800 px-2 py-1 rounded-full">Points</span>
                         </div>
                         <p className="text-gray-400 text-sm mt-3">Points distribués</p>
-                        <p className="text-3xl font-bold text-white mt-1">{stats.totalPointsEarned}⭐</p>
+                        <p className="text-3xl font-bold text-white mt-1">{stats.totalPointsEarned} pts</p>
                     </div>
                 </div>
 
@@ -263,11 +350,11 @@ export default async function DashboardPage() {
                     <div className="absolute inset-0 bg-gradient-to-r from-red-500/20 to-pink-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
                     <div className="relative p-5 z-10">
                         <div className="flex items-center justify-between">
-                            <span className="text-3xl">🔥</span>
+                            <span className="w-11 h-11 rounded-xl bg-red-500/15 text-red-400 flex items-center justify-center"><Flame size={22} /></span>
                             <span className="text-xs text-gray-500 bg-gray-800 px-2 py-1 rounded-full">Dépenses</span>
                         </div>
                         <p className="text-gray-400 text-sm mt-3">Points Consommés</p>
-                        <p className="text-3xl font-bold text-white mt-1">{stats.totalPointsConsumed}⭐</p>
+                        <p className="text-3xl font-bold text-white mt-1">{stats.totalPointsConsumed} pts</p>
                     </div>
                 </div>
 
@@ -276,7 +363,7 @@ export default async function DashboardPage() {
                     <div className="absolute inset-0 bg-gradient-to-r from-green-500/20 to-emerald-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
                     <div className="relative p-5 z-10">
                         <div className="flex items-center justify-between">
-                            <span className="text-3xl">🔄</span>
+                            <span className="w-11 h-11 rounded-xl bg-green-500/15 text-green-400 flex items-center justify-center"><RefreshCw size={22} /></span>
                             <span className="text-xs text-gray-500 bg-gray-800 px-2 py-1 rounded-full">Taux</span>
                         </div>
                         <p className="text-gray-400 text-sm mt-3">Taux d'Échange</p>
@@ -309,7 +396,7 @@ export default async function DashboardPage() {
                 <div className="flex items-start justify-between flex-wrap gap-3">
                     <div>
                         <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                            <span>📈</span> Tendances Récompenses
+                            <TrendingUp size={22} className="text-orange-400" /> Tendances Récompenses
                         </h2>
                         <p className="text-sm text-gray-400 mt-1">
                             Les récompenses les plus échangées sur les 30 derniers jours
@@ -377,76 +464,8 @@ export default async function DashboardPage() {
                 )}
             </div>
 
-         {/* Performance de fidélité block (animated) - Nouveau design */}
-<div 
-    className="relative overflow-hidden transition-all duration-300 hover:shadow-[0_25px_60px_rgba(16,185,129,0.5)]"
-    style={{
-        background: "linear-gradient(135deg, #10B981 0%, #059669 100%)",
-        borderRadius: "32px",
-        padding: "40px",
-        marginBottom: "40px",
-        color: "white",
-        boxShadow: "0 20px 50px rgba(16,185,129,0.3)",
-        position: "relative",
-        overflow: "hidden",
-        border: "1px solid rgba(255,255,255,0.1)"
-    }}
->
-    {/* Animated gradient overlay (shimmer) - adapté pour le nouveau fond */}
-    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer"></div>
-    
-    <div className="relative z-10">
-        <div className="flex justify-between items-start flex-wrap gap-4">
-            <div className="flex items-center gap-2">
-                <div className="p-2 bg-white/20 rounded-lg animate-pulse">
-                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                    </svg>
-                </div>
-                <div>
-                    <h3 className="text-lg font-semibold text-white">Performance de fidélité cette période</h3>
-                    <p className="text-sm text-white/70">30 derniers jours</p>
-                </div>
-            </div>
-            <div className="text-right">
-                <p className="text-2xl font-bold text-white animate-pulse">+0 DT</p>
-                <p className="text-xs text-white/60">Faible échantillon</p>
-            </div>
-        </div>
-
-        <p className="text-sm text-white/80 mt-2 flex items-center gap-1">
-            <span>💰</span> Revenus supplémentaires grâce à la fidélité
-        </p>
-
-        <div className="mt-4 grid grid-cols-2 gap-4">
-            <div className="bg-white/10 rounded-lg p-3 backdrop-blur-sm transition-transform hover:scale-105">
-                <p className="text-xs text-white/70">Basé sur 10.00 DT/visite</p>
-                <p className="text-2xl font-bold text-white mt-1">0</p>
-                <p className="text-xs text-white/70">Clients récurrents</p>
-            </div>
-            <div className="bg-white/10 rounded-lg p-3 backdrop-blur-sm transition-transform hover:scale-105">
-                <p className="text-xs text-white/70">Visites supplémentaires</p>
-                <p className="text-2xl font-bold text-white mt-1">0</p>
-                <p className="text-xs text-white/70">+0% vs période précédente</p>
-            </div>
-        </div>
-
-        <div className="mt-5 pt-3 border-t border-white/20">
-            <div className="flex justify-between items-center">
-                <p className="text-sm text-white/80 flex items-center gap-1">
-                    <span>📊</span> Activité tampons vs. 30 jours précédents
-                </p>
-                <span className="text-xs text-white/60 bg-black/30 px-2 py-1 rounded-full">Statique</span>
-            </div>
-            <div className="flex items-center gap-2 mt-2">
-                <div className="flex-1 h-2 bg-white/20 rounded-full overflow-hidden">
-                    <div className="w-1/3 h-full bg-white/80 rounded-full animate-pulse"></div>
-                </div>
-                <span className="text-xs text-white/70">+0%</span>
-            </div>
-        </div>
-    </div>
-</div>
+            {/* Performance de fidélité — real figures */}
+            <LoyaltyPerformance data={performance} />
 
 
 
