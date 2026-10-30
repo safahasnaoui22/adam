@@ -134,6 +134,13 @@ export default function QRCodePage() {
   ): Promise<HTMLCanvasElement> => {
     await waitForImages(element);
 
+    const qrImages = Array.from(element.querySelectorAll('img[alt="QR Code"]'));
+    for (const image of qrImages) {
+      if (!(image instanceof HTMLImageElement) || !image.complete || image.naturalWidth === 0) {
+        throw new Error("The original QR image did not load correctly.");
+      }
+    }
+
     const exportWidth = fixedWidth ?? Math.ceil(element.getBoundingClientRect().width);
 
     return html2canvas(element, {
@@ -249,7 +256,9 @@ export default function QRCodePage() {
               max-width: 190mm;
               max-height: 277mm;
               object-fit: contain;
+              image-rendering: auto;
               page-break-inside: avoid;
+              break-inside: avoid;
             }
             @media screen {
               body { min-height: 100vh; padding: 16px; }
@@ -492,7 +501,13 @@ export default function QRCodePage() {
                     </div>
                   </div>
 
-                  <div style={{ textAlign: "center", padding: "0 1rem 0.2rem" }}>
+                  <div
+                    style={{
+                      textAlign: "center",
+                      padding: "0 1rem 1rem",
+                      marginBottom: "0.35rem",
+                    }}
+                  >
                     <span
                       style={{
                         display: "inline-block",
@@ -547,11 +562,51 @@ export default function QRCodePage() {
                         alt="QR Code"
                         width={170}
                         height={170}
-                        style={{ width: "100%", height: "100%" }}
+                        crossOrigin="anonymous"
+                        style={{
+                          display: "block",
+                          width: "100%",
+                          height: "100%",
+                          imageRendering: "pixelated",
+                        }}
                       />
                     </div>
 
-                    {/* Keep the QR modules unobstructed so the printed code scans reliably. */}
+                    {/* Restaurant logo in the center of the QR, as in the original design. */}
+                    {restaurantLogo && (
+                      <div
+                        style={{
+                          position: "absolute",
+                          top: "50%",
+                          left: "50%",
+                          transform: "translate(-50%, -50%)",
+                          width: "48px",
+                          height: "48px",
+                          backgroundColor: "#ffffff",
+                          borderRadius: "50%",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
+                          border: "2px solid #ffffff",
+                          zIndex: 3,
+                          overflow: "hidden",
+                        }}
+                      >
+                        <img
+                          src={restaurantLogo}
+                          alt="Logo du restaurant au centre du QR code"
+                          crossOrigin="anonymous"
+                          style={{
+                            display: "block",
+                            width: "40px",
+                            height: "40px",
+                            borderRadius: "50%",
+                            objectFit: "cover",
+                          }}
+                        />
+                      </div>
+                    )}
                   </div>
 
                   <div style={{ textAlign: "center", padding: "0.25rem 1rem 1rem" }}>
@@ -609,14 +664,47 @@ export default function QRCodePage() {
                       <img
                         src={qrCode}
                         alt="QR Code"
+                        crossOrigin="anonymous"
                         style={{
                           width: "100%",
                           maxWidth: "280px",
                           height: "auto",
                           display: "block",
+                          imageRendering: "pixelated",
                         }}
                       />
-                      {/* Keep the original QR image unobstructed for reliable scanning. */}
+                      {restaurantLogo && (
+                        <div
+                          style={{
+                            position: "absolute",
+                            top: "50%",
+                            left: "50%",
+                            transform: "translate(-50%, -50%)",
+                            width: "64px",
+                            height: "64px",
+                            backgroundColor: "#ffffff",
+                            borderRadius: "50%",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
+                            border: "2px solid #ffffff",
+                            overflow: "hidden",
+                          }}
+                        >
+                          <img
+                            src={restaurantLogo}
+                            alt="Logo du restaurant au centre du QR code"
+                            crossOrigin="anonymous"
+                            style={{
+                              width: "52px",
+                              height: "52px",
+                              borderRadius: "50%",
+                              objectFit: "cover",
+                            }}
+                          />
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
