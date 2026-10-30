@@ -1,19 +1,42 @@
 ---
-id: "9c0d0f6b-9633-422d-bdb3-26d1780f76bf"
-title: "Git co-change pattern: .refact/buddy/chats/workflows/buddy_pr_issue_matchmaker.json + .refact/buddy/runtime_queue.jsonl"
-kind: pattern
+id: 9c0d0f6b-9633-422d-bdb3-26d1780f76bf
+title: 'Git co-change pattern: .refact/buddy/chats/workflows/buddy_pr_issue_matchmaker.json + .refact/buddy/runtime_queue.jsonl'
+tags:
+- cochange
+- git
+- pattern
 created: 2026-10-30
 updated: 2026-10-30
-review_after: 2026-11-29
+filenames:
+- .refact/buddy/chats/workflows/buddy_pr_issue_matchmaker.json
+- .refact/buddy/runtime_queue.jsonl
+links: []
+kind: pattern
 status: proposed
-tags: ["cochange", "git", "pattern"]
-filenames: [".refact/buddy/chats/workflows/buddy_pr_issue_matchmaker.json", ".refact/buddy/runtime_queue.jsonl"]
-created_at: "2026-10-30T08:48:03.546255200+00:00"
-content_hash: "019b0c193a096274b468da71fdecced19689a8162fe9cca8f8cd9562eac96bd4"
-source_tool: "buddy_memory_lifecycle:git"
-source_confidence: 0.780
-source_commit: "9b9adcfc3f29"
-source_content_hash: "019b0c193a096274b468da71fdecced19689a8162fe9cca8f8cd9562eac96bd4"
+superseded_by: null
+deprecated_at: null
+review_after: 2026-10-30
+source_chat_id: null
+created_at: 2026-10-30T08:48:03.546255200+00:00
+summary: null
+description: null
+entities: []
+related_files: []
+related_entities: []
+content_hash: 019b0c193a096274b468da71fdecced19689a8162fe9cca8f8cd9562eac96bd4
+source_tool: buddy_memory_lifecycle:git
+source_confidence: 0.7799999713897705
+source_trajectory_id: null
+source_message_range: null
+source_commit: 9b9adcfc3f29
+topic: null
+last_used_at: null
+use_count: 0
+last_injected_at: null
+dismissed_count: 0
+source_content_hash: 019b0c193a096274b468da71fdecced19689a8162fe9cca8f8cd9562eac96bd4
+review_needed: true
+occurrences: 0
 ---
 
 Git co-change pattern: .refact/buddy/chats/workflows/buddy_pr_issue_matchmaker.json + .refact/buddy/runtime_queue.jsonl

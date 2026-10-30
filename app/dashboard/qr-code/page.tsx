@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useRef } from "react";
@@ -6,7 +7,10 @@ import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 import Image from "next/image";
 
-// Professional icons (Feather style)
+// ============================================================
+// ICONS
+// ============================================================
+
 const DownloadIcon = () => (
   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -22,7 +26,7 @@ const PdfIcon = () => (
 
 const PrintIcon = () => (
   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
   </svg>
 );
 
@@ -39,6 +43,10 @@ const StoreIcon = () => (
   </svg>
 );
 
+// ============================================================
+// MAIN COMPONENT
+// ============================================================
+
 export default function QRCodePage() {
   const [qrCode, setQrCode] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -53,6 +61,10 @@ export default function QRCodePage() {
   const flyerRef = useRef<HTMLDivElement>(null);
   const qrCardRef = useRef<HTMLDivElement>(null);
 
+  // ============================================================
+  // FETCH DATA
+  // ============================================================
+
   useEffect(() => {
     generateQRCode();
     fetchRestaurantInfo();
@@ -62,14 +74,15 @@ export default function QRCodePage() {
     try {
       const res = await fetch("/api/restaurant/generate-qr");
       const data = await res.json();
+
       if (res.ok) {
         setQrCode(data.qrCode);
         setRestaurantUrl(data.url);
         setRestaurantName(data.restaurantName || "Mon Restaurant");
       } else {
-        setError(data.error);
+        setError(data.error || "Impossible de générer le QR code.");
       }
-    } catch (error) {
+    } catch {
       setError("Failed to generate QR code");
     } finally {
       setLoading(false);
@@ -80,6 +93,7 @@ export default function QRCodePage() {
     try {
       const res = await fetch("/api/restaurant/info");
       const data = await res.json();
+
       if (res.ok && data.logo) {
         setRestaurantLogo(data.logo);
       }
@@ -88,184 +102,211 @@ export default function QRCodePage() {
     }
   };
 
-  const handleCopyUrl = () => {
-    navigator.clipboard.writeText(restaurantUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  // ============================================================
+  // COPY URL
+  // ============================================================
+
+  const handleCopyUrl = async () => {
+    try {
+      await navigator.clipboard.writeText(restaurantUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setError("Impossible de copier le lien.");
+    }
   };
 
-  // Wait for all images to load
-  const waitForImages = (element: HTMLElement): Promise<void> => {
+  // ============================================================
+  // WAIT FOR IMAGES AND FONTS
+  // ============================================================
+
+  const waitForImages = async (element: HTMLElement): Promise<void> => {
+    await document.fonts.ready;
+
     const images = Array.from(element.querySelectorAll("img"));
-    const promises = images.map(
-      (img) =>
-        new Promise<void>((resolve) => {
-          if (img.complete) resolve();
-          else {
-            img.onload = () => resolve();
-            img.onerror = () => resolve();
+
+    await Promise.all(
+      images.map(async (img) => {
+        if (!img.complete) {
+          await new Promise<void>((resolve) => {
+            const finish = () => resolve();
+
+            img.addEventListener("load", finish, { once: true });
+            img.addEventListener("error", finish, { once: true });
+          });
+        }
+
+        if (img.complete && img.naturalWidth > 0 && img.decode) {
+          try {
+            await img.decode();
+          } catch {
+            // Continue if decoding fails
           }
-        })
+        }
+      })
     );
-    return Promise.all(promises).then(() => {});
   };
 
-  // FLYER export functions
+  // ============================================================
+  // CAPTURE EXACT RENDERED ELEMENT
+  // ============================================================
+
+  const captureElement = async (element: HTMLElement): Promise<HTMLCanvasElement> => {
+    await waitForImages(element);
+
+    // Wait until the browser finishes its layout and paint
+    await new Promise<void>((resolve) => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => resolve());
+      });
+    });
+
+    const rect = element.getBoundingClientRect();
+
+    if (!rect.width || !rect.height) {
+      throw new Error("Element has invalid dimensions.");
+    }
+
+    const canvas = await html2canvas(element, {
+      scale: 3,
+      backgroundColor: null,
+      logging: false,
+      useCORS: true,
+      allowTaint: false,
+
+      width: Math.ceil(rect.width),
+      height: Math.ceil(rect.height),
+
+      windowWidth: document.documentElement.clientWidth,
+      windowHeight: document.documentElement.clientHeight,
+
+      imageTimeout: 15000,
+      removeContainer: true,
+    });
+
+    return canvas;
+  };
+
+  // ============================================================
+  // FILE NAME
+  // ============================================================
+
+  const getFileName = (prefix: string, extension: string) => {
+    const safeName = restaurantName
+      .trim()
+      .replace(/[^a-zA-Z0-9À-ÿ_-]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+
+    return `${prefix}-${safeName || "restaurant"}.${extension}`;
+  };
+
+  // ============================================================
+  // FLYER EXPORT: PNG
+  // ============================================================
+
   const downloadPosterAsPNG = async () => {
     if (!flyerRef.current || flyerExporting) return;
+
     setFlyerExporting(true);
+    setError("");
+
     try {
-      await waitForImages(flyerRef.current);
-      const canvas = await html2canvas(flyerRef.current, {
-        scale: 3,
-        backgroundColor: "#ff8c00",
-        logging: false,
-        useCORS: true,
-        allowTaint: false,
-      });
+      const canvas = await captureElement(flyerRef.current);
+
       const link = document.createElement("a");
-      link.download = `affiche-${restaurantName.replace(/\s/g, "-")}.png`;
+
+      link.download = getFileName("affiche", "png");
       link.href = canvas.toDataURL("image/png");
+
+      document.body.appendChild(link);
       link.click();
+      link.remove();
     } catch (err) {
-      console.error("Error generating PNG:", err);
+      console.error("Error generating flyer PNG:", err);
       setError("Impossible de générer l'image. Réessayez.");
     } finally {
       setFlyerExporting(false);
     }
   };
 
+  // ============================================================
+  // FLYER EXPORT: PDF
+  // ============================================================
+
   const downloadPosterAsPDF = async () => {
     if (!flyerRef.current || flyerExporting) return;
+
     setFlyerExporting(true);
+    setError("");
+
     try {
-      await waitForImages(flyerRef.current);
-      const canvas = await html2canvas(flyerRef.current, {
-        scale: 3,
-        backgroundColor: "#ff8c00",
-        logging: false,
-        useCORS: true,
-        allowTaint: false,
-      });
+      const canvas = await captureElement(flyerRef.current);
+
       const imgData = canvas.toDataURL("image/png");
+
       const pdf = new jsPDF({
         orientation: "portrait",
         unit: "mm",
         format: "a4",
+        compress: true,
       });
-      const imgWidth = 190;
+
+      const pageWidth = 190;
       const pageHeight = 277;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      let heightLeft = imgHeight;
-      let position = 10;
 
-      pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
+      // Keep original image proportions
+      const ratio = Math.min(
+        pageWidth / canvas.width,
+        pageHeight / canvas.height
+      );
 
-      while (heightLeft >= 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-      }
-      pdf.save(`affiche-${restaurantName.replace(/\s/g, "-")}.pdf`);
+      const finalWidth = canvas.width * ratio;
+      const finalHeight = canvas.height * ratio;
+
+      const x = (210 - finalWidth) / 2;
+      const y = (297 - finalHeight) / 2;
+
+      pdf.addImage(
+        imgData,
+        "PNG",
+        x,
+        y,
+        finalWidth,
+        finalHeight,
+        undefined,
+        "FAST"
+      );
+
+      pdf.save(getFileName("affiche", "pdf"));
     } catch (err) {
-      console.error("Error generating PDF:", err);
+      console.error("Error generating flyer PDF:", err);
       setError("Impossible de générer le PDF. Réessayez.");
     } finally {
       setFlyerExporting(false);
     }
   };
 
-  const printPoster = () => {
-    if (!flyerRef.current) return;
-    const printWindow = window.open("", "_blank");
-    if (!printWindow) {
-      setError("Veuillez autoriser les popups pour l'impression");
-      return;
-    }
+  // ============================================================
+  // QR CODE EXPORT: PNG
+  // ============================================================
 
-    const flyerHtml = flyerRef.current.cloneNode(true) as HTMLElement;
-    const images = flyerHtml.querySelectorAll("img");
-    images.forEach((img) => {
-      if (img.src) img.setAttribute("src", img.src);
-    });
-
-    const styles = document.querySelectorAll("link[rel='stylesheet'], style");
-    let styleHtml = "";
-    styles.forEach((style) => {
-      if (style.tagName === "LINK") {
-        const link = style as HTMLLinkElement;
-        styleHtml += `<link href="${link.href}" rel="stylesheet">`;
-      } else {
-        styleHtml += style.outerHTML;
-      }
-    });
-
-    printWindow.document.write(`
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>Affiche - ${restaurantName}</title>
-          ${styleHtml}
-          <style>
-            body {
-              margin: 0;
-              padding: 20px;
-              display: flex;
-              justify-content: center;
-              align-items: center;
-              min-height: 100vh;
-              background: white;
-              font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-            }
-            .print-container {
-              max-width: 600px;
-              margin: 0 auto;
-            }
-            button, .no-print {
-              display: none;
-            }
-            .flyer-card {
-              box-shadow: none !important;
-              margin: 0;
-              border: 1px solid #e2e8f0;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="print-container">
-            ${flyerHtml.outerHTML}
-          </div>
-          <script>
-            window.onload = () => {
-              window.print();
-              window.onafterprint = () => window.close();
-            };
-          </script>
-        </body>
-      </html>
-    `);
-    printWindow.document.close();
-  };
-
-  // QR CODE standalone export functions
   const downloadQRCodeAsPNG = async () => {
     if (!qrCardRef.current || qrExporting) return;
+
     setQrExporting(true);
+    setError("");
+
     try {
-      await waitForImages(qrCardRef.current);
-      const canvas = await html2canvas(qrCardRef.current, {
-        scale: 3,
-        backgroundColor: "#ffffff",
-        logging: false,
-        useCORS: true,
-        allowTaint: false,
-      });
+      const canvas = await captureElement(qrCardRef.current);
+
       const link = document.createElement("a");
-      link.download = `qr-code-${restaurantName.replace(/\s/g, "-")}.png`;
+
+      link.download = getFileName("qr-code", "png");
       link.href = canvas.toDataURL("image/png");
+
+      document.body.appendChild(link);
       link.click();
+      link.remove();
     } catch (err) {
       console.error("Error generating QR PNG:", err);
       setError("Impossible de générer le QR code. Réessayez.");
@@ -274,30 +315,54 @@ export default function QRCodePage() {
     }
   };
 
+  // ============================================================
+  // QR CODE EXPORT: PDF
+  // ============================================================
+
   const downloadQRCodeAsPDF = async () => {
     if (!qrCardRef.current || qrExporting) return;
+
     setQrExporting(true);
+    setError("");
+
     try {
-      await waitForImages(qrCardRef.current);
-      const canvas = await html2canvas(qrCardRef.current, {
-        scale: 3,
-        backgroundColor: "#ffffff",
-        logging: false,
-        useCORS: true,
-        allowTaint: false,
-      });
+      const canvas = await captureElement(qrCardRef.current);
+
       const imgData = canvas.toDataURL("image/png");
+
       const pdf = new jsPDF({
         orientation: "portrait",
         unit: "mm",
         format: "a4",
+        compress: true,
       });
-      const imgWidth = 150;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      const xPosition = (210 - imgWidth) / 2;
-      const yPosition = (297 - imgHeight) / 2;
-      pdf.addImage(imgData, "PNG", xPosition, yPosition, imgWidth, imgHeight);
-      pdf.save(`qr-code-${restaurantName.replace(/\s/g, "-")}.pdf`);
+
+      const maxWidth = 170;
+      const maxHeight = 250;
+
+      const ratio = Math.min(
+        maxWidth / canvas.width,
+        maxHeight / canvas.height
+      );
+
+      const width = canvas.width * ratio;
+      const height = canvas.height * ratio;
+
+      const x = (210 - width) / 2;
+      const y = (297 - height) / 2;
+
+      pdf.addImage(
+        imgData,
+        "PNG",
+        x,
+        y,
+        width,
+        height,
+        undefined,
+        "FAST"
+      );
+
+      pdf.save(getFileName("qr-code", "pdf"));
     } catch (err) {
       console.error("Error generating QR PDF:", err);
       setError("Impossible de générer le PDF du QR code. Réessayez.");
@@ -306,93 +371,232 @@ export default function QRCodePage() {
     }
   };
 
-  const printQRCode = () => {
-    if (!qrCardRef.current) return;
+  // ============================================================
+  // PRINT: USE THE SAME RENDERED IMAGE AS THE DOWNLOAD
+  // ============================================================
+
+  const printElement = async (
+    element: HTMLElement,
+    title: string,
+    background: string
+  ) => {
+    // Open synchronously to avoid popup blockers
     const printWindow = window.open("", "_blank");
+
     if (!printWindow) {
-      setError("Veuillez autoriser les popups pour l'impression");
+      setError("Veuillez autoriser les popups pour l'impression.");
       return;
     }
 
-    const qrHtml = qrCardRef.current.cloneNode(true) as HTMLElement;
-    const images = qrHtml.querySelectorAll("img");
-    images.forEach((img) => {
-      if (img.src) img.setAttribute("src", img.src);
-    });
+    try {
+      const canvas = await captureElement(element);
 
-    const styles = document.querySelectorAll("link[rel='stylesheet'], style");
-    let styleHtml = "";
-    styles.forEach((style) => {
-      if (style.tagName === "LINK") {
-        const link = style as HTMLLinkElement;
-        styleHtml += `<link href="${link.href}" rel="stylesheet">`;
-      } else {
-        styleHtml += style.outerHTML;
+      // Use the exact captured appearance
+      const imageData = canvas.toDataURL("image/png");
+
+      printWindow.document.open();
+
+      printWindow.document.write(`
+        <!DOCTYPE html>
+        <html lang="fr">
+          <head>
+            <meta charset="UTF-8" />
+            <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+            <title>${title.replace(/[<>&"]/g, "")}</title>
+
+            <style>
+              @page {
+                size: auto;
+                margin: 10mm;
+              }
+
+              * {
+                box-sizing: border-box;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+              }
+
+              html,
+              body {
+                margin: 0;
+                padding: 0;
+                width: 100%;
+                min-height: 100%;
+                background: ${background};
+              }
+
+              body {
+                display: flex;
+                justify-content: center;
+                align-items: flex-start;
+              }
+
+              .print-container {
+                display: flex;
+                justify-content: center;
+                align-items: flex-start;
+                width: 100%;
+                padding: 0;
+              }
+
+              .print-image {
+                display: block;
+                width: auto;
+                height: auto;
+                max-width: 190mm;
+                max-height: 277mm;
+                object-fit: contain;
+                margin: 0 auto;
+              }
+
+              @media print {
+                html,
+                body {
+                  width: 100%;
+                  height: auto;
+                  min-height: 0;
+                  background: ${background} !important;
+                }
+
+                .print-container {
+                  padding: 0;
+                  width: 100%;
+                }
+
+                .print-image {
+                  max-width: 100%;
+                  max-height: 277mm;
+                }
+              }
+            </style>
+          </head>
+
+          <body>
+            <div class="print-container">
+              <img
+                class="print-image"
+                id="print-image"
+                src="${imageData}"
+                alt="${title.replace(/[<>&"]/g, "")}"
+              />
+            </div>
+          </body>
+        </html>
+      `);
+
+      printWindow.document.close();
+
+      const printImage = printWindow.document.getElementById(
+        "print-image"
+      ) as HTMLImageElement | null;
+
+      if (!printImage) {
+        throw new Error("Print image could not be created.");
       }
-    });
 
-    printWindow.document.write(`
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>QR Code - ${restaurantName}</title>
-          ${styleHtml}
-          <style>
-            body {
-              margin: 0;
-              padding: 20px;
-              display: flex;
-              justify-content: center;
-              align-items: center;
-              min-height: 100vh;
-              background: #f1f5f9;
-              font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-            }
-            .print-container {
-              display: flex;
-              justify-content: center;
-              align-items: center;
-            }
-            button, .no-print {
-              display: none;
-            }
-            .qr-card {
-              box-shadow: none !important;
-              border: 1px solid #e2e8f0;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="print-container">
-            ${qrHtml.outerHTML}
-          </div>
-          <script>
-            window.onload = () => {
-              window.print();
-              window.onafterprint = () => window.close();
-            };
-          </script>
-        </body>
-      </html>
-    `);
-    printWindow.document.close();
+      // Wait for the image to be ready
+      if (!printImage.complete) {
+        await new Promise<void>((resolve, reject) => {
+          printImage.onload = () => resolve();
+          printImage.onerror = () =>
+            reject(new Error("Failed to load print image."));
+        });
+      }
+
+      if (printImage.decode) {
+        try {
+          await printImage.decode();
+        } catch {
+          // Continue if the image is already rendered
+        }
+      }
+
+      printWindow.focus();
+
+      // Give the print window time to render
+      await new Promise<void>((resolve) => {
+        printWindow.requestAnimationFrame(() => {
+          printWindow.requestAnimationFrame(() => resolve());
+        });
+      });
+
+      printWindow.onafterprint = () => {
+        printWindow.close();
+      };
+
+      printWindow.print();
+    } catch (err) {
+      console.error("Print error:", err);
+
+      if (!printWindow.closed) {
+        printWindow.close();
+      }
+
+      setError("Impossible de préparer l'impression.");
+    }
   };
+
+  // ============================================================
+  // PRINT FLYER
+  // ============================================================
+
+  const printPoster = () => {
+    if (!flyerRef.current) return;
+
+    printElement(
+      flyerRef.current,
+      `Affiche - ${restaurantName}`,
+      "#f46e4b"
+    );
+  };
+
+  // ============================================================
+  // PRINT QR CODE
+  // ============================================================
+
+  const printQRCode = () => {
+    if (!qrCardRef.current) return;
+
+    printElement(
+      qrCardRef.current,
+      `QR Code - ${restaurantName}`,
+      "#ffffff"
+    );
+  };
+
+  // ============================================================
+  // LOADING
+  // ============================================================
 
   if (loading && !qrCode) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#f46e4b] mb-4"></div>
-          <p className="text-gray-300">Génération de votre QR code...</p>
+          <p className="text-gray-300">
+            Génération de votre QR code...
+          </p>
         </div>
       </div>
     );
   }
 
+  // ============================================================
+  // MAIN UI
+  // ============================================================
+
   return (
-    <div className="min-h-screen py-8 px-4" style={{ background: "#2e283d" }}>
+    <div
+      className="min-h-screen py-8 px-4"
+      style={{ background: "#2e283d" }}
+    >
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl font-bold text-white mb-2">QR Code </h1>
+
+        <h1 className="text-3xl font-bold text-white mb-2">
+          QR Code
+        </h1>
+
         <p className="text-gray-300 mb-8">
           Vos clients scannent ce code pour accéder à leur carte de fidélité
         </p>
@@ -405,11 +609,18 @@ export default function QRCodePage() {
 
         {qrCode && (
           <>
-            {/* TOP ROW: Flyer + Standalone QR Code */}
+            {/* ==================================================
+                TOP ROW: FLYER + STANDALONE QR CODE
+            ================================================== */}
+
             <div className="grid md:grid-cols-2 gap-8 mb-12">
-              {/* Left: Flyer Section */}
+
+              {/* ==================================================
+                  LEFT: FLYER
+              ================================================== */}
+
               <div className="space-y-6">
-                {/* FLYER */}
+
                 <div
                   ref={flyerRef}
                   className="flyer-card w-full max-w-md mx-auto rounded-2xl shadow-2xl overflow-hidden"
@@ -418,9 +629,24 @@ export default function QRCodePage() {
                     background: "#f46e4b",
                   }}
                 >
-                  {/* Top section: logo + name */}
-                  <div style={{ padding: "1.2rem 1.5rem 0.8rem", textAlign: "center" }}>
-                    <div style={{ display: "flex", justifyContent: "center", marginBottom: "0.5rem" }}>
+
+                  {/* LOGO + RESTAURANT NAME */}
+
+                  <div
+                    style={{
+                      padding: "1.2rem 1.5rem 0.8rem",
+                      textAlign: "center",
+                    }}
+                  >
+
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "center",
+                        marginBottom: "0.5rem",
+                      }}
+                    >
+
                       {restaurantLogo ? (
                         <div
                           style={{
@@ -436,13 +662,13 @@ export default function QRCodePage() {
                           <img
                             src={restaurantLogo}
                             alt={restaurantName}
+                            crossOrigin="anonymous"
                             style={{
                               width: "100%",
                               height: "100%",
                               borderRadius: "50%",
                               objectFit: "cover",
                             }}
-                            crossOrigin="anonymous"
                           />
                         </div>
                       ) : (
@@ -462,6 +688,7 @@ export default function QRCodePage() {
                           <StoreIcon />
                         </div>
                       )}
+
                     </div>
 
                     <h2
@@ -476,7 +703,13 @@ export default function QRCodePage() {
                       {restaurantName}
                     </h2>
 
-                    <div style={{ display: "flex", justifyContent: "center", marginBottom: "0.5rem" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "center",
+                        marginBottom: "0.5rem",
+                      }}
+                    >
                       <div
                         style={{
                           width: "40px",
@@ -486,9 +719,17 @@ export default function QRCodePage() {
                         }}
                       />
                     </div>
+
                   </div>
 
-                  <div style={{ textAlign: "center", padding: "0 1rem 0.2rem" }}>
+                  {/* SCAN TO WIN */}
+
+                  <div
+                    style={{
+                      textAlign: "center",
+                      padding: "0 1rem 0.2rem",
+                    }}
+                  >
                     <span
                       style={{
                         display: "inline-block",
@@ -503,6 +744,8 @@ export default function QRCodePage() {
                     </span>
                   </div>
 
+                  {/* GIFT BOX + QR CODE */}
+
                   <div
                     style={{
                       position: "relative",
@@ -511,11 +754,13 @@ export default function QRCodePage() {
                       margin: "0 auto",
                     }}
                   >
+
                     <Image
                       src="/images/box.png"
                       alt="Gift Box"
                       width={370}
                       height={370}
+                      unoptimized
                       style={{
                         position: "relative",
                         width: "100%",
@@ -523,8 +768,9 @@ export default function QRCodePage() {
                         objectFit: "contain",
                         zIndex: 1,
                       }}
-                      unoptimized
                     />
+
+                    {/* QR CODE */}
 
                     <div
                       style={{
@@ -543,11 +789,16 @@ export default function QRCodePage() {
                         alt="QR Code"
                         width={170}
                         height={170}
-                        style={{ width: "100%", height: "100%" }}
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          display: "block",
+                        }}
                       />
                     </div>
 
-                    {/* Logo overlay inside QR code */}
+                    {/* RESTAURANT LOGO INSIDE QR CODE */}
+
                     {restaurantLogo && (
                       <div
                         style={{
@@ -570,19 +821,27 @@ export default function QRCodePage() {
                         <img
                           src={restaurantLogo}
                           alt="Logo"
+                          crossOrigin="anonymous"
                           style={{
                             width: "40px",
                             height: "40px",
                             borderRadius: "50%",
                             objectFit: "cover",
                           }}
-                          crossOrigin="anonymous"
                         />
                       </div>
                     )}
+
                   </div>
 
-                  <div style={{ textAlign: "center", padding: "0.25rem 1rem 1rem" }}>
+                  {/* BOTTOM TEXT */}
+
+                  <div
+                    style={{
+                      textAlign: "center",
+                      padding: "0.25rem 1rem 1rem",
+                    }}
+                  >
                     <span
                       style={{
                         display: "inline-block",
@@ -592,21 +851,31 @@ export default function QRCodePage() {
                         fontSize: "0.7rem",
                       }}
                     >
-                      SCANNEZ , GAGNEZ DES POINTS  &amp; RECEVEZ DES CADEAUX !
+                      SCANNEZ , GAGNEZ DES POINTS &amp; RECEVEZ DES CADEAUX !
                     </span>
                   </div>
+
                 </div>
 
-                {/* Flyer buttons */}
+                {/* FLYER BUTTONS */}
+
                 <div className="flex flex-wrap gap-3 justify-center">
+
                   <button
                     onClick={downloadPosterAsPNG}
                     disabled={flyerExporting}
                     className="flex-1 min-w-[100px] px-4 py-2.5 bg-[#f46e4b] text-white rounded-lg hover:bg-[#e0682e] flex items-center justify-center transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50"
                   >
-                    <DownloadIcon />
-                    <span className="ml-2">PNG</span>
+                    {flyerExporting ? (
+                      <span className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
+                    ) : (
+                      <>
+                        <DownloadIcon />
+                        <span className="ml-2">PNG</span>
+                      </>
+                    )}
                   </button>
+
                   <button
                     onClick={downloadPosterAsPDF}
                     disabled={flyerExporting}
@@ -615,6 +884,7 @@ export default function QRCodePage() {
                     <PdfIcon />
                     <span className="ml-2">PDF</span>
                   </button>
+
                   <button
                     onClick={printPoster}
                     className="flex-1 min-w-[100px] px-4 py-2.5 bg-[#2d2d44] text-gray-200 rounded-lg hover:bg-[#3d3d5c] flex items-center justify-center transition-all duration-200 shadow-md hover:shadow-lg"
@@ -622,18 +892,33 @@ export default function QRCodePage() {
                     <PrintIcon />
                     <span className="ml-2">Imprimer</span>
                   </button>
+
                 </div>
+
               </div>
 
-              {/* Right: Standalone QR Code Card (no text) */}
+              {/* ==================================================
+                  RIGHT: STANDALONE QR CODE
+              ================================================== */}
+
               <div className="space-y-6">
+
                 <div
                   ref={qrCardRef}
                   className="qr-card w-full max-w-md mx-auto bg-white rounded-2xl shadow-xl overflow-hidden"
                   style={{ padding: "2rem" }}
                 >
+
                   <div className="flex justify-center">
-                    <div className="relative" style={{ width: "280px", margin: "0 auto" }}>
+
+                    <div
+                      className="relative"
+                      style={{
+                        width: "280px",
+                        margin: "0 auto",
+                      }}
+                    >
+
                       <img
                         src={qrCode}
                         alt="QR Code"
@@ -644,6 +929,7 @@ export default function QRCodePage() {
                           display: "block",
                         }}
                       />
+
                       {restaurantLogo && (
                         <div
                           style={{
@@ -665,30 +951,42 @@ export default function QRCodePage() {
                           <img
                             src={restaurantLogo}
                             alt="Logo"
+                            crossOrigin="anonymous"
                             style={{
                               width: "52px",
                               height: "52px",
                               borderRadius: "50%",
                               objectFit: "cover",
                             }}
-                            crossOrigin="anonymous"
                           />
                         </div>
                       )}
+
                     </div>
+
                   </div>
+
                 </div>
 
-                {/* QR Code standalone buttons */}
+                {/* QR CODE BUTTONS */}
+
                 <div className="flex flex-wrap gap-3 justify-center">
+
                   <button
                     onClick={downloadQRCodeAsPNG}
                     disabled={qrExporting}
                     className="flex-1 min-w-[100px] px-4 py-2.5 bg-[#f46e4b] text-white rounded-lg hover:bg-[#e0682e] flex items-center justify-center transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50"
                   >
-                    <DownloadIcon />
-                    <span className="ml-2">PNG</span>
+                    {qrExporting ? (
+                      <span className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
+                    ) : (
+                      <>
+                        <DownloadIcon />
+                        <span className="ml-2">PNG</span>
+                      </>
+                    )}
                   </button>
+
                   <button
                     onClick={downloadQRCodeAsPDF}
                     disabled={qrExporting}
@@ -697,6 +995,7 @@ export default function QRCodePage() {
                     <PdfIcon />
                     <span className="ml-2">PDF</span>
                   </button>
+
                   <button
                     onClick={printQRCode}
                     className="flex-1 min-w-[100px] px-4 py-2.5 bg-[#2d2d44] text-gray-200 rounded-lg hover:bg-[#3d3d5c] flex items-center justify-center transition-all duration-200 shadow-md hover:shadow-lg"
@@ -704,40 +1003,70 @@ export default function QRCodePage() {
                     <PrintIcon />
                     <span className="ml-2">Imprimer</span>
                   </button>
+
                 </div>
+
               </div>
+
             </div>
 
-            {/* BOTTOM SECTION: Instructions, URL, Stats */}
+            {/* ==================================================
+                BOTTOM SECTION
+            ================================================== */}
+
             <div className="space-y-6">
+
+              {/* HOW TO USE */}
+
               <div className="bg-[#1a1a2e] p-6 rounded-xl shadow-lg border border-[#2d2d44]">
-                <h2 className="text-xl font-semibold mb-4 text-white">Comment utiliser ce QR code ?</h2>
+
+                <h2 className="text-xl font-semibold mb-4 text-white">
+                  Comment utiliser ce QR code ?
+                </h2>
+
                 <div className="space-y-4">
+
                   {[
                     "Imprimez l'affiche ou le QR code – Placez-le sur vos tables, comptoir, ou vitrine",
                     "Client scanne le code – Avec l'appareil photo de son téléphone",
                     "Client entre son nom – Son compte est créé automatiquement",
                     "Carte de fidélité digitale – Le client accumule des tampons à chaque visite",
                   ].map((text, idx) => (
-                    <div key={idx} className="flex items-start space-x-3">
+                    <div
+                      key={idx}
+                      className="flex items-start space-x-3"
+                    >
                       <div className="flex-shrink-0 w-6 h-6 bg-[#f46e4b]/20 text-[#f46e4b] rounded-full flex items-center justify-center text-sm font-bold">
                         {idx + 1}
                       </div>
-                      <p className="text-gray-300 text-sm">{text}</p>
+
+                      <p className="text-gray-300 text-sm">
+                        {text}
+                      </p>
                     </div>
                   ))}
+
                 </div>
+
               </div>
 
+              {/* DIRECT URL + STATISTICS */}
+
               <div className="bg-[#1a1a2e] p-6 rounded-xl shadow-lg border border-[#2d2d44]">
-                <h2 className="text-lg font-semibold mb-3 text-white">Lien direct</h2>
+
+                <h2 className="text-lg font-semibold mb-3 text-white">
+                  Lien direct
+                </h2>
+
                 <div className="flex items-center space-x-2 mb-6">
+
                   <input
                     type="text"
                     value={restaurantUrl}
                     readOnly
-                    className="flex-1 px-3 py-2 border border-[#2d2d44] rounded-lg bg-[#0f0f1a] text-sm text-white"
+                    className="flex-1 min-w-0 px-3 py-2 border border-[#2d2d44] rounded-lg bg-[#0f0f1a] text-sm text-white"
                   />
+
                   <button
                     onClick={handleCopyUrl}
                     className="px-4 py-2 bg-[#2d2d44] text-gray-300 rounded-lg hover:bg-[#f46e4b] hover:text-white flex items-center transition-colors"
@@ -751,26 +1080,38 @@ export default function QRCodePage() {
                       </>
                     )}
                   </button>
+
                 </div>
 
+                {/* STATISTICS */}
+
                 <div className="bg-[#ffd9b9] p-5 rounded-xl">
+
                   <h3 className="font-semibold text-[#e0682e] mb-2 flex items-center gap-2">
-                    <span>📊</span> Statistiques
+                    <span>📊</span>
+                    Statistiques
                   </h3>
+
                   <p className="text-sm text-[#7f8489] mb-4">
                     Suivez le nombre de clients qui scannent votre QR code et rejoignent votre programme.
                   </p>
+
                   <Link
                     href="/dashboard/clients"
                     className="text-[#f46e4b] hover:text-[#e0682e] text-sm font-medium inline-flex items-center transition-colors"
                   >
                     Voir mes clients →
                   </Link>
+
                 </div>
+
               </div>
+
             </div>
+
           </>
         )}
+
       </div>
     </div>
   );
