@@ -48,6 +48,40 @@ const QR_CARD_SIZE = 344;
 
 const FONT_STACK = "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
 
+// Fine-tune the QR position inside the gift box (in px, on the 448px-wide flyer).
+// Negative Y = move up, positive Y = move down. Negative X = left, positive X = right.
+const QR_OFFSET_X = 0;
+const QR_OFFSET_Y = 0;
+
+// Bounding box of the non-transparent pixels of an image (natural coordinates)
+const getOpaqueBounds = (img: HTMLImageElement) => {
+  try {
+    const w = img.naturalWidth;
+    const h = img.naturalHeight;
+    const c = document.createElement("canvas");
+    c.width = w;
+    c.height = h;
+    const g = c.getContext("2d")!;
+    g.drawImage(img, 0, 0);
+    const data = g.getImageData(0, 0, w, h).data;
+    let minX = w, minY = h, maxX = 0, maxY = 0;
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        if (data[(y * w + x) * 4 + 3] > 40) {
+          if (x < minX) minX = x;
+          if (x > maxX) maxX = x;
+          if (y < minY) minY = y;
+          if (y > maxY) maxY = y;
+        }
+      }
+    }
+    if (maxX <= minX || maxY <= minY) return null;
+    return { minX, minY, maxX, maxY };
+  } catch {
+    return null;
+  }
+};
+
 const loadImage = (src: string): Promise<HTMLImageElement | null> =>
   new Promise((resolve) => {
     const img = new Image();
@@ -214,13 +248,29 @@ const renderFlyer = async (
   const boxSize = 360;
   const boxX = cx - boxSize / 2;
   const boxY = 268;
+
+  // Default: centre of the 360x360 area
+  let qrCx = cx + QR_OFFSET_X;
+  let qrCy = boxY + boxSize / 2 + QR_OFFSET_Y;
+
   if (box) {
-    ctx.drawImage(box, boxX, boxY, boxSize, boxSize);
+    // Keep the image proportions (object-fit: contain), centred in the area
+    const ratio = Math.min(boxSize / box.naturalWidth, boxSize / box.naturalHeight);
+    const dw = box.naturalWidth * ratio;
+    const dh = box.naturalHeight * ratio;
+    const dx = boxX + (boxSize - dw) / 2;
+    const dy = boxY + (boxSize - dh) / 2;
+    ctx.drawImage(box, dx, dy, dw, dh);
+
+    // Centre the QR on the visible part of the box (ignores transparent margins)
+    const b = getOpaqueBounds(box);
+    if (b) {
+      qrCx = dx + ((b.minX + b.maxX) / 2) * ratio + QR_OFFSET_X;
+      qrCy = dy + ((b.minY + b.maxY) / 2) * ratio + QR_OFFSET_Y;
+    }
   }
 
   const qrSize = 170;
-  const qrCx = cx;
-  const qrCy = boxY + boxSize / 2;
 
   // White backing plate: guarantees a quiet zone so the code always scans
   const plate = qrSize + 16;
