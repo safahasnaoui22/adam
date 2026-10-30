@@ -33,7 +33,7 @@ const CopyIcon = () => (
 );
 
 const StoreIcon = () => (
-  <svg className="w-12 h-12 text-[#fe5502]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+  <svg className="w-12 h-12 text-[#f46e4b]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 22V12h6v10" />
   </svg>
@@ -382,7 +382,7 @@ export default function QRCodePage() {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#fe5502] mb-4"></div>
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#f46e4b] mb-4"></div>
           <p className="text-gray-300">Génération de votre QR code...</p>
         </div>
       </div>
@@ -602,7 +602,7 @@ export default function QRCodePage() {
                   <button
                     onClick={downloadPosterAsPNG}
                     disabled={flyerExporting}
-                    className="flex-1 min-w-[100px] px-4 py-2.5 bg-[#fe5502] text-white rounded-lg hover:bg-[#e0682e] flex items-center justify-center transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50"
+                    className="flex-1 min-w-[100px] px-4 py-2.5 bg-[#f46e4b] text-white rounded-lg hover:bg-[#e0682e] flex items-center justify-center transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50"
                   >
                     <DownloadIcon />
                     <span className="ml-2">PNG</span>
@@ -684,7 +684,7 @@ export default function QRCodePage() {
                   <button
                     onClick={downloadQRCodeAsPNG}
                     disabled={qrExporting}
-                    className="flex-1 min-w-[100px] px-4 py-2.5 bg-[#fe5502] text-white rounded-lg hover:bg-[#e0682e] flex items-center justify-center transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50"
+                    className="flex-1 min-w-[100px] px-4 py-2.5 bg-[#f46e4b] text-white rounded-lg hover:bg-[#e0682e] flex items-center justify-center transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50"
                   >
                     <DownloadIcon />
                     <span className="ml-2">PNG</span>
@@ -720,7 +720,7 @@ export default function QRCodePage() {
                     "Carte de fidélité digitale – Le client accumule des tampons à chaque visite",
                   ].map((text, idx) => (
                     <div key={idx} className="flex items-start space-x-3">
-                      <div className="flex-shrink-0 w-6 h-6 bg-[#fe5502]/20 text-[#fe5502] rounded-full flex items-center justify-center text-sm font-bold">
+                      <div className="flex-shrink-0 w-6 h-6 bg-[#f46e4b]/20 text-[#f46e4b] rounded-full flex items-center justify-center text-sm font-bold">
                         {idx + 1}
                       </div>
                       <p className="text-gray-300 text-sm">{text}</p>
@@ -740,7 +740,7 @@ export default function QRCodePage() {
                   />
                   <button
                     onClick={handleCopyUrl}
-                    className="px-4 py-2 bg-[#2d2d44] text-gray-300 rounded-lg hover:bg-[#fe5502] hover:text-white flex items-center transition-colors"
+                    className="px-4 py-2 bg-[#2d2d44] text-gray-300 rounded-lg hover:bg-[#f46e4b] hover:text-white flex items-center transition-colors"
                   >
                     {copied ? (
                       <span>✓ Copié</span>
@@ -762,7 +762,7 @@ export default function QRCodePage() {
                   </p>
                   <Link
                     href="/dashboard/clients"
-                    className="text-[#fe5502] hover:text-[#e0682e] text-sm font-medium inline-flex items-center transition-colors"
+                    className="text-[#f46e4b] hover:text-[#e0682e] text-sm font-medium inline-flex items-center transition-colors"
                   >
                     Voir mes clients →
                   </Link>
