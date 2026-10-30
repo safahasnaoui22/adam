@@ -415,7 +415,7 @@ export default function QRCodePage() {
                   className="flyer-card w-full max-w-md mx-auto rounded-2xl shadow-2xl overflow-hidden"
                   style={{
                     fontFamily: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
-                    background: "linear-gradient(160deg, #ff9a00 0%, #ff7200 60%, #ff5500 100%)",
+                    background: "#f46e4b",
                   }}
                 >
                   {/* Top section: logo + name */}
