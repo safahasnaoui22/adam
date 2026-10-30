@@ -125,20 +125,21 @@ export default function QRCodePage() {
     }
   };
 
-  // Capture the element at its real CSS dimensions. Do not rely on the
-  // responsive width of the dashboard when creating downloadable files.
-  const captureElement = async (element: HTMLElement): Promise<HTMLCanvasElement> => {
+  // Export the flyer at the same fixed design width as the intended preview.
+  // The dashboard's two-column layout can shrink the visible card on desktop;
+  // capturing that shrunken width changes the spacing and proportions.
+  const captureElement = async (
+    element: HTMLElement,
+    fixedWidth?: number
+  ): Promise<HTMLCanvasElement> => {
     await waitForImages(element);
 
-    const width = Math.ceil(element.getBoundingClientRect().width);
-    const height = Math.ceil(element.scrollHeight);
+    const exportWidth = fixedWidth ?? Math.ceil(element.getBoundingClientRect().width);
 
     return html2canvas(element, {
       scale: 4,
-      width,
-      height,
-      windowWidth: width,
-      windowHeight: height,
+      width: exportWidth,
+      windowWidth: exportWidth,
       scrollX: 0,
       scrollY: 0,
       backgroundColor: null,
@@ -147,14 +148,16 @@ export default function QRCodePage() {
       allowTaint: false,
       imageTimeout: 15000,
       onclone: (clonedDocument) => {
+        const selector =
+          element === flyerRef.current ? ".flyer-card" : ".qr-card";
         const clonedElement = clonedDocument.querySelector(
-          element === flyerRef.current ? ".flyer-card" : ".qr-card"
+          selector
         ) as HTMLElement | null;
 
-        if (clonedElement) {
-          clonedElement.style.width = `${width}px`;
-          clonedElement.style.maxWidth = "none";
-          clonedElement.style.minWidth = `${width}px`;
+        if (clonedElement && fixedWidth) {
+          clonedElement.style.width = `${fixedWidth}px`;
+          clonedElement.style.minWidth = `${fixedWidth}px`;
+          clonedElement.style.maxWidth = `${fixedWidth}px`;
           clonedElement.style.margin = "0";
           clonedElement.style.transform = "none";
           clonedElement.style.boxSizing = "border-box";
@@ -279,7 +282,7 @@ export default function QRCodePage() {
     setFlyerExporting(true);
     setError("");
     try {
-      const canvas = await captureElement(flyerRef.current);
+      const canvas = await captureElement(flyerRef.current, 448);
       downloadCanvasAsPNG(canvas, `${safeFileName("affiche")}.png`);
     } catch (err) {
       console.error("Error generating PNG:", err);
@@ -294,7 +297,7 @@ export default function QRCodePage() {
     setFlyerExporting(true);
     setError("");
     try {
-      const canvas = await captureElement(flyerRef.current);
+      const canvas = await captureElement(flyerRef.current, 448);
       saveCanvasAsPDF(canvas, `${safeFileName("affiche")}.pdf`);
     } catch (err) {
       console.error("Error generating PDF:", err);
@@ -314,7 +317,7 @@ export default function QRCodePage() {
     setFlyerExporting(true);
     setError("");
     try {
-      const canvas = await captureElement(flyerRef.current);
+      const canvas = await captureElement(flyerRef.current, 448);
       printCanvas(canvas, `Affiche - ${restaurantName}`, printWindow);
     } catch (err) {
       printWindow.close();
@@ -548,39 +551,7 @@ export default function QRCodePage() {
                       />
                     </div>
 
-                    {/* Logo overlay inside QR code */}
-                    {restaurantLogo && (
-                      <div
-                        style={{
-                          position: "absolute",
-                          top: "50%",
-                          left: "50%",
-                          transform: "translate(-50%, -50%)",
-                          width: "48px",
-                          height: "48px",
-                          backgroundColor: "white",
-                          borderRadius: "50%",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          boxShadow: "0 2px 8px rgba(0,0,0,0.25)",
-                          zIndex: 3,
-                          border: "2px solid #ffffff",
-                        }}
-                      >
-                        <img
-                          src={restaurantLogo}
-                          alt="Logo"
-                          style={{
-                            width: "40px",
-                            height: "40px",
-                            borderRadius: "50%",
-                            objectFit: "cover",
-                          }}
-                          crossOrigin="anonymous"
-                        />
-                      </div>
-                    )}
+                    {/* Keep the QR modules unobstructed so the printed code scans reliably. */}
                   </div>
 
                   <div style={{ textAlign: "center", padding: "0.25rem 1rem 1rem" }}>
@@ -645,37 +616,7 @@ export default function QRCodePage() {
                           display: "block",
                         }}
                       />
-                      {restaurantLogo && (
-                        <div
-                          style={{
-                            position: "absolute",
-                            top: "50%",
-                            left: "50%",
-                            transform: "translate(-50%, -50%)",
-                            width: "64px",
-                            height: "64px",
-                            backgroundColor: "white",
-                            borderRadius: "50%",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
-                            border: "2px solid #ffffff",
-                          }}
-                        >
-                          <img
-                            src={restaurantLogo}
-                            alt="Logo"
-                            style={{
-                              width: "52px",
-                              height: "52px",
-                              borderRadius: "50%",
-                              objectFit: "cover",
-                            }}
-                            crossOrigin="anonymous"
-                          />
-                        </div>
-                      )}
+                      {/* Keep the original QR image unobstructed for reliable scanning. */}
                     </div>
                   </div>
                 </div>
