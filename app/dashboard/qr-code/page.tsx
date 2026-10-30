@@ -51,7 +51,7 @@ const FONT_STACK = "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
 // Fine-tune the QR position inside the gift box (in px, on the 448px-wide flyer).
 // Negative Y = move up, positive Y = move down. Negative X = left, positive X = right.
 const QR_OFFSET_X = 0;
-const QR_OFFSET_Y = 0;
+const QR_OFFSET_Y = 24;
 
 // Bounding box of the non-transparent pixels of an image (natural coordinates)
 const getOpaqueBounds = (img: HTMLImageElement) => {
