@@ -1098,9 +1098,31 @@ export default function ClientDashboard() {
     fetchClientData(clientId);
     fetchRestaurantData(activeRestaurantId);
   } else {
-    router.replace(
-      `/client/login?restaurantId=${encodeURIComponent(activeRestaurantId || "")}`
-    );
+    // Nothing in localStorage (the browser may have cleared it): the login cookie
+    // lasts 1 year, so restore the account from the server session first.
+    const goLogin = () =>
+      router.replace(
+        `/client/login?restaurantId=${encodeURIComponent(activeRestaurantId || "")}`
+      );
+    fetch("/api/auth/session")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((sess) => {
+        const p = sess?.user?.customerProfile;
+        const sameBusiness = p && (!restaurantId || p.restaurantId === restaurantId);
+        if (sess?.user?.role === "CUSTOMER" && p && sameBusiness) {
+          try {
+            localStorage.setItem("clientId", p.customerId || p.id);
+            localStorage.setItem("clientName", p.name || "");
+            localStorage.setItem("restaurantId", p.restaurantId);
+            if (sess.user.restaurantSlug) localStorage.setItem("restaurantSlug", sess.user.restaurantSlug);
+          } catch {}
+          fetchClientData(p.customerId || p.id);
+          fetchRestaurantData(p.restaurantId);
+        } else {
+          goLogin();
+        }
+      })
+      .catch(goLogin);
   }
 }, [restaurantId, router]);  
 

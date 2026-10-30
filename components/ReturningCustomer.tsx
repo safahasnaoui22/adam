@@ -37,15 +37,15 @@ export default function ReturningCustomer({
       localStorage.setItem("restaurantId", restaurantId);
       localStorage.setItem("restaurantSlug", restaurantSlug);
     } catch {}
-    router.push(`/client/dashboard?restaurantId=${restaurantId}`);
+    // replace (not push): the Back button must not bounce the customer back here
+    router.replace(`/client/dashboard?restaurantId=${restaurantId}`);
   };
 
-  // Opened from the installed app icon: go straight to the card, no extra tap.
+  // The server only renders this component when the customer already has a valid
+  // session for THIS business: open the card straight away, no extra tap.
+  // ("Ce n'est pas moi" below still lets them switch account.)
   useEffect(() => {
-    const standalone =
-      window.matchMedia?.("(display-mode: standalone)").matches ||
-      (navigator as any).standalone === true;
-    if (standalone) handleContinue();
+    handleContinue();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -67,7 +67,7 @@ export default function ReturningCustomer({
         disabled={busy}
         className="w-full rounded-2xl bg-gradient-to-r from-[#fe5502] to-[#ff7a33] px-5 py-4 text-base font-bold text-white disabled:opacity-60"
       >
-        Continuer en tant que {name}
+        {busy ? "Ouverture de votre carte…" : `Continuer en tant que ${name}`}
       </button>
       <button
         type="button"
