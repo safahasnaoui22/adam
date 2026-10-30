@@ -51,7 +51,7 @@ const FONT_STACK = "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
 // Fine-tune the QR position inside the gift box (in px, on the 448px-wide flyer).
 // Negative Y = move up, positive Y = move down. Negative X = left, positive X = right.
 const QR_OFFSET_X = 0;
-const QR_OFFSET_Y = 24;
+const QR_OFFSET_Y = 20;
 
 // Bounding box of the non-transparent pixels of an image (natural coordinates)
 const getOpaqueBounds = (img: HTMLImageElement) => {
@@ -127,18 +127,85 @@ const drawCircleImage = (
   ctx.restore();
 };
 
-// Draw a QR image sharp (no smoothing)
+// Redraw the QR code module by module, with every module an exact whole
+// number of pixels. This keeps all lines perfectly even and sharp (no
+// stretching / blurring), so the code scans the same on screen, in the
+// PNG, in the PDF and on paper.
+// Returns the drawn size in logical units.
 const drawQR = (
   ctx: CanvasRenderingContext2D,
   img: HTMLImageElement,
-  x: number,
-  y: number,
-  size: number
-) => {
-  ctx.save();
-  ctx.imageSmoothingEnabled = false;
-  ctx.drawImage(img, x, y, size, size);
-  ctx.restore();
+  cx: number,
+  cy: number,
+  sizeLogical: number,
+  scale: number
+): number => {
+  const fallback = () => {
+    ctx.save();
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(img, cx - sizeLogical / 2, cy - sizeLogical / 2, sizeLogical, sizeLogical);
+    ctx.restore();
+    return sizeLogical;
+  };
+
+  try {
+    const w = img.naturalWidth;
+    const h = img.naturalHeight;
+    const c = document.createElement("canvas");
+    c.width = w;
+    c.height = h;
+    const g = c.getContext("2d", { willReadFrequently: true })!;
+    g.drawImage(img, 0, 0);
+    const d = g.getImageData(0, 0, w, h).data;
+    const dark = (x: number, y: number) => {
+      const i = (y * w + x) * 4;
+      return d[i + 3] > 128 && (d[i] + d[i + 1] + d[i + 2]) / 3 < 128;
+    };
+
+    // Bounding box of the dark modules
+    let minX = w, minY = h, maxX = -1, maxY = -1;
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        if (dark(x, y)) {
+          if (x < minX) minX = x;
+          if (x > maxX) maxX = x;
+          if (y < minY) minY = y;
+          if (y > maxY) maxY = y;
+        }
+      }
+    }
+    if (maxX < 0) return fallback();
+
+    // Top-left finder pattern = 7 modules wide -> module size in source pixels
+    let x = minX;
+    while (x < w && dark(x, minY)) x++;
+    const m = (x - minX) / 7;
+    const n = Math.round((maxX - minX + 1) / m);
+    if (m < 1 || n < 21 || n > 177 || (n - 21) % 4 !== 0) return fallback();
+
+    // Draw in device pixels with an integer module size
+    const mp = Math.max(1, Math.floor((sizeLogical * scale) / n));
+    const total = mp * n;
+    const x0 = Math.round(cx * scale - total / 2);
+    const y0 = Math.round(cy * scale - total / 2);
+
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.fillStyle = "#000000";
+    for (let r = 0; r < n; r++) {
+      for (let col = 0; col < n; col++) {
+        const sx = Math.min(w - 1, Math.round(minX + (col + 0.5) * m));
+        const sy = Math.min(h - 1, Math.round(minY + (r + 0.5) * m));
+        if (dark(sx, sy)) {
+          ctx.fillRect(x0 + col * mp, y0 + r * mp, mp, mp);
+        }
+      }
+    }
+    ctx.restore();
+    return total / scale;
+  } catch {
+    return fallback();
+  }
 };
 
 // Reduce font size until the text fits maxWidth
@@ -166,7 +233,8 @@ const setLetterSpacing = (ctx: CanvasRenderingContext2D, value: string) => {
 const renderFlyer = async (
   qrSrc: string,
   logoSrc: string | null,
-  name: string
+  name: string,
+  SCALE: number = 3
 ): Promise<string> => {
   const canvas = document.createElement("canvas");
   canvas.width = FLYER_W * SCALE;
@@ -270,16 +338,14 @@ const renderFlyer = async (
     }
   }
 
-  const qrSize = 170;
-
-  // White backing plate: guarantees a quiet zone so the code always scans
-  const plate = qrSize + 16;
+  // White backing plate with a proper quiet zone (>= 4 modules) around the code
+  const plate = 190;
   ctx.fillStyle = "#ffffff";
   roundRectPath(ctx, qrCx - plate / 2, qrCy - plate / 2, plate, plate, 8);
   ctx.fill();
 
   if (qr) {
-    drawQR(ctx, qr, qrCx - qrSize / 2, qrCy - qrSize / 2, qrSize);
+    drawQR(ctx, qr, qrCx, qrCy, 142, SCALE);
   }
 
   if (logo && qr) {
@@ -289,10 +355,10 @@ const renderFlyer = async (
     ctx.shadowOffsetY = 2 * SCALE;
     ctx.fillStyle = "#ffffff";
     ctx.beginPath();
-    ctx.arc(qrCx, qrCy, 24, 0, Math.PI * 2);
+    ctx.arc(qrCx, qrCy, 21, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
-    drawCircleImage(ctx, logo, qrCx, qrCy, 20);
+    drawCircleImage(ctx, logo, qrCx, qrCy, 17.5);
   }
 
   // --- Footer text --------------------------------------------------------
@@ -307,7 +373,8 @@ const renderFlyer = async (
 
 const renderQRCard = async (
   qrSrc: string,
-  logoSrc: string | null
+  logoSrc: string | null,
+  SCALE: number = 3
 ): Promise<string> => {
   const canvas = document.createElement("canvas");
   canvas.width = QR_CARD_SIZE * SCALE;
@@ -324,22 +391,20 @@ const renderQRCard = async (
   roundRectPath(ctx, 0, 0, QR_CARD_SIZE, QR_CARD_SIZE, 24);
   ctx.fill();
 
-  const qrSize = 280;
-  const qrX = (QR_CARD_SIZE - qrSize) / 2;
-  if (qr) drawQR(ctx, qr, qrX, qrX, qrSize);
+  const c = QR_CARD_SIZE / 2;
+  if (qr) drawQR(ctx, qr, c, c, 250, SCALE);
 
   if (logo && qr) {
-    const c = QR_CARD_SIZE / 2;
     ctx.save();
     ctx.shadowColor = "rgba(0,0,0,0.2)";
     ctx.shadowBlur = 12 * SCALE;
     ctx.shadowOffsetY = 4 * SCALE;
     ctx.fillStyle = "#ffffff";
     ctx.beginPath();
-    ctx.arc(c, c, 32, 0, Math.PI * 2);
+    ctx.arc(c, c, 30, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
-    drawCircleImage(ctx, logo, c, c, 26);
+    drawCircleImage(ctx, logo, c, c, 25);
   }
 
   return canvas.toDataURL("image/png");
@@ -437,6 +502,9 @@ export default function QRCodePage() {
 
   const [flyerImg, setFlyerImg] = useState<string | null>(null);
   const [qrCardImg, setQrCardImg] = useState<string | null>(null);
+  // Extra high-resolution versions used for PDF and printing
+  const [flyerHi, setFlyerHi] = useState<string | null>(null);
+  const [qrCardHi, setQrCardHi] = useState<string | null>(null);
 
   useEffect(() => {
     generateQRCode();
@@ -456,6 +524,14 @@ export default function QRCodePage() {
         if (!cancelled) {
           setFlyerImg(flyer);
           setQrCardImg(card);
+        }
+        const [flyerH, cardH] = await Promise.all([
+          renderFlyer(qrCode, restaurantLogo, restaurantName || "Mon Restaurant", 6),
+          renderQRCard(qrCode, restaurantLogo, 6),
+        ]);
+        if (!cancelled) {
+          setFlyerHi(flyerH);
+          setQrCardHi(cardH);
         }
       } catch (err) {
         console.error("Render error:", err);
@@ -511,29 +587,34 @@ export default function QRCodePage() {
   // Flyer actions
   const flyerPNG = () =>
     flyerImg && downloadPNG(flyerImg, `affiche-${safeName(restaurantName)}.png`);
-  const flyerPDF = () =>
-    flyerImg &&
-    downloadPDF(
-      flyerImg,
-      FLYER_W / FLYER_H,
-      190,
-      277,
-      `affiche-${safeName(restaurantName)}.pdf`
-    );
-  const flyerPrint = () =>
-    flyerImg &&
-    printImage(flyerImg, `Affiche - ${restaurantName}`, 170, 260, popupBlocked);
+  const flyerPDF = () => {
+    const src = flyerHi || flyerImg;
+    if (src)
+      downloadPDF(
+        src,
+        FLYER_W / FLYER_H,
+        190,
+        277,
+        `affiche-${safeName(restaurantName)}.pdf`
+      );
+  };
+  const flyerPrint = () => {
+    const src = flyerHi || flyerImg;
+    if (src) printImage(src, `Affiche - ${restaurantName}`, 170, 260, popupBlocked);
+  };
 
   // QR actions
   const qrPNG = () =>
     qrCardImg &&
     downloadPNG(qrCardImg, `qr-code-${safeName(restaurantName)}.png`);
-  const qrPDF = () =>
-    qrCardImg &&
-    downloadPDF(qrCardImg, 1, 150, 150, `qr-code-${safeName(restaurantName)}.pdf`);
-  const qrPrint = () =>
-    qrCardImg &&
-    printImage(qrCardImg, `QR Code - ${restaurantName}`, 120, 120, popupBlocked);
+  const qrPDF = () => {
+    const src = qrCardHi || qrCardImg;
+    if (src) downloadPDF(src, 1, 150, 150, `qr-code-${safeName(restaurantName)}.pdf`);
+  };
+  const qrPrint = () => {
+    const src = qrCardHi || qrCardImg;
+    if (src) printImage(src, `QR Code - ${restaurantName}`, 120, 120, popupBlocked);
+  };
 
   if (loading && !qrCode) {
     return (
