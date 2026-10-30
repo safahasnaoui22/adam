@@ -38,7 +38,7 @@ export async function GET() {
       margin: 2,
       width: 300,
       color: {
-        dark: '#fe5502',
+        dark: '#000000',
         light: '#ffffff'
       }
     });
