@@ -7,6 +7,7 @@ import Image from "next/image";
 import { QRCodeSVG } from "qrcode.react";
 import { getPatternStyle } from "@/lib/patterns";
 import SpinWheelModal from "./spin";
+import CelebrationCard from "@/components/CelebrationCard";
 
 // beforeinstallprompt is now captured app-wide in app/providers.tsx
 // (see lib/pwaInstall.ts) so it isn't missed when it fires on an earlier
@@ -456,6 +457,8 @@ type PointsCelebrationProps = {
   cardBg: string;
   mode?: CelebrationMode;
   rewardName?: string;
+  clientName?: string;
+  unlockedRewardName?: string;
   onClose: () => void;
 };
 
@@ -467,6 +470,8 @@ function PointsCelebration({
   cardBg,
   mode = "earned",
   rewardName,
+  clientName,
+  unlockedRewardName,
   onClose,
 }: PointsCelebrationProps) {
   const [displayCount, setDisplayCount] = useState(0);
@@ -520,135 +525,22 @@ function PointsCelebration({
 
   const accentColor = isEarned ? primaryColor : "#7c3aed";
 
+  // New design (cream card + confetti). Logic above is unchanged.
   return (
-    <div
-      style={{
-        position: "fixed", inset: 0, zIndex: 200,
-        display: "flex", alignItems: "center", justifyContent: "center",
-        backgroundColor: "rgba(0,0,0,0.75)",
-        backdropFilter: "blur(12px)",
-        animation: "celebFadeIn 0.2s ease",
-      }}
-      onClick={onClose}
-    >
-      <div style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none" }}>
-        {particles.map((p, i) => (
-          <div key={i} style={{
-            position: "absolute",
-            left: `${p.x}%`,
-            top: `${p.y}%`,
-            width: p.size,
-            height: p.size,
-            borderRadius: i % 3 === 0 ? "50%" : "2px",
-            backgroundColor: p.color,
-            animation: `particleBurst 1.8s ${p.delay}s cubic-bezier(0.25,0.46,0.45,0.94) both`,
-            "--vx": `${p.vx}px`,
-          } as React.CSSProperties}/>
-        ))}
-      </div>
-
-      <div
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          width: "min(320px, 86vw)",
-          borderRadius: 28,
-          overflow: "hidden",
-          animation: "celebCardIn 0.45s cubic-bezier(0.34,1.56,0.64,1)",
-          position: "relative",
-        }}
-      >
-        <div style={{
-          backgroundColor: accentColor,
-          padding: "32px 28px 40px",
-          textAlign: "center",
-          position: "relative",
-          overflow: "hidden",
-        }}>
-          <div style={{ position: "absolute", top: -20, right: -20, width: 100, height: 100, borderRadius: "50%", backgroundColor: "rgba(255,255,255,0.08)" }}/>
-          <div style={{ position: "absolute", bottom: -30, left: -15, width: 80, height: 80, borderRadius: "50%", backgroundColor: "rgba(255,255,255,0.06)" }}/>
-
-          <div style={{ position: "relative", zIndex: 1 }}>
-            <div style={{
-              width: 64, height: 64, borderRadius: "50%",
-              backgroundColor: "rgba(255,255,255,0.2)",
-              border: "2px solid rgba(255,255,255,0.35)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              margin: "0 auto 16px", fontSize: 28,
-              animation: phase === "enter" ? "iconPop 0.5s cubic-bezier(0.34,1.56,0.64,1)" : "none",
-            }}>
-              {isEarned ? (
-                <span style={{ color: "white", fontWeight: 800, fontSize: 22 }}>+</span>
-              ) : (
-                <span>🎁</span>
-              )}
-            </div>
-
-            <p style={{
-              fontSize: 11, fontWeight: 700, letterSpacing: "0.12em",
-              textTransform: "uppercase", color: "rgba(255,255,255,0.7)",
-              margin: "0 0 10px",
-            }}>
-              {isEarned ? "Points gagnés" : "Récompense utilisée"}
-            </p>
-
-            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center", gap: 4 }}>
-              <span style={{
-                fontSize: 68, fontWeight: 800, lineHeight: 1,
-                color: "white",
-                fontVariantNumeric: "tabular-nums",
-                letterSpacing: "-3px",
-                animation: phase === "done" ? "numberPop 0.3s cubic-bezier(0.34,1.56,0.64,1)" : "none",
-              }}>
-                {isEarned ? "+" : "-"}{displayCount}
-              </span>
-              <span style={{ fontSize: 20, fontWeight: 600, color: "rgba(255,255,255,0.75)", marginBottom: 4 }}>pts</span>
-            </div>
-
-            {rewardName && !isEarned && (
-              <div style={{
-                display: "inline-block",
-                backgroundColor: "rgba(255,255,255,0.2)",
-                borderRadius: 20, padding: "5px 14px", marginTop: 10,
-              }}>
-                <span style={{ fontSize: 13, fontWeight: 600, color: "white" }}>{rewardName}</span>
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div style={{ backgroundColor: cardBg, padding: "20px 24px 24px", textAlign: "center" }}>
-          <div style={{
-            display: "flex", alignItems: "center", justifyContent: "space-between",
-            backgroundColor: `${accentColor}08`,
-            borderRadius: 14, padding: "12px 16px",
-            marginBottom: 16,
-            border: `1px solid ${accentColor}18`,
-          }}>
-            <span style={{ fontSize: 13, color: `${textColor}60`, fontWeight: 500 }}>Nouveau solde</span>
-            <span style={{ fontSize: 22, fontWeight: 800, color: accentColor, fontVariantNumeric: "tabular-nums" }}>
-              {newTotal} pts
-            </span>
-          </div>
-
-          <button
-            onClick={onClose}
-            style={{
-              width: "100%", padding: "14px",
-              backgroundColor: accentColor,
-              border: "none", borderRadius: 14,
-              color: "#fff", fontWeight: 700, fontSize: 15,
-              cursor: "pointer", letterSpacing: "0.01em",
-            }}
-          >
-            {isEarned ? "Super, merci ! 🎉" : "Profitez bien ! 🎁"}
-          </button>
-
-          <p style={{ fontSize: 11, color: `${textColor}30`, margin: "10px 0 0" }}>
-            Se ferme automatiquement…
-          </p>
-        </div>
-      </div>
-    </div>
+    <CelebrationCard
+      mode={mode}
+      name={clientName}
+      primaryColor={primaryColor}
+      confetti={isEarned}
+      title={isEarned ? "Félicitations" : "Profitez-en"}
+      subtitle={isEarned ? "Vous avez gagné des points" : "Vous avez utilisé vos points"}
+      pill={`${isEarned ? "+" : "-"}${displayCount} pts`}
+      rewardLabel={isEarned ? "Récompense débloquée" : "Récompense utilisée"}
+      rewardName={isEarned ? unlockedRewardName : rewardName}
+      balance={newTotal}
+      buttonText={isEarned ? "Merci, Super ! 👏" : "Parfait, merci ! 👍"}
+      onClose={onClose}
+    />
   );
 }
 
@@ -1375,6 +1267,8 @@ useEffect(() => {
   const loyaltyRule = restaurant.loyaltyProgram;
   const spendThreshold = loyaltyRule?.spendThreshold ?? 1;
   const pointsEarned = loyaltyRule?.pointsEarned ?? 10;
+  // Welcome points set by the owner — only shown while the option is active
+  const welcomeBonusPts = loyaltyRule?.welcomeBonusActive ? Math.min(50, loyaltyRule?.welcomeBonusPoints ?? 0) : 0;
 
   const D = { primary: primaryColor, secondary: secondaryColor, background: bgColor, cardBg: cardBgColor, text: textColor };
 
@@ -1477,6 +1371,15 @@ useEffect(() => {
           primaryColor={D.primary} textColor={D.text} cardBg={D.cardBg}
           mode={celebration.mode}
           rewardName={celebration.rewardName}
+          clientName={client?.name}
+          unlockedRewardName={
+            celebration.mode === "spent"
+              ? undefined
+              : rewards
+                  .filter((r: any) => r.pts > celebration.newTotal - celebration.pointsEarned && r.pts <= celebration.newTotal)
+                  .map((r: any) => r.name)
+                  .join(" · ") || undefined
+          }
           onClose={() => setCelebration(null)}
         />
       )}
@@ -1494,6 +1397,7 @@ useEffect(() => {
           onClose={() => setShowSpin(false)}
           restaurantId={restaurant.id}
           customerId={client.id}
+          customerName={client.name}
           restaurantName={restaurant.name}
           restaurantSlug={restaurant.urlSlug}
           primaryColor={D.primary}
@@ -1640,7 +1544,7 @@ useEffect(() => {
                         const reached = clientPts >= r.pts;
                         return (
                           <div key={r.id} className="absolute flex items-end justify-center" style={{ left: `${posOf(i)}%`, bottom: 0, transform: "translateX(-50%)" }}>
-                            <IconGiftBox size={reached ? 36 : 32} color={D.primary} dim={!reached}/>
+                            <IconGiftBox size={34} color={D.primary} dim={!reached}/>
                           </div>
                         );
                       })}
@@ -1689,6 +1593,29 @@ useEffect(() => {
             </div>
           </div>
         </AnimSection>
+
+        {/* ── Welcome points (visible only while the owner keeps it active) ── */}
+        {welcomeBonusPts > 0 && (
+          <AnimSection delay={80}>
+            <div className="px-4 pt-3">
+              <div
+                className="flex items-center gap-4 rounded-[24px] p-4"
+                style={{ background: `linear-gradient(135deg, ${D.primary}18, ${D.primary}08)`, border: `1.5px solid ${D.primary}30` }}
+              >
+                <span className="shrink-0 flex items-center justify-center" style={{ width: 48, height: 48, borderRadius: 16, background: `${D.primary}20` }}>
+                  <IconGiftBox size={28} color={D.primary}/>
+                </span>
+                <div className="min-w-0">
+                  <p className="text-sm font-bold" style={{ color: D.text }}>Cadeau de bienvenue</p>
+                  <p className="text-xs mt-0.5" style={{ color: `${D.text}99` }}>
+                    {welcomeBonusPts} point{welcomeBonusPts > 1 ? "s" : ""} offert{welcomeBonusPts > 1 ? "s" : ""} à la création de votre compte
+                  </p>
+                </div>
+                <span className="ml-auto shrink-0 text-sm font-extrabold" style={{ color: D.primary }}>+{welcomeBonusPts} pts</span>
+              </div>
+            </div>
+          </AnimSection>
+        )}
 
         {/* ── Coupons card ── */}
         <AnimSection delay={100}>

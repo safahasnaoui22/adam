@@ -8,6 +8,7 @@ type SpinWheelModalProps = {
   onClose: () => void;
   restaurantId: string;
   customerId: string;
+  customerName?: string;
   restaurantName?: string;
   restaurantSlug?: string;
   primaryColor?: string;
@@ -21,6 +22,7 @@ export default function SpinWheelModal({
   onClose,
   restaurantId,
   customerId,
+  customerName,
   restaurantName,
   restaurantSlug,
   primaryColor = "#fe5502",
@@ -82,6 +84,7 @@ export default function SpinWheelModal({
           cardBg={cardBg}
           restaurantId={restaurantId}
           customerId={customerId}
+          customerName={customerName}
           restaurantName={restaurantName}
           restaurantSlug={restaurantSlug}
           onPointsEarned={onPointsEarned}

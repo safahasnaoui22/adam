@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
+import CelebrationCard from "@/components/CelebrationCard";
 
 type Segment = {
   label: string;
@@ -38,6 +39,7 @@ type SpinWheelProps = {
   cardBg?: string;
   restaurantId: string;
   customerId: string;
+  customerName?: string;
   restaurantName?: string;
   restaurantSlug?: string;
   onPointsEarned?: (points: number, newTotal: number) => void;
@@ -53,6 +55,7 @@ export default function SpinWheel({
   cardBg = "#ffffff",
   restaurantId,
   customerId,
+  customerName,
   restaurantName,
   restaurantSlug,
   onPointsEarned,
@@ -121,12 +124,13 @@ export default function SpinWheel({
       ctx.stroke();
       ctx.restore();
 
-      const totalProb = segments.reduce((acc, s) => acc + (s.probability || 0), 0);
+      // Every slice has the SAME size — probability only affects the draw, not the drawing
+      const sliceAngle = (2 * Math.PI) / segments.length;
       let currentAngle = rot - Math.PI / 2;
 
       for (let i = 0; i < segments.length; i++) {
         const seg = segments[i];
-        const arcSize = ((seg.probability || 0) / totalProb) * (2 * Math.PI);
+        const arcSize = sliceAngle;
         const start = currentAngle;
         const end = start + arcSize;
 
@@ -194,11 +198,8 @@ export default function SpinWheel({
   }, [currentGame, drawWheel]);
 
   const getTargetAngle = (targetIndex: number, segments: Segment[]) => {
-    const totalProb = segments.reduce((acc, s) => acc + (s.probability || 0), 0);
-    let angleAtStart = 0;
-    for (let i = 0; i < targetIndex; i++) angleAtStart += (segments[i].probability || 0) / totalProb;
-    const segmentSize = (segments[targetIndex].probability || 0) / totalProb;
-    const targetCenterPercent = angleAtStart + (segmentSize / 2);
+    // Equal slices: the centre of slice i sits at (i + 0.5) / n of the circle
+    const targetCenterPercent = (targetIndex + 0.5) / segments.length;
     return -(targetCenterPercent * 2 * Math.PI) % (2 * Math.PI);
   };
 
@@ -347,6 +348,27 @@ export default function SpinWheel({
       {showResult && result && (() => {
         const kind = prizeKind(result);
         const win = isWin(result);
+        if (win) {
+          return (
+            <CelebrationCard
+              mode="earned"
+              name={customerName}
+              primaryColor={primaryColor}
+              emoji={kind === "gift" ? "🎁" : kind === "coupon" ? "🎟️" : kind === "free_spin" ? "⚡" : "🎉"}
+              title="Félicitations"
+              subtitle={kind === "gift" ? "Vous avez gagné un cadeau" : kind === "coupon" ? "Vous avez gagné un coupon" : kind === "free_spin" ? "Vous avez gagné un tour gratuit" : "Vous avez gagné des points"}
+              pill={kind === "points" ? `+${result.points} pts` : kind === "free_spin" ? "+1 tour gratuit" : undefined}
+              pillIcon={kind === "free_spin" ? "bolt" : "star"}
+              rewardLabel={kind === "gift" ? "Cadeau gagné" : kind === "coupon" ? "Coupon gagné" : undefined}
+              rewardName={kind === "gift" || kind === "coupon" ? result.label : undefined}
+              rewardEmoji={kind === "coupon" ? "🎟️" : "🎁"}
+              rewardNote={kind === "gift" || kind === "coupon" ? (result.description ? `${result.description} — Présentez cet écran au commerçant` : "Présentez cet écran au commerçant pour le récupérer") : undefined}
+              buttonText="Merci, Super ! 👏"
+              onClose={() => setShowResult(false)}
+              secondary={{ label: shareState === "copied" ? "Copié !" : shareState === "error" ? "Échec" : "📤 Partager", onClick: handleShare }}
+            />
+          );
+        }
         return (
         <div style={{ width: "100%", padding: "24px 16px", marginTop: 14, background: win ? `linear-gradient(160deg, ${primaryColor}14, ${primaryColor}05)` : `${textColor}06`, borderRadius: 20, textAlign: "center", border: `1.5px solid ${win ? primaryColor + "45" : textColor + "15"}`, animation: "popIn 0.4s cubic-bezier(.34,1.56,.64,1) both" }}>
           <div style={{ fontSize: 42, marginBottom: 8 }}>{kind === "gift" ? "🎁" : kind === "coupon" ? "🎟️" : kind === "free_spin" ? "⚡" : result.points >= 200 ? "🏆" : result.points >= 100 ? "🎉" : win ? "✨" : "😅"}</div>

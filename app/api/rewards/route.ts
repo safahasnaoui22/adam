@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/lib/auth";
 import { prisma } from "@/app/lib/prisma";
+import { getNextRewardRange } from "@/lib/loyalty-rules";
+
 
 export async function POST(request: NextRequest) {
   try {
@@ -29,10 +31,27 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // ── Points range rule (enforced server-side too) ──
+    const pts = Number(pointsRequired);
+    if (!Number.isInteger(pts)) {
+      return NextResponse.json({ error: "Nombre de points invalide." }, { status: 400 });
+    }
+    const activeRewards = await prisma.reward.findMany({
+      where: { loyaltyProgramId: loyaltyProgram.id, isActive: true },
+      select: { pointsRequired: true },
+    });
+    const [minPts, maxPts] = getNextRewardRange(activeRewards.map((r) => r.pointsRequired));
+    if (isActive !== false && (pts < minPts || pts > maxPts)) {
+      return NextResponse.json(
+        { error: `Les points requis doivent être compris entre ${minPts} et ${maxPts}.` },
+        { status: 400 }
+      );
+    }
+
     const reward = await prisma.reward.create({
       data: {
         name,
-        pointsRequired,
+        pointsRequired: pts,
         description,
         isActive: isActive ?? true,
         loyaltyProgramId: loyaltyProgram.id,

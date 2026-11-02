@@ -89,6 +89,8 @@ model LoyaltyProgram {
   spendThreshold        Float      @default(1)
   pointsEarned          Int        @default(1)
   autoPushNotifications Boolean    @default(true)
+  welcomeBonusPoints    Int        @default(0)
+  welcomeBonusActive    Boolean    @default(false)
   createdAt             DateTime   @default(now())
   updatedAt             DateTime   @updatedAt
   restaurantId          String     @unique

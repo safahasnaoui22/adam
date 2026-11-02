@@ -3,6 +3,14 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import {
+  getNextRewardRange,
+  FIRST_REWARD_MIN,
+  FIRST_REWARD_MAX,
+  REWARD_GAP_MIN,
+  REWARD_GAP_MAX,
+  WELCOME_BONUS_MAX,
+} from "@/lib/loyalty-rules";
 
 interface Reward {
   id: string;
@@ -16,6 +24,8 @@ interface LoyaltyProgram {
   id: string;
   spendThreshold: number;
   pointsEarned: number;
+  welcomeBonusPoints?: number;
+  welcomeBonusActive?: boolean;
   rewards: Reward[];
 }
 
@@ -29,6 +39,11 @@ export default function LoyaltyProgramPage() {
   const [spendThreshold, setSpendThreshold] = useState(1);
   const [pointsEarned, setPointsEarned] = useState(10);
   const [rewards, setRewards] = useState<Reward[]>([]);
+
+  // Welcome points (free points at sign-up, 0–50)
+  const [welcomeActive, setWelcomeActive] = useState(false);
+  const [welcomePoints, setWelcomePoints] = useState("10");
+  const [savingWelcome, setSavingWelcome] = useState(false);
 
   // New reward form
   const [showRewardForm, setShowRewardForm] = useState(false);
@@ -49,19 +64,14 @@ export default function LoyaltyProgramPage() {
    * Returns the [min, max] points range for the *next* reward to be added.
    *
    * Rules:
-   *  - First reward  → 100 – 300 pts
-   *  - Every subsequent reward → (prevMax + 100) – (prevMax + 300)
+   *  - First reward  → 1 – 200 pts
+   *  - Every subsequent reward → (highest active reward + 100) – (highest active reward + 300)
    *
    * Only ACTIVE rewards are considered — deactivated ("soft-deleted") rewards
    * are excluded so that removing a tier resets the range correctly.
    */
-  const getNextPointsRange = (rewardsList: Reward[]): [number, number] => {
-    if (rewardsList.length === 0) return [100, 300];
-    const active = rewardsList.filter((r) => r.isActive);
-    if (active.length === 0) return [100, 300];
-    const maxPoints = Math.max(...active.map((r) => r.pointsRequired));
-    return [maxPoints + 100, maxPoints + 300];
-  };
+  const getNextPointsRange = (rewardsList: Reward[]): [number, number] =>
+    getNextRewardRange(rewardsList.filter((r) => r.isActive).map((r) => r.pointsRequired));
 
   /** Clamp a value to [min, max] */
   const clamp = (value: number, min: number, max: number) =>
@@ -80,6 +90,8 @@ export default function LoyaltyProgramPage() {
         setSpendThreshold(data.spendThreshold);
         setPointsEarned(data.pointsEarned);
         setRewards(data.rewards);
+        setWelcomeActive(Boolean(data.welcomeBonusActive));
+        setWelcomePoints(String(data.welcomeBonusPoints > 0 ? data.welcomeBonusPoints : 10));
         // Pre-fill the quick article form with the minimum of the allowed range
         const [firstMin] = getNextPointsRange(
           (data.rewards as Reward[]).filter((r) => r.isActive)
@@ -115,6 +127,40 @@ export default function LoyaltyProgramPage() {
       alert("Erreur de mise à jour");
     } finally {
       setSaving(false);
+    }
+  };
+
+  // Save / activate / remove the welcome points
+  const saveWelcomeBonus = async (active: boolean) => {
+    const pts = parseInt(welcomePoints, 10);
+    if (active) {
+      if (!Number.isInteger(pts) || pts < 1 || pts > WELCOME_BONUS_MAX) {
+        toast?.error(`Saisissez un nombre de points entre 1 et ${WELCOME_BONUS_MAX}.`);
+        return;
+      }
+    }
+    setSavingWelcome(true);
+    try {
+      const res = await fetch("/api/loyalty-program", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(
+          active
+            ? { welcomeBonusPoints: pts, welcomeBonusActive: true }
+            : { welcomeBonusActive: false }
+        ),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setWelcomeActive(active);
+        toast?.success(active ? "Points de bienvenue activés" : "Points de bienvenue retirés");
+      } else {
+        toast?.error(data.error || "Erreur");
+      }
+    } catch {
+      toast?.error("Erreur de connexion au serveur");
+    } finally {
+      setSavingWelcome(false);
     }
   };
 
@@ -399,6 +445,69 @@ export default function LoyaltyProgramPage() {
         </form>
       </div>
 
+      {/* Welcome points: free points given at sign-up */}
+      <div className="bg-white/[0.04] rounded-xl shadow p-6 mb-8 border border-white/10">
+        <div className="flex items-start justify-between gap-4 mb-4">
+          <div>
+            <h2 className="text-xl font-semibold text-white">Points de bienvenue</h2>
+            <p className="text-sm text-gray-400 mt-1">
+              Points offerts automatiquement au client à la création de son compte (maximum {WELCOME_BONUS_MAX} points).
+            </p>
+          </div>
+          <span
+            className={`shrink-0 text-[11px] font-bold tracking-widest uppercase px-3 py-1 rounded-full border ${
+              welcomeActive
+                ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
+                : "bg-white/5 text-gray-400 border-white/10"
+            }`}
+          >
+            {welcomeActive ? "Actif" : "Inactif"}
+          </span>
+        </div>
+
+        <label htmlFor="welcome-points" className="block text-xs font-extrabold tracking-widest text-gray-400 uppercase mb-2">
+          Combien de points offerts ?
+        </label>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <input
+              id="welcome-points"
+              type="number"
+              min={1}
+              max={WELCOME_BONUS_MAX}
+              step={1}
+              value={welcomePoints}
+              onChange={(e) => setWelcomePoints(e.target.value)}
+              className="w-full px-4 py-3 pr-14 rounded-xl bg-black/20 border border-[var(--border)] text-[#F97316] font-bold focus:outline-none focus:border-[#F97316]"
+            />
+            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-extrabold tracking-widest text-gray-400">
+              PTS
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => saveWelcomeBonus(true)}
+            disabled={savingWelcome}
+            className="px-5 py-3 rounded-xl font-bold text-white bg-gradient-to-r from-[#F97316] to-[#D95B05] hover:brightness-110 disabled:opacity-50 transition"
+          >
+            {savingWelcome ? "Enregistrement..." : welcomeActive ? "Mettre à jour" : "Activer"}
+          </button>
+          {welcomeActive && (
+            <button
+              type="button"
+              onClick={() => saveWelcomeBonus(false)}
+              disabled={savingWelcome}
+              className="px-5 py-3 rounded-xl font-bold text-red-400 bg-red-500/15 hover:bg-red-500/30 disabled:opacity-50 transition"
+            >
+              Retirer
+            </button>
+          )}
+        </div>
+        <p className="text-xs text-gray-500 mt-2">
+          Entre 1 et {WELCOME_BONUS_MAX} points. Une fois activé, le cadeau apparaît dans le dashboard client ; en le retirant, il disparaît.
+        </p>
+      </div>
+
       {/* Menu des articles: cards on the left, quick form on the right */}
       <div className="mb-8">
         <h2 className="text-2xl font-bold text-white">Menu des Récompenses 🎁</h2>
@@ -509,7 +618,7 @@ export default function LoyaltyProgramPage() {
                 type="number"
                 min={minPts}
                 max={maxPts}
-                step={10}
+                step={1}
                 value={articlePoints}
                 onChange={(e) => setArticlePoints(e.target.value)}
                 className="w-full px-4 py-3 pr-14 rounded-xl bg-black/20 border border-[var(--border)] text-[#F97316] font-bold focus:outline-none focus:border-[#F97316]"
@@ -521,6 +630,9 @@ export default function LoyaltyProgramPage() {
             </div>
             <p className="text-xs text-gray-500 mt-2">
               Entre {minPts} et {maxPts} pts pour ce prochain article
+              {isFirstReward
+                ? ` (premier article : ${FIRST_REWARD_MIN} à ${FIRST_REWARD_MAX} pts)`
+                : ` (écart de ${REWARD_GAP_MIN} à ${REWARD_GAP_MAX} pts avec le précédent)`}
             </p>
 
             <p className="text-sm text-gray-400 mt-4">

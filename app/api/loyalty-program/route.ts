@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/lib/auth";
 import { prisma } from "@/app/lib/prisma";
+import { parseWelcomeBonus, WELCOME_BONUS_MAX } from "@/lib/loyalty-rules";
 
 export async function GET() {
   try {
@@ -46,15 +47,36 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { spendThreshold, pointsEarned } = body;
+    const { spendThreshold, pointsEarned, welcomeBonusPoints, welcomeBonusActive } = body;
+
+    // Only touch the fields that were actually sent
+    const data: Record<string, unknown> = {};
+    if (spendThreshold !== undefined) data.spendThreshold = spendThreshold;
+    if (pointsEarned !== undefined) data.pointsEarned = pointsEarned;
+
+    if (welcomeBonusPoints !== undefined) {
+      const pts = parseWelcomeBonus(welcomeBonusPoints);
+      if (pts === null) {
+        return NextResponse.json(
+          { error: `Les points de bienvenue doivent être un entier entre 0 et ${WELCOME_BONUS_MAX}.` },
+          { status: 400 }
+        );
+      }
+      data.welcomeBonusPoints = pts;
+    }
+    if (welcomeBonusActive !== undefined) {
+      data.welcomeBonusActive = Boolean(welcomeBonusActive);
+    }
 
     const updated = await prisma.loyaltyProgram.upsert({
       where: { restaurantId: session.user.restaurantId },
-      update: { spendThreshold, pointsEarned },
+      update: data,
       create: {
         restaurantId: session.user.restaurantId,
         spendThreshold: spendThreshold ?? 1,
         pointsEarned: pointsEarned ?? 10,
+        welcomeBonusPoints: (data.welcomeBonusPoints as number) ?? 0,
+        welcomeBonusActive: (data.welcomeBonusActive as boolean) ?? false,
       },
     });
 

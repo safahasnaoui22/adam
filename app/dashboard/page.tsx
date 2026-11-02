@@ -464,8 +464,7 @@ export default async function DashboardPage() {
                 )}
             </div>
 
-            {/* Performance de fidélité — real figures */}
-            <LoyaltyPerformance data={performance} />
+          
 
 
 

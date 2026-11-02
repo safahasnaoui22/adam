@@ -17,7 +17,11 @@ export async function POST(request: NextRequest) {
     // Check if restaurant exists and is active
     const restaurant = await prisma.restaurant.findUnique({
       where: { id: restaurantId },
-      select: { accountStatus: true, name: true }
+      select: {
+        accountStatus: true,
+        name: true,
+        loyaltyProgram: { select: { welcomeBonusActive: true, welcomeBonusPoints: true } },
+      },
     });
 
     if (!restaurant) {
@@ -33,6 +37,11 @@ export async function POST(request: NextRequest) {
         { status: 403 }
       );
     }
+
+    // Welcome points (set by the owner, 0–50, only if the option is active)
+    const lp = restaurant.loyaltyProgram;
+    const welcomePoints =
+      lp?.welcomeBonusActive ? Math.max(0, Math.min(50, lp.welcomeBonusPoints ?? 0)) : 0;
 
     // Generate unique customer ID
     const customerId = `CUST-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
@@ -57,7 +66,7 @@ export async function POST(request: NextRequest) {
               name,
               customerId,
               restaurantId,
-              points: 0,
+              points: welcomePoints,
               stamps: 0,
             },
           },
@@ -71,7 +80,7 @@ export async function POST(request: NextRequest) {
       await tx.visit.create({
         data: {
           customerId: newUser.customerProfile!.id,
-          pointsEarned: 0,
+          pointsEarned: welcomePoints,
           stampsEarned: 0,
         },
       });
