@@ -4,16 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import {
-  LayoutDashboard,
-  Palette,
-  Star,
-  QrCode,
-  Gift,
-  Users,
-  Activity,
-  BarChart3,
   LogOut,
-  Sparkles,
 } from "lucide-react";
 
 export default function DashboardNav() {
@@ -21,27 +12,23 @@ export default function DashboardNav() {
 
   const navigation = [
     { name: "Tableau de bord", href: "/dashboard" },
-    { name: "Personnaliser la carte", href: "/dashboard/personalize" },
-    { name: "Programme de fidélité", href: "/dashboard/loyalty-program" },
+    { name: "Système de Point", href: "/dashboard/loyalty-program" },
+    { name: "Programme & Cart", href: "/dashboard/personalize" },
     { name: "QR Code", href: "/dashboard/qr-code" },
-   
-    { name: "Roue de la chance", href: "/dashboard/spin-wheel" },
-    { name: "Cartes client", href: "/dashboard/clients" },
-    { name: "Activités", href: "/dashboard/activities" },
+    { name: "Spin & Win (Jeu)", href: "/dashboard/spin-wheel" },
+    { name: "Clients & Historique", href: "/dashboard/clients" },
     { name: "Statistiques", href: "/dashboard/stats" },
   ];
 
-  // Professional icon mapping for each route
+  // Font Awesome icon mapping for each route
   const iconMap: Record<string, React.ReactNode> = {
-    "/dashboard": <LayoutDashboard size={20} />,
-    "/dashboard/personalize": <Palette size={20} />,
-    "/dashboard/loyalty-program": <Star size={20} />,
-    "/dashboard/qr-code": <QrCode size={20} />,
-  
-    "/dashboard/spin-wheel": <Sparkles size={20} />,
-    "/dashboard/clients": <Users size={20} />,
-    "/dashboard/activities": <Activity size={20} />,
-    "/dashboard/stats": <BarChart3 size={20} />,
+    "/dashboard": <i className="fa-solid fa-chart-pie" style={{ width: 24 }}></i>,
+    "/dashboard/personalize": <i className="fa-solid fa-store" style={{ width: 24 }}></i>,
+    "/dashboard/loyalty-program": <i className="fa-solid fa-star" style={{ width: 24 }}></i>,
+    "/dashboard/qr-code": <i className="fa-solid fa-qrcode" style={{ width: 24 }}></i>,
+    "/dashboard/spin-wheel": <i className="fa-solid fa-dharmachakra" style={{ width: 24 }}></i>,
+    "/dashboard/clients": <i className="fa-solid fa-users" style={{ width: 24 }}></i>,
+    "/dashboard/stats": <i className="fa-solid fa-chart-pie" style={{ width: 24 }}></i>,
   };
 
   return (
