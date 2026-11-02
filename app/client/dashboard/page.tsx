@@ -2010,7 +2010,7 @@ useEffect(() => {
               className="w-10 h-10 rounded-2xl flex items-center justify-center text-xl flex-shrink-0"
               style={{ backgroundColor: `${D.primary}20` }}
             >
-              {item.emoji}
+              {item.icon}
             </div>
 
             <div>
