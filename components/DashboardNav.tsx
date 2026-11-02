@@ -28,7 +28,7 @@ export default function DashboardNav() {
     "/dashboard/qr-code": <i className="fa-solid fa-qrcode" style={{ width: 24 }}></i>,
     "/dashboard/spin-wheel": <i className="fa-solid fa-dharmachakra" style={{ width: 24 }}></i>,
     "/dashboard/clients": <i className="fa-solid fa-users" style={{ width: 24 }}></i>,
-    "/dashboard/stats": <i className="fa-solid fa-chart-pie" style={{ width: 24 }}></i>,
+  "/dashboard/stats": <i className="fa-solid fa-chart-column" style={{ width: 24 }}></i>,
   };
 
   return (
