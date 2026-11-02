@@ -1602,16 +1602,7 @@ useEffect(() => {
                 </p>
               )}
 
-              <button
-                onClick={() => {
-                  setActiveTab("rewards");
-                  document.getElementById("rewards-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
-                }}
-                className="w-full mt-4 transition-transform active:scale-[0.98]"
-                style={{ padding: "16px 0", borderRadius: 20, border: "none", cursor: "pointer", background: `${D.primary}12`, color: D.primary, fontSize: 18, fontWeight: 700 }}
-              >
-                Voir les récompenses
-              </button>
+            
             </div>
           </div>
         </AnimSection>
