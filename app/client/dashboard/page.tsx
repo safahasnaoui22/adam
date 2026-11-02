@@ -1617,7 +1617,7 @@ useEffect(() => {
           </AnimSection>
         )}
 
-        {/* ── Coupons card ── */}
+        {/* ── Coupons card
         <AnimSection delay={100}>
           <div className="px-4 pt-3 pb-4">
             <button
@@ -1646,7 +1646,7 @@ useEffect(() => {
               </span>
             </button>
           </div>
-        </AnimSection>
+        </AnimSection> ── */}
 
         {/* ── Rewards Swiper ── */}
         <AnimSection delay={100}>
