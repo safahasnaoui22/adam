@@ -865,6 +865,27 @@ export default function ClientDashboard() {
   const [showNotifModal, setShowNotifModal] = useState(false);
   const [notifActive, setNotifActive] = useState(false);
   const [pwaInstalled, setPwaInstalled] = useState(false);
+    // Welcome gift card: shown until the customer has seen it once
+  const [welcomeSeen, setWelcomeSeen] = useState<boolean | null>(null);
+  useEffect(() => {
+    const id = localStorage.getItem("clientId");
+    if (!id) return;
+    try {
+      setWelcomeSeen(localStorage.getItem(`BONOO:welcomeSeen:${id}`) === "1");
+    } catch {
+      setWelcomeSeen(false);
+    }
+  }, [client?.id]);
+  useEffect(() => {
+    if (welcomeSeen !== false || !restaurant?.loyaltyProgram?.welcomeBonusActive) return;
+    const id = localStorage.getItem("clientId");
+    if (!id) return;
+    // once the customer has had the card on screen for a few seconds, remember it
+    const t = setTimeout(() => {
+      try { localStorage.setItem(`BONOO:welcomeSeen:${id}`, "1"); } catch {}
+    }, 5000);
+    return () => clearTimeout(t);
+  }, [welcomeSeen, restaurant?.loyaltyProgram?.welcomeBonusActive]);
 
   const [swiperOffset, setSwiperOffset] = useState(0);
   const touchStartX = useRef<number | null>(null);
@@ -1595,7 +1616,7 @@ useEffect(() => {
         </AnimSection>
 
         {/* ── Welcome points (visible only while the owner keeps it active) ── */}
-        {welcomeBonusPts > 0 && (
+              {welcomeBonusPts > 0 && welcomeSeen === false && (
           <AnimSection delay={80}>
             <div className="px-4 pt-3">
               <div
@@ -1933,24 +1954,52 @@ useEffect(() => {
       style={{ borderColor: `${D.primary}18` }}
     >
       {[
-        {
-          emoji: "🛍️",
-          step: "1. Chri w jma3 points",
-          desc: "Kol mara techri men 3and commerce partenaire, tjama3 points fi compte mte3ek.",
-          shade: `${D.primary}0a`,
-        },
-        {
-          emoji: "📱",
-          step: "2. Scanni codek QR",
-          desc: 'Wa9t el paiement, warri code QR mte3ek lel commerçant bech tjama3 points facilement.',
-          shade: `${D.primary}06`,
-        },
-        {
-          emoji: "🎁",
-          step: "3. Baddel points b cadeaux",
-          desc: "Ki tjama3 points kfeya, najmou ywalliwlek réductions, cadeaux wala récompenses 3and les commerces partenaires.",
-          shade: `${D.primary}0a`,
-        },
+       {
+  icon: (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" />
+      <path d="M3 6h18" />
+      <path d="M16 10a4 4 0 0 1-8 0" />
+    </svg>
+  ),
+  step: "1. eChri w jma3 points",
+  desc: "Kol mara techri men 3and commerce partenaire, tjama3 points fi compte mte3ek.",
+  shade: `${D.primary}0a`,
+},
+{
+  icon: (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect width="5" height="5" x="3" y="3" rx="1" />
+      <rect width="5" height="5" x="16" y="3" rx="1" />
+      <rect width="5" height="5" x="3" y="16" rx="1" />
+      <path d="M21 16h-3a2 2 0 0 0-2 2v3" />
+      <path d="M21 21v.01" />
+      <path d="M12 7v3a2 2 0 0 1-2 2H7" />
+      <path d="M3 12h.01" />
+      <path d="M12 3h.01" />
+      <path d="M12 16v.01" />
+      <path d="M16 12h1" />
+      <path d="M21 12v.01" />
+      <path d="M12 21v-1" />
+    </svg>
+  ),
+  step: "2. Scanni codek QR",
+  desc: "Wa9t el paiement, warri code QR mte3ek lel commerçant bech tjama3 points facilement.",
+  shade: `${D.primary}06`,
+},
+{
+  icon: (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="8" width="18" height="4" rx="1" />
+      <path d="M12 8v13" />
+      <path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7" />
+      <path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5" />
+    </svg>
+  ),
+  step: "3. Baddel points b cadeaux",
+  desc: "Ki tjama3 points kfeya, najmou ywalliwlek réductions, cadeaux wala récompenses 3and les commerces partenaires.",
+  shade: `${D.primary}0a`,
+},
       ].map((item, idx, arr) => (
         <div key={idx}>
           <div
