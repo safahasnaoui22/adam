@@ -3,7 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
 import { Toaster } from "sonner";
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
 const inter = Inter({ subsets: ["latin"] });
 
 // ── Viewport must be a separate export in Next.js 14+ ────────────────
@@ -56,6 +56,7 @@ export default function RootLayout({
   return (
     <html lang="fr">
       <head>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
         <script dangerouslySetInnerHTML={{ __html: EARLY_INSTALL_PROMPT_SCRIPT }} />
         {/*
           Icon, apple-touch-icon, app title and manifest come from the
