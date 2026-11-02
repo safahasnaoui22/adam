@@ -291,7 +291,7 @@ export default function PersonalizePage() {
   }
 
   return (
-   <div className="max-w-7xl mx-auto pt-8 pb-28 px-4">
+    <div className="max-w-7xl mx-auto py-8 px-4">
       <h1 className="text-3xl font-bold text-white mb-1">Personnalisez votre carte</h1>
       <p className="text-gray-400 text-sm mb-8">
         Rendez votre carte de fidélité unique. Ces paramètres aident les clients à reconnaître votre commerce.
@@ -549,55 +549,32 @@ export default function PersonalizePage() {
         )}
 
         {/* ── Action bar ── */}
-       {/* ── Floating Action Bar ── */}
-<div className="fixed bottom-0 left-0 right-0 z-50
-                bg-[#292238]/95 backdrop-blur-xl
-                border-t border-[#4a3f60]
-                px-6 py-4 shadow-[0_-8px_30px_rgba(0,0,0,0.25)]">
-
-  <div className="relative max-w-7xl mx-auto flex items-center justify-start">
-
-    {/* Annuler: stays on the left */}
-    <button
-      type="button"
-      onClick={() => router.back()}
-      className="flex items-center gap-2 px-5 py-2.5
-                 border border-[#4a3f60] rounded-lg
-                 text-sm text-gray-400
-                 hover:bg-[#4a3f60] hover:text-white
-                 transition-all"
-    >
-      <IconChevronLeft size={15}/>
-      Annuler
-    </button>
-
-    {/* Enregistrer: always centered */}
-    <button
-      type="submit"
-      disabled={saving}
-      className="absolute left-1/2 -translate-x-1/2
-                 flex items-center justify-center gap-2
-                 min-w-[170px] px-7 py-3
-                 bg-[#fe5502] text-white rounded-xl
-                 text-sm font-semibold
-                 hover:bg-[#e0682e]
-                 disabled:opacity-50
-                 transition-all shadow-lg shadow-orange-500/20"
-    >
-      {saving ? (
-        <>
-          <IconSpinner size={15}/>
-          Enregistrement...
-        </>
-      ) : (
-        <>
-          <IconSave size={16} color="#fff"/>
-          Enregistrer
-        </>
-      )}
-    </button>
-
-  </div>
+{/* Floating Save Button - follows scroll */}
+<div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
+  <button
+    type="submit"
+    disabled={saving}
+    className="flex items-center justify-center gap-2
+      min-w-[180px] px-8 py-3.5
+      bg-[#fe5502] text-white rounded-xl
+      text-sm font-semibold shadow-xl
+      shadow-orange-500/30
+      hover:bg-[#e0682e]
+      disabled:opacity-50 transition-all"
+  >
+    {saving ? (
+      <>
+        <IconSpinner size={15}/>
+        Enregistrement...
+      </>
+    ) : (
+      <>
+        <IconSave size={16} color="#fff"/>
+        Enregistrer
+      </>
+    )}
+  </button>
+</div>
 </div>
         </div>
 
