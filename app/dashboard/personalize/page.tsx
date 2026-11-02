@@ -548,33 +548,36 @@ export default function PersonalizePage() {
           </div>
         )}
 
-        {/* ── Action bar ── */}
-        <div className="flex justify-end gap-3 pt-2">
-          <button
-            type="button"
-            onClick={() => router.back()}
-            className="flex items-center gap-2 px-5 py-2.5 border border-[#4a3f60] rounded-lg text-sm text-gray-400 hover:bg-[#4a3f60] hover:text-white transition-all"
-          >
-            <IconChevronLeft size={15} color="currentColor"/>
-            Annuler
-          </button>
-          <button
-            type="submit"
-            disabled={saving}
-            className="flex items-center gap-2 px-6 py-2.5 bg-[#fe5502] text-white rounded-lg text-sm font-semibold hover:bg-[#e0682e] disabled:opacity-50 transition-all shadow-md shadow-orange-500/20"
-          >
-            {saving ? (
-              <>
-                <IconSpinner size={15}/>
-                Enregistrement...
-              </>
-            ) : (
-              <>
-                <IconSave size={15} color="#fff"/>
-                Enregistrer
-              </>
-            )}
-          </button>
+       
+               {/* ── Action bar: floating, centered, follows the scroll ── */}
+        <div className="sticky bottom-4 z-30 flex justify-center pt-2 pointer-events-none">
+          <div className="pointer-events-auto flex items-center gap-3 px-3 py-2.5 rounded-2xl bg-[#2f2843]/90 backdrop-blur-md border border-[#4a3f60] shadow-2xl shadow-black/40">
+            <button
+              type="button"
+              onClick={() => router.back()}
+              className="flex items-center gap-2 px-5 py-2.5 border border-[#4a3f60] rounded-lg text-sm text-gray-400 hover:bg-[#4a3f60] hover:text-white transition-all"
+            >
+              <IconChevronLeft size={15} color="currentColor"/>
+              Annuler
+            </button>
+            <button
+              type="submit"
+              disabled={saving}
+              className="flex items-center justify-center gap-2 px-8 py-2.5 bg-[#fe5502] text-white rounded-lg text-sm font-semibold hover:bg-[#e0682e] disabled:opacity-50 transition-all shadow-md shadow-orange-500/20"
+            >
+              {saving ? (
+                <>
+                  <IconSpinner size={15}/>
+                  Enregistrement...
+                </>
+              ) : (
+                <>
+                  <IconSave size={15} color="#fff"/>
+                  Enregistrer
+                </>
+              )}
+            </button>
+          </div>
         </div>
         </div>
 
