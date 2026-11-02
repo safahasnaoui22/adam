@@ -431,17 +431,15 @@ export default function SpinWheelConfigPage() {
   // ---- display helpers for the new layout (no logic change) ----
   const featured = games.find((g) => g.id === featuredId) ?? games.find((g) => g.isActive) ?? games[0] ?? null;
   const wheelGradient = (g: any) => {
-    const total = g.segments.reduce((a: number, b: any) => a + (b.probability || 0), 0) || 100;
-    let acc = 0;
-    return g.segments.map((sg: any) => {
-      const start = (acc / total) * 100; acc += sg.probability || 0;
-      return `${sg.color} ${start}% ${(acc / total) * 100}%`;
-    }).join(", ");
+    // every slice has the SAME size (probability only affects the draw, not the drawing)
+    const n = g.segments.length || 1;
+    return g.segments.map((sg: any, i: number) =>
+      `${sg.color} ${(i / n) * 100}% ${((i + 1) / n) * 100}%`
+    ).join(", ");
   };
-  const wheelMids = (g: any) => {
-    const total = g.segments.reduce((a: number, b: any) => a + (b.probability || 0), 0) || 100;
-    let acc = 0;
-    return g.segments.map((sg: any) => { const mid = ((acc + (sg.probability || 0) / 2) / total) * 360; acc += sg.probability || 0; return mid; });
+   const wheelMids = (g: any) => {
+    const n = g.segments.length || 1;
+    return g.segments.map((_: any, i: number) => ((i + 0.5) / n) * 360);
   };
   const ruleText = (g: any) =>
     g.rule === "daily" ? "Une fois par jour"
