@@ -876,13 +876,14 @@ export default function ClientDashboard() {
       setWelcomeSeen(false);
     }
   }, [client?.id]);
-  useEffect(() => {
+   useEffect(() => {
     if (welcomeSeen !== false || !restaurant?.loyaltyProgram?.welcomeBonusActive) return;
     const id = localStorage.getItem("clientId");
     if (!id) return;
-    // once the customer has had the card on screen for a few seconds, remember it
+    // the customer has now received/seen the welcome gift: remember it AND hide the card
     const t = setTimeout(() => {
       try { localStorage.setItem(`BONOO:welcomeSeen:${id}`, "1"); } catch {}
+      setWelcomeSeen(true);
     }, 5000);
     return () => clearTimeout(t);
   }, [welcomeSeen, restaurant?.loyaltyProgram?.welcomeBonusActive]);
@@ -1677,29 +1678,7 @@ useEffect(() => {
               <span className="text-xs font-semibold px-3 py-1 rounded-full" style={{ backgroundColor: `${D.primary}15`, color: D.primary }}>{clientPts} pts</span>
             </div>
 
-            {/* ── Spin wheel entry point ── */}
-            {spinAvailable && (
-            <button
-              onClick={() => setShowSpin(true)}
-              className="w-full flex items-center gap-3 mb-5 p-4 rounded-2xl text-left transition-transform active:scale-[0.98]"
-              style={{
-                background: `linear-gradient(135deg, ${D.primary}18, ${D.primary}08)`,
-                border: `1px solid ${D.primary}30`,
-              }}
-            >
-              <span style={{ fontSize: 30, lineHeight: 1 }}>🎡</span>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold" style={{ color: D.text }}>Roue de la chance</p>
-                <p className="text-xs mt-0.5" style={{ color: `${D.text}70` }}>Tournez la roue pour gagner des points bonus</p>
-              </div>
-              <span
-                className="text-xs font-semibold px-3 py-1.5 rounded-full shrink-0"
-                style={{ backgroundColor: D.primary, color: "#fff" }}
-              >
-                Jouer
-              </span>
-            </button>
-            )}
+         
 
             {nextReward && (
               <div className="mb-5">
@@ -1780,7 +1759,29 @@ useEffect(() => {
             )}
           </div>
         </AnimSection>
-
+            {/* ── Spin wheel entry point (under the rewards list) ── */}
+            {spinAvailable && (
+            <button
+              onClick={() => setShowSpin(true)}
+              className="w-full flex items-center gap-3 mt-5 p-4 rounded-2xl text-left transition-transform active:scale-[0.98]"
+              style={{
+                background: `linear-gradient(135deg, ${D.primary}18, ${D.primary}08)`,
+                border: `1px solid ${D.primary}30`,
+              }}
+            >
+              <span style={{ fontSize: 30, lineHeight: 1 }}>🎡</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold" style={{ color: D.text }}>Roue de la chance</p>
+                <p className="text-xs mt-0.5" style={{ color: `${D.text}70` }}>Tournez la roue pour gagner des points bonus</p>
+              </div>
+              <span
+                className="text-xs font-semibold px-3 py-1.5 rounded-full shrink-0"
+                style={{ backgroundColor: D.primary, color: "#fff" }}
+              >
+                Jouer
+              </span>
+            </button>
+            )}
         {/* ── Points à gagner ── */}
         {availableBonuses.length > 0 && (
           <AnimSection delay={140}>
