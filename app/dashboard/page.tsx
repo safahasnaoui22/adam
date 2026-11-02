@@ -371,7 +371,7 @@ export default async function DashboardPage() {
                     </div>
                 </div>
             </div>
-                        {/* Status Banner */}
+                        {/* Status Banner 
             <div className="bg-[var(--bg-card)] shadow rounded-[var(--radius-md)] border border-[var(--border)]">
                 <div className="px-4 py-5 sm:p-6">
                     <div className="flex items-center justify-between flex-wrap gap-4">
@@ -390,79 +390,78 @@ export default async function DashboardPage() {
                     </div>
                 </div>
             </div>
-
+*/}
             {/* Tendances Récompenses */}
-            <div className="bg-[var(--bg-card)] rounded-[var(--radius-md)] border border-[var(--border)] p-6">
-                <div className="flex items-start justify-between flex-wrap gap-3">
-                    <div>
-                        <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                            <TrendingUp size={22} className="text-orange-400" /> Tendances Récompenses
-                        </h2>
-                        <p className="text-sm text-gray-400 mt-1">
-                            Les récompenses les plus échangées sur les 30 derniers jours
-                        </p>
-                    </div>
-                    <span className="text-xs font-semibold text-gray-300 bg-white/5 border border-[var(--border)] px-3 py-1 rounded-full">
-                        {rewardTrends.totalLast30} échange{rewardTrends.totalLast30 > 1 ? "s" : ""} · 30 jours
-                    </span>
-                </div>
+                    
+            {(() => {
+                const rewardRows = (restaurant.loyaltyProgram?.rewards ?? [])
+                    .map((r) => ({
+                        id: r.id,
+                        name: r.name,
+                        pointsRequired: r.pointsRequired,
+                        isActive: r.isActive,
+                        claims: rewardTrends.totals[r.id] ?? 0,
+                    }))
+                    .filter((r) => r.isActive || r.claims > 0)
+                    .sort((a, b) => b.claims - a.claims || a.pointsRequired - b.pointsRequired);
 
-                {rewardTrends.items.length === 0 ? (
-                    <div className="mt-6 text-center py-8 border border-dashed border-[var(--border)] rounded-xl">
-                        <p className="text-gray-300 font-medium">Aucun échange pour le moment</p>
-                        <p className="text-sm text-gray-500 mt-1">
-                            Dès que vos clients échangeront leurs points, les récompenses les plus populaires apparaîtront ici.
-                        </p>
-                        <Link
-                            href="/dashboard/loyalty-program"
-                            className="mt-4 inline-flex items-center px-4 py-2 text-sm font-medium rounded-md text-white bg-[#fe5502] hover:bg-[#e0682e] transition-colors"
-                        >
-                            Gérer mes récompenses
-                        </Link>
-                    </div>
-                ) : (
-                    <ul className="mt-5 space-y-3">
-                        {rewardTrends.items.map((r, i) => (
-                            <li
-                                key={r.id}
-                                className="flex items-center gap-4 bg-white/5 border border-[var(--border)] rounded-xl px-4 py-3"
-                            >
-                                <span className="w-8 h-8 shrink-0 rounded-full bg-[#fe5502]/15 text-[#fe5502] text-sm font-bold flex items-center justify-center">
-                                    {i + 1}
-                                </span>
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex items-baseline justify-between gap-3">
-                                        <p className="text-white font-semibold truncate">{r.name}</p>
-                                        <p className="text-xs text-gray-400 shrink-0">{r.pointsRequired} pts</p>
-                                    </div>
-                                    <div className="mt-2 h-2 bg-white/10 rounded-full overflow-hidden">
-                                        <div
-                                            className="h-full rounded-full bg-gradient-to-r from-[#F97316] to-[#fb923c]"
-                                            style={{ width: `${Math.max(4, (r.last30 / maxTrendCount) * 100)}%` }}
-                                        />
-                                    </div>
-                                </div>
-                                <div className="text-right shrink-0">
-                                    <p className="text-white font-bold">{r.last30}</p>
-                                    <p
-                                        className={`text-xs font-semibold ${
-                                            r.trend === null
-                                                ? "text-gray-500"
-                                                : r.trend > 0
-                                                ? "text-emerald-400"
-                                                : r.trend < 0
-                                                ? "text-red-400"
-                                                : "text-gray-400"
-                                        }`}
+                return (
+                    <div className="bg-[var(--bg-card)] rounded-3xl border border-[var(--border)] p-6 sm:p-8 shadow-lg">
+                        <h2 className="text-2xl font-extrabold text-white flex items-center gap-3">
+                            <span className="flex items-center justify-center">
+                                <Flame
+                                    size={30}
+                                    className="text-[#F97316] fill-[#F97316]"
+                                    style={{ filter: "drop-shadow(0 0 10px rgba(249,115,22,0.55))" }}
+                                />
+                            </span>
+                            Tendances Récompenses
+                        </h2>
+
+                        {rewardRows.length === 0 ? (
+                            <div className="mt-6 text-center py-8 border border-dashed border-[var(--border)] rounded-2xl">
+                                <p className="text-gray-300 font-medium">Aucune récompense pour le moment</p>
+                                <p className="text-sm text-gray-500 mt-1">
+                                    Ajoutez des récompenses pour suivre ici celles que vos clients réclament.
+                                </p>
+                                <Link
+                                    href="/dashboard/loyalty-program"
+                                    className="mt-4 inline-flex items-center px-4 py-2 text-sm font-medium rounded-md text-white bg-[#fe5502] hover:bg-[#e0682e] transition-colors"
+                                >
+                                    Gérer mes récompenses
+                                </Link>
+                            </div>
+                        ) : (
+                            <ul className="mt-6 space-y-3">
+                                {rewardRows.map((r) => (
+                                    <li
+                                        key={r.id}
+                                        className="flex items-center gap-4 bg-white/[0.04] border border-white/[0.06] rounded-2xl px-5 py-4"
                                     >
-                                        {r.trend === null ? "—" : `${r.trend > 0 ? "↑ +" : r.trend < 0 ? "↓ " : ""}${r.trend}%`}
-                                    </p>
-                                </div>
-                            </li>
-                        ))}
-                    </ul>
-                )}
-            </div>
+                                        <span className="w-[50px] h-[50px] shrink-0 rounded-xl bg-[#F97316]/15 text-[#F97316] flex items-center justify-center">
+                                            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                                <path d="M20 7h-2.18A3 3 0 0 0 12 4.35 3 3 0 0 0 6.18 7H4a1 1 0 0 0-1 1v4h18V8a1 1 0 0 0-1-1ZM9 7a1 1 0 1 1 1 1H9Zm5 1a1 1 0 1 1 1-1v1ZM4 14v5a2 2 0 0 0 2 2h5v-7Zm9 7h5a2 2 0 0 0 2-2v-5h-7Z" />
+                                            </svg>
+                                        </span>
+
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-white font-bold text-lg truncate">{r.name}</p>
+                                            <p className="text-sm text-slate-400">{r.pointsRequired} points nécessaires</p>
+                                        </div>
+
+                                        <div className="text-right shrink-0">
+                                            <p className="text-white font-extrabold text-xl leading-none">{r.claims}</p>
+                                            <p className="text-[11px] font-medium tracking-[0.14em] uppercase text-slate-400 mt-1.5">
+                                                Réclamations
+                                            </p>
+                                        </div>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                    </div>
+                );
+            })()}
 
           
 
