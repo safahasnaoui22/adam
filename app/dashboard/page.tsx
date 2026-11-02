@@ -116,8 +116,10 @@ async function getRewardTrends(restaurantId: string) {
             return { ...r, trend };
         });
 
-    const totalLast30 = Array.from(byReward.values()).reduce((s, r) => s + r.last30, 0);
-    return { items, totalLast30 };
+       const totalLast30 = Array.from(byReward.values()).reduce((s, r) => s + r.last30, 0);
+    const totals: Record<string, number> = {};
+    byReward.forEach((r) => { totals[r.id] = r.total; });
+    return { items, totalLast30, totals };
 }
 
 // Loyalty performance: last 30 days vs the 30 days before, from real visits.
