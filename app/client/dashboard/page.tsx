@@ -12,7 +12,7 @@ import CelebrationCard from "@/components/CelebrationCard";
 // beforeinstallprompt is now captured app-wide in app/providers.tsx
 // (see lib/pwaInstall.ts) so it isn't missed when it fires on an earlier
 // page, before the customer ever reaches this dashboard.
-import { getDeferredPrompt, promptInstall, onPwaStateChange, waitForInstallPrompt } from "@/lib/pwaInstall";
+import { getDeferredPrompt, promptInstall, onPwaStateChange, waitForInstallPrompt, isPwaInstalled } from "@/lib/pwaInstall";
 import PwaDebug from "@/components/PwaDebug";
 
 // ── useScrollReveal hook ───────────────────────────────────────────────
@@ -584,15 +584,40 @@ type BonusModalProps = {
   textColor: string;
   cardBg: string;
   onStart: () => void;
-  onConfirm: () => void;
+  onConfirm: (image: string) => void;
   onCancel: () => void;
   loading: boolean;
+  error: string | null;
 };
 
 const BONUS_WAIT_SECONDS = 20;
 
-function BonusModal({ action, pointsValue, primaryColor, textColor, cardBg, onStart, onConfirm, onCancel, loading }: BonusModalProps) {
+function BonusModal({ action, pointsValue, primaryColor, textColor, cardBg, onStart, onConfirm, onCancel, loading, error }: BonusModalProps) {
   const [step, setStep] = useState<"intro" | "waiting" | "confirm">("intro");
+  const [image, setImage] = useState<string | null>(null);
+  const [imgError, setImgError] = useState<string | null>(null);
+
+  // Shrinks the screenshot (max 1280px JPEG) so the upload stays small and fast.
+  const handleFile = (file: File | undefined) => {
+    setImgError(null);
+    if (!file) return;
+    if (!file.type.startsWith("image/")) { setImgError("Choisissez une image."); return; }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const scale = Math.min(1, 1280 / Math.max(img.width, img.height));
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        canvas.getContext("2d")!.drawImage(img, 0, 0, canvas.width, canvas.height);
+        setImage(canvas.toDataURL("image/jpeg", 0.82));
+      };
+      img.onerror = () => setImgError("Image illisible.");
+      img.src = reader.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
   const [countdown, setCountdown] = useState(BONUS_WAIT_SECONDS);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -632,7 +657,7 @@ function BonusModal({ action, pointsValue, primaryColor, textColor, cardBg, onSt
               <p style={{ fontSize: 12, color: `${textColor}60`, margin: 0, lineHeight: 1.6 }}>
                 1. Appuyez sur <strong style={{ color: textColor }}>Ouvrir {action.label}</strong><br/>
                 2. {action.actionLabel}<br/>
-                3. Revenez ici et confirmez
+                3. Revenez ici et envoyez une capture d'écran comme preuve
               </p>
             </div>
             <a
@@ -652,18 +677,38 @@ function BonusModal({ action, pointsValue, primaryColor, textColor, cardBg, onSt
               <span style={{ fontSize: 24, fontWeight: 700, color: primaryColor }}>{countdown}</span>
             </div>
             <h3 style={{ fontSize: 16, fontWeight: 700, color: textColor, margin: "0 0 8px" }}>En cours…</h3>
-            <p style={{ fontSize: 13, color: `${textColor}70`, margin: "0 0 20px" }}>Effectuez l'action sur {action.label},<br/>puis revenez ici. Le bouton de confirmation apparaît dans {countdown}s.</p>
+            <p style={{ fontSize: 13, color: `${textColor}70`, margin: "0 0 20px" }}>Effectuez l'action sur {action.label},<br/>puis faites une capture d'écran. L'envoi de la preuve apparaît dans {countdown}s.</p>
           </div>
         )}
         {step === "confirm" && (
           <div style={{ textAlign: "center" }}>
-            <div style={{ fontSize: 52, marginBottom: 12 }}>🎯</div>
-            <h3 style={{ fontSize: 18, fontWeight: 700, color: textColor, margin: "0 0 8px" }}>Avez-vous bien effectué l'action ?</h3>
-            <p style={{ fontSize: 13, color: `${textColor}70`, margin: "0 0 24px", lineHeight: 1.5 }}>Confirmez que vous avez <strong>{action.actionLabel.toLowerCase()}</strong> sur {action.label}.</p>
-            <button onClick={onConfirm} disabled={loading} style={{ width: "100%", padding: "14px", backgroundColor: primaryColor, border: "none", borderRadius: 14, color: "#fff", fontWeight: 700, fontSize: 15, cursor: loading ? "not-allowed" : "pointer", opacity: loading ? 0.7 : 1, marginBottom: 10 }}>
-              {loading ? "Enregistrement…" : `✅ Oui, j'ai ${action.actionLabel.toLowerCase()} !`}
+            <div style={{ fontSize: 44, marginBottom: 10 }}>📸</div>
+            <h3 style={{ fontSize: 18, fontWeight: 700, color: textColor, margin: "0 0 8px" }}>Envoyez votre preuve</h3>
+            <p style={{ fontSize: 13, color: `${textColor}70`, margin: "0 0 16px", lineHeight: 1.5 }}>
+              {action.id === "googleMaps"
+                ? "Capture de votre avis : 5 étoiles + commentaire, avec le nom du commerce visible."
+                : `Capture de la page ${action.label} montrant que vous êtes bien abonné(e).`}
+            </p>
+            <label style={{ display: "block", cursor: loading ? "not-allowed" : "pointer", marginBottom: 12 }}>
+              <input type="file" accept="image/*" disabled={loading} style={{ display: "none" }} onChange={(e) => handleFile(e.target.files?.[0])} />
+              {image ? (
+                <img src={image} alt="Aperçu" style={{ maxHeight: 220, maxWidth: "100%", borderRadius: 12, border: `1.5px solid ${primaryColor}40` }} />
+              ) : (
+                <div style={{ border: `2px dashed ${primaryColor}60`, borderRadius: 14, padding: "26px 12px", color: primaryColor, fontWeight: 600, fontSize: 14, backgroundColor: `${primaryColor}08` }}>
+                  Choisir la capture d'écran
+                </div>
+              )}
+            </label>
+            {image && !loading && (
+              <p style={{ fontSize: 12, color: `${textColor}60`, margin: "0 0 12px" }}>Touchez l'image pour la changer</p>
+            )}
+            {(error || imgError) && (
+              <p style={{ fontSize: 13, color: "#dc2626", margin: "0 0 12px", lineHeight: 1.4 }}>{imgError || error}</p>
+            )}
+            <button onClick={() => image && onConfirm(image)} disabled={loading || !image} style={{ width: "100%", padding: "14px", backgroundColor: primaryColor, border: "none", borderRadius: 14, color: "#fff", fontWeight: 700, fontSize: 15, cursor: loading || !image ? "not-allowed" : "pointer", opacity: loading || !image ? 0.6 : 1, marginBottom: 10 }}>
+              {loading ? "Vérification en cours…" : "Envoyer pour vérification"}
             </button>
-            <button onClick={onCancel} style={{ width: "100%", padding: "12px", backgroundColor: "transparent", border: "none", color: `${textColor}60`, fontSize: 14, cursor: "pointer" }}>Non, annuler</button>
+            <button onClick={onCancel} style={{ width: "100%", padding: "12px", backgroundColor: "transparent", border: "none", color: `${textColor}60`, fontSize: 14, cursor: "pointer" }}>Annuler</button>
           </div>
         )}
       </div>
@@ -857,6 +902,7 @@ export default function ClientDashboard() {
   const [patternStyle, setPatternStyle] = useState<React.CSSProperties>({});
   const [completedBonuses, setCompletedBonuses] = useState<string[]>([]);
   const [claimingBonus, setClaimingBonus] = useState<string | null>(null);
+  const [bonusError, setBonusError] = useState<string | null>(null);
   const [activeBonusModal, setActiveBonusModal] = useState<BonusAction | null>(null);
   const [celebration, setCelebration] = useState<{
     pointsEarned: number; newTotal: number; mode?: "earned" | "spent"; rewardName?: string;
@@ -1109,7 +1155,13 @@ export default function ClientDashboard() {
     if (ready) {
       try {
         const outcome = await promptInstall();
-        if (outcome === "accepted") setPwaInstalled(true);
+        // "accepted" only means the user tapped Install. Android then builds the
+        // app in the background (WebAPK) and fires `appinstalled` when it is
+        // really on the phone, so only flip to "installed" on that event.
+        if (outcome === "accepted") {
+          setInstallHint("Installation en cours… L'icône va apparaître dans quelques secondes sur votre écran d'accueil ou dans la liste de vos applications.");
+          setTimeout(() => setInstallHint(null), 15000);
+        }
       } catch (err) {
         console.error("[install] prompt failed:", err);
       }
@@ -1127,6 +1179,11 @@ export default function ClientDashboard() {
   const [, forceInstallStateRefresh] = useState(0);
 useEffect(() => {
   const unsubscribe = onPwaStateChange(() => {
+    if (isPwaInstalled()) {
+      setPwaInstalled(true);
+      setInstallHint("Application installée ✓ Cherchez son icône sur votre écran d'accueil ou dans la liste de vos applications.");
+      setTimeout(() => setInstallHint(null), 15000);
+    }
     forceInstallStateRefresh((n) => n + 1);
   });
 
@@ -1178,6 +1235,7 @@ useEffect(() => {
       return;
     }
     (window as any).__bonusUrl = restaurant[action.urlKey];
+    setBonusError(null);
     setActiveBonusModal(action);
   };
 
@@ -1198,14 +1256,15 @@ useEffect(() => {
     } catch (e) { console.error(e); }
   };
 
-  const handleConfirmBonus = async () => {
+  const handleConfirmBonus = async (image: string) => {
     if (!activeBonusModal) return;
     setClaimingBonus(activeBonusModal.id);
+    setBonusError(null);
     try {
-      const res = await fetch("/api/customer/claim-bonus", {
+      const res = await fetch("/api/customer/verify-bonus", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ platform: activeBonusModal.id, token: bonusTokenRef.current }),
+        body: JSON.stringify({ platform: activeBonusModal.id, token: bonusTokenRef.current, image }),
       });
       const data = await res.json();
       if (res.ok) {
@@ -1225,13 +1284,12 @@ useEffect(() => {
           );
         }, 350);
       } else {
-        alert(data.error || "Une erreur est survenue. Réessayez plus tard.");
-        setActiveBonusModal(null);
+        // Keep the modal open so the customer can read why and retry with a better screenshot.
+        setBonusError(data.error || "Une erreur est survenue. Réessayez plus tard.");
       }
     } catch (err) {
       console.error(err);
-      alert("Erreur réseau. Vérifiez votre connexion.");
-      setActiveBonusModal(null);
+      setBonusError("Erreur réseau. Vérifiez votre connexion.");
     } finally {
       setClaimingBonus(null);
     }
@@ -1384,6 +1442,7 @@ useEffect(() => {
           onConfirm={handleConfirmBonus}
           onCancel={() => setActiveBonusModal(null)}
           loading={claimingBonus === activeBonusModal.id}
+          error={bonusError}
         />
       )}
       {celebration && (
