@@ -453,11 +453,15 @@ function CustomerPopup({
 }) {
   const [points, setPoints] = useState(customer.points);
   const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
-
-  // ─ Redeem reward ─
   const [loadingReward, setLoadingReward] = useState<string | null>(null);
 
   const shortId = customer.customerId.slice(-4);
+
+  // Only rewards the customer can already claim are shown. Anything that
+  // needs more points than the customer has stays hidden (no locked rows).
+  const availableRewards = [...rewards]
+    .filter((r) => points >= r.pointsRequired)
+    .sort((a, b) => a.pointsRequired - b.pointsRequired);
 
   const handleRedeemReward = async (rewardId: string, pointsRequired: number) => {
     if (points < pointsRequired) {
@@ -475,7 +479,7 @@ function CustomerPopup({
       const data = await res.json();
       if (res.ok) {
         setPoints(data.newPoints);
-        setMessage({ text: `Récompense échangée 🎉 — Solde : ${data.newPoints}`, type: "success" });
+        setMessage({ text: `Récompense échangée — nouveau solde : ${data.newPoints} pts`, type: "success" });
       } else {
         setMessage({ text: data.error || "Erreur", type: "error" });
       }
@@ -493,266 +497,258 @@ function CustomerPopup({
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="cp-card">
+      <div className="cp-card" role="dialog" aria-modal="true">
         <button className="cp-close" onClick={onClose} aria-label="Fermer">
-          ×
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
         </button>
 
+        {/* ── Identity ── */}
         <div className="cp-header">
           <div className="cp-avatar">{customer.name.charAt(0).toUpperCase()}</div>
-          <h2 className="cp-name">{customer.name}</h2>
-          <p className="cp-id">#{shortId}</p>
+          <div className="cp-ident">
+            <h2 className="cp-name">{customer.name}</h2>
+            <span className="cp-id">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="2" y="5" width="20" height="14" rx="3" />
+                <line x1="2" y1="10" x2="22" y2="10" />
+              </svg>
+              Carte #{shortId}
+            </span>
+          </div>
         </div>
 
+        {/* ── Balance ── */}
         <div className="cp-balance">
-          <div className="cp-balance-icon">
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="12" y1="1" x2="12" y2="23" />
-              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-            </svg>
+          <div>
+            <span className="cp-balance-label">Solde de points</span>
+            <div className="cp-balance-row">
+              <span className="cp-balance-value" key={points}>{points}</span>
+              <span className="cp-balance-unit">pts</span>
+            </div>
           </div>
-          <div className="cp-balance-info">
-            <span className="cp-balance-value">{points}</span>
-            <span className="cp-balance-label">points disponibles</span>
+          <div className="cp-balance-icon">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="#fff" stroke="#fff" strokeWidth="1.5" strokeLinejoin="round">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+            </svg>
           </div>
         </div>
 
         {message && (
-          <div className={`cp-message ${message.type}`}>
-            <span className="cp-message-icon">
+          <div className={`cp-message ${message.type}`} role="status">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               {message.type === "success" ? (
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
+                <polyline points="20 6 9 17 4 12" />
               ) : (
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <>
                   <line x1="18" y1="6" x2="6" y2="18" />
                   <line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
+                </>
               )}
-            </span>
-            {message.text}
+            </svg>
+            <span>{message.text}</span>
           </div>
         )}
 
-        {/* Récompenses disponibles */}
-        {rewards.length > 0 && (
-          <div className="cp-section" style={{ animationDelay: "0.15s" }}>
-            <div className="cp-section-header">
-              <span className="cp-section-icon cp-icon-green">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="20 12 20 22 4 22 4 12" />
-                  <rect x="2" y="7" width="20" height="5" />
-                  <line x1="12" y1="22" x2="12" y2="7" />
-                  <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z" />
-                  <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" />
-                </svg>
-              </span>
-              <h3>Récompenses disponibles</h3>
+        {/* ── Rewards ── */}
+        <div className="cp-section-header">
+          <h3>Récompenses disponibles</h3>
+          <span className="cp-count">{availableRewards.length}</span>
+        </div>
+
+        {availableRewards.length > 0 ? (
+          <div className="cp-rewards">
+            {availableRewards.map((reward, i) => (
+              <div key={reward.id} className="cp-reward" style={{ animationDelay: `${0.05 * i}s` }}>
+                <div className="cp-reward-icon">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 12 20 22 4 22 4 12" />
+                    <rect x="2" y="7" width="20" height="5" />
+                    <line x1="12" y1="22" x2="12" y2="7" />
+                    <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z" />
+                    <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" />
+                  </svg>
+                </div>
+                <div className="cp-reward-body">
+                  <p className="cp-reward-name">{reward.name}</p>
+                  {reward.description && <p className="cp-reward-desc">{reward.description}</p>}
+                  <span className="cp-reward-points">{reward.pointsRequired} pts</span>
+                </div>
+                <button
+                  className="cp-btn"
+                  onClick={() => handleRedeemReward(reward.id, reward.pointsRequired)}
+                  disabled={loadingReward !== null}
+                >
+                  {loadingReward === reward.id ? <span className="cp-spinner" /> : "Échanger"}
+                </button>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="cp-empty">
+            <div className="cp-empty-icon">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 12 20 22 4 22 4 12" />
+                <rect x="2" y="7" width="20" height="5" />
+                <line x1="12" y1="22" x2="12" y2="7" />
+              </svg>
             </div>
-            <div className="cp-rewards">
-              {[...rewards]
-                .sort((a, b) => a.pointsRequired - b.pointsRequired)
-                .map((reward) => {
-                  const isAvailable = points >= reward.pointsRequired;
-                  const missing = reward.pointsRequired - points;
-                  return (
-                    <div key={reward.id} className={`cp-reward ${isAvailable ? "available" : "locked"}`}>
-                      <div>
-                        <p className="cp-reward-name">{reward.name}</p>
-                        <p className="cp-reward-points">{reward.pointsRequired} points</p>
-                        {!isAvailable && <p className="cp-reward-desc">🔒 Il manque {missing} point(s)</p>}
-                        {isAvailable && reward.description && <p className="cp-reward-desc">{reward.description}</p>}
-                      </div>
-                      {isAvailable ? (
-                        <button
-                          className="cp-btn cp-btn-green"
-                          onClick={() => handleRedeemReward(reward.id, reward.pointsRequired)}
-                          disabled={loadingReward === reward.id}
-                        >
-                          {loadingReward === reward.id ? "…" : "Échanger"}
-                        </button>
-                      ) : (
-                        <span className="cp-lock" aria-label="Verrouillée">
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                          </svg>
-                        </span>
-                      )}
-                    </div>
-                  );
-                })}
-            </div>
+            <p>Aucune récompense disponible pour le moment</p>
           </div>
         )}
       </div>
 
       <style>{`
         @keyframes cpFadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes cpSlideUp { from { opacity: 0; transform: translateY(40px) scale(0.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
-        @keyframes cpPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
-        @keyframes cpPop { 0% { transform: scale(0.6); opacity: 0; } 60% { transform: scale(1.08); opacity: 1; } 100% { transform: scale(1); } }
-        @keyframes cpSectionIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes cpSlideUp { from { opacity: 0; transform: translateY(24px) scale(0.98); } to { opacity: 1; transform: none; } }
+        @keyframes cpItemIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+        @keyframes cpBump { 0% { transform: scale(1); } 40% { transform: scale(1.12); } 100% { transform: scale(1); } }
+        @keyframes cpSpin { to { transform: rotate(360deg); } }
 
         .cp-overlay {
           position: fixed; inset: 0; z-index: 200;
-          background: rgba(0,0,0,0.78);
-          backdrop-filter: blur(6px);
+          background: rgba(10, 8, 22, 0.78);
+          backdrop-filter: blur(8px);
           display: flex; align-items: center; justify-content: center;
           padding: 1rem;
           animation: cpFadeIn 0.2s ease-out;
         }
         .cp-card {
-          background: linear-gradient(165deg, #34315a 0%, #221f3d 100%);
+          position: relative; width: 100%; max-width: 480px;
+          max-height: 90vh; overflow-y: auto;
+          padding: 1.75rem 1.5rem 1.5rem;
           border-radius: 1.5rem;
-        padding: 2.25rem;
-width: 100%;
-max-width: 540px;
-          max-height: 92vh; overflow-y: auto;
-          position: relative;
-          box-shadow: 0 25px 70px rgba(0,0,0,0.55), 0 0 0 1px rgba(254,85,2,0.18);
-          animation: cpSlideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+          background: linear-gradient(180deg, #2f2c52 0%, #221f3d 100%);
+          border: 1px solid rgba(255,255,255,0.08);
+          box-shadow: 0 30px 80px rgba(0,0,0,0.55);
+          animation: cpSlideUp 0.3s cubic-bezier(0.22, 1, 0.36, 1);
         }
         .cp-card::-webkit-scrollbar { width: 6px; }
         .cp-card::-webkit-scrollbar-thumb { background: #4a4870; border-radius: 3px; }
 
         .cp-close {
-          position: absolute; top: 1rem; right: 1.25rem;
-          background: rgba(255,255,255,0.08); border: none; color: #9ca3af;
-          width: 2.25rem; height: 2.25rem; border-radius: 50%;
-          font-size: 1.4rem; cursor: pointer; line-height: 1;
-          display: flex; align-items: center; justify-content: center;
-          transition: background 0.15s, color 0.15s, transform 0.2s;
+          position: absolute; top: 0.9rem; right: 0.9rem;
+          width: 2rem; height: 2rem; border-radius: 50%;
+          background: rgba(255,255,255,0.07); border: none; color: #a1a1c4;
+          display: flex; align-items: center; justify-content: center; cursor: pointer;
+          transition: background 0.15s, color 0.15s;
         }
-        .cp-close:hover { background: rgba(248,113,113,0.2); color: #f87171; transform: rotate(90deg); }
+        .cp-close:hover { background: rgba(255,255,255,0.14); color: #fff; }
 
-        .cp-header { text-align: center; margin-bottom: 1rem; }
+        .cp-header { display: flex; align-items: center; gap: 0.9rem; margin: 0 2rem 1.25rem 0; }
         .cp-avatar {
-          width: 60px; height: 60px; margin: 0 auto 0.6rem;
-          border-radius: 50%;
-          background: linear-gradient(135deg, #5b5aff, #8b8aff);
+          width: 54px; height: 54px; flex-shrink: 0; border-radius: 16px;
+          background: linear-gradient(135deg, #5b5aff, #8f8eff);
           display: flex; align-items: center; justify-content: center;
-          color: #fff; font-size: 1.6rem; font-weight: 800;
-          box-shadow: 0 8px 24px rgba(91,90,255,0.4);
-          animation: cpPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s backwards;
+          color: #fff; font-size: 1.5rem; font-weight: 800;
+          box-shadow: 0 8px 20px rgba(91,90,255,0.35);
         }
-        .cp-name { color: #fff; font-size: 1.3rem; font-weight: 800; margin: 0 0 0.2rem; }
-        .cp-id { color: #6b7280; font-size: 0.8rem; font-family: monospace; margin: 0; letter-spacing: 0.05em; }
+        .cp-ident { min-width: 0; }
+        .cp-name {
+          margin: 0 0 0.3rem; color: #fff; font-size: 1.25rem; font-weight: 700;
+          white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .cp-id {
+          display: inline-flex; align-items: center; gap: 0.35rem;
+          padding: 0.2rem 0.6rem; border-radius: 999px;
+          background: rgba(255,255,255,0.07); color: #b9b8d6;
+          font-size: 0.75rem; font-weight: 600; font-family: ui-monospace, monospace; letter-spacing: 0.04em;
+        }
 
         .cp-balance {
-          display: flex; align-items: center; gap: 1rem;
-          background: linear-gradient(135deg, rgba(254,85,2,0.18), rgba(254,85,2,0.04));
+          display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+          padding: 1.1rem 1.25rem; margin-bottom: 1.25rem; border-radius: 1.1rem;
+          background: linear-gradient(135deg, rgba(254,85,2,0.22), rgba(254,85,2,0.06));
           border: 1px solid rgba(254,85,2,0.3);
-          border-radius: 1.1rem;
-          padding: 1.1rem 1.25rem;
-          margin-bottom: 1.25rem;
         }
+        .cp-balance-label { color: #fdb27a; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; }
+        .cp-balance-row { display: flex; align-items: baseline; gap: 0.4rem; margin-top: 0.2rem; }
+        .cp-balance-value { color: #fff; font-size: 2.4rem; font-weight: 800; line-height: 1; animation: cpBump 0.35s ease-out; }
+        .cp-balance-unit { color: #fdb27a; font-size: 1rem; font-weight: 700; }
         .cp-balance-icon {
-          width: 52px; height: 52px; flex-shrink: 0;
-          border-radius: 50%;
+          width: 52px; height: 52px; flex-shrink: 0; border-radius: 16px;
           background: linear-gradient(135deg, #fe5502, #ff8a3d);
           display: flex; align-items: center; justify-content: center;
           box-shadow: 0 8px 20px rgba(254,85,2,0.4);
-          animation: cpPulse 2.4s ease-in-out infinite;
         }
-        .cp-balance-info { display: flex; flex-direction: column; }
-        .cp-balance-value { color: #fff; font-size: 2rem; font-weight: 800; line-height: 1.1; }
-        .cp-balance-label { color: #fdb27a; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 0.15rem; }
 
         .cp-message {
-          display: flex; align-items: center; gap: 0.5rem;
-          padding: 0.6rem 0.9rem; border-radius: 0.6rem; font-size: 0.85rem; font-weight: 600;
-          margin-bottom: 1.1rem; animation: cpFadeIn 0.2s ease-out;
+          display: flex; align-items: center; gap: 0.55rem;
+          padding: 0.7rem 0.9rem; margin-bottom: 1.1rem; border-radius: 0.75rem;
+          font-size: 0.85rem; font-weight: 600; animation: cpFadeIn 0.2s ease-out;
         }
-        .cp-message-icon { display: flex; flex-shrink: 0; }
-        .cp-message.success { background: rgba(52,211,153,0.12); color: #34d399; border: 1px solid rgba(52,211,153,0.3); }
-        .cp-message.error { background: rgba(248,113,113,0.12); color: #f87171; border: 1px solid rgba(248,113,113,0.3); }
+        .cp-message svg { flex-shrink: 0; }
+        .cp-message.success { background: rgba(52,211,153,0.12); color: #34d399; border: 1px solid rgba(52,211,153,0.28); }
+        .cp-message.error { background: rgba(248,113,113,0.12); color: #f87171; border: 1px solid rgba(248,113,113,0.28); }
 
-        .cp-section {
-          background: rgba(255,255,255,0.03);
-          border: 1px solid rgba(255,255,255,0.06);
-          border-radius: 0.9rem;
-          padding: 1.1rem;
-          margin-bottom: 1rem;
-          animation: cpSectionIn 0.4s ease-out backwards;
-        }
-          .cp-section-header h3 {
-  font-size: 1.4rem;
-  font-weight: 800;
-  letter-spacing: 0.3px;
-}
-        .cp-section-header { display: flex; align-items: center; gap: 0.55rem; margin-bottom: 0.85rem; }
-        .cp-section-icon {
-          width: 30px; height: 30px; border-radius: 0.5rem;
-          display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-        }
-        .cp-icon-orange { background: rgba(254,85,2,0.12); }
-        .cp-icon-red { background: rgba(239,68,68,0.12); }
-        .cp-icon-green { background: rgba(22,163,74,0.12); }
-        .cp-section h3 { color: #e5e7eb; font-size: 0.95rem; font-weight: 700; margin: 0; }
-
-        .cp-rule-banner {
-          background: rgba(254,85,2,0.12); border: 1px solid rgba(254,85,2,0.35);
-          border-radius: 0.6rem; padding: 0.55rem 0.85rem; margin-bottom: 0.85rem;
-          font-size: 0.8rem; color: #fdb27a;
+        .cp-section-header { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.8rem; }
+        .cp-section-header h3 { margin: 0; color: #fff; font-size: 1.05rem; font-weight: 700; }
+        .cp-count {
+          min-width: 1.5rem; height: 1.5rem; padding: 0 0.45rem; border-radius: 999px;
+          background: rgba(52,211,153,0.15); color: #34d399;
+          display: inline-flex; align-items: center; justify-content: center;
+          font-size: 0.78rem; font-weight: 800;
         }
 
-        .cp-row { display: flex; gap: 0.5rem; }
-        .cp-input {
-          flex: 1; padding: 0.85rem 1rem; border-radius: 0.65rem;
-          background: #3d3b5e; border: 1.5px solid #4a4870; color: #fff;
-          font-size: 0.95rem; outline: none; box-sizing: border-box;
-          transition: border-color 0.15s;
+        .cp-rewards { display: flex; flex-direction: column; gap: 0.6rem; }
+        .cp-reward {
+          display: flex; align-items: center; gap: 0.85rem;
+          padding: 0.85rem; border-radius: 1rem;
+          background: rgba(255,255,255,0.045);
+          border: 1px solid rgba(255,255,255,0.08);
+          transition: border-color 0.15s, background 0.15s;
+          animation: cpItemIn 0.3s ease-out backwards;
         }
-        .cp-input:focus { border-color: #5b5aff; }
-        .cp-input::placeholder { color: #7c7aa0; }
-        .cp-input-full { width: 100%; margin-bottom: 0.6rem; }
-
-        .cp-preview {
-          display: flex; align-items: center; gap: 0.4rem;
-          padding: 0.5rem 0.75rem; border-radius: 0.5rem;
-          font-size: 0.82rem; font-weight: 600; margin-bottom: 0.85rem;
+        .cp-reward:hover { background: rgba(255,255,255,0.07); border-color: rgba(254,85,2,0.4); }
+        .cp-reward-icon {
+          width: 44px; height: 44px; flex-shrink: 0; border-radius: 12px;
+          display: flex; align-items: center; justify-content: center;
+          background: rgba(254,85,2,0.14); color: #ff8a3d;
         }
-        .cp-preview.ok { background: rgba(52,211,153,0.1); border: 1px solid rgba(52,211,153,0.3); color: #34d399; }
-        .cp-preview.warn { background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.3); color: #f87171; }
-
-        .cp-submit-btn {
-          width: 100%; padding: 0.9rem; border: none; border-radius: 0.65rem;
-          background: linear-gradient(135deg, #fe5502, #ff8a3d);
-          color: #fff; font-weight: 700; font-size: 0.98rem; cursor: pointer;
-          display: flex; align-items: center; justify-content: center; gap: 0.5rem;
-          transition: filter 0.15s, transform 0.1s;
+        .cp-reward-body { flex: 1; min-width: 0; }
+        .cp-reward-name { margin: 0; color: #fff; font-size: 0.95rem; font-weight: 700; }
+        .cp-reward-desc { margin: 0.15rem 0 0.35rem; color: #9b9ac0; font-size: 0.78rem; line-height: 1.35; }
+        .cp-reward-points {
+          display: inline-block; margin-top: 0.25rem; padding: 0.12rem 0.55rem; border-radius: 999px;
+          background: rgba(254,85,2,0.14); color: #fdb27a; font-size: 0.72rem; font-weight: 700;
         }
-        .cp-submit-btn:hover:not(:disabled) { filter: brightness(1.08); }
-        .cp-submit-btn:active:not(:disabled) { transform: scale(0.98); }
-        .cp-submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
         .cp-btn {
-          padding: 0.85rem 1.1rem; border: none; border-radius: 0.65rem;
-          font-weight: 700; font-size: 0.92rem; cursor: pointer; color: #fff;
+          flex-shrink: 0; min-width: 86px; height: 40px; padding: 0 1rem;
+          border: none; border-radius: 0.75rem; color: #fff; cursor: pointer;
+          background: linear-gradient(135deg, #16a34a, #22c55e);
+          font-size: 0.88rem; font-weight: 700;
+          display: flex; align-items: center; justify-content: center;
+          box-shadow: 0 6px 16px rgba(34,197,94,0.25);
           transition: filter 0.15s, transform 0.1s;
-          white-space: nowrap;
         }
-        .cp-btn:active { transform: scale(0.97); }
+        .cp-btn:hover:not(:disabled) { filter: brightness(1.08); }
+        .cp-btn:active:not(:disabled) { transform: scale(0.96); }
         .cp-btn:disabled { opacity: 0.55; cursor: not-allowed; }
-        .cp-btn-red { background: #ef4444; }
-        .cp-btn-red:hover:not(:disabled) { filter: brightness(1.1); }
-        .cp-btn-green { background: #16a34a; }
-        .cp-btn-green:hover:not(:disabled) { filter: brightness(1.1); }
-
-        .cp-rewards { display: flex; flex-direction: column; gap: 0.5rem; max-height: 220px; overflow-y: auto; }
-        .cp-reward {
-          display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
-          padding: 0.85rem; border-radius: 0.65rem;
-          transition: transform 0.15s;
+        .cp-spinner {
+          width: 16px; height: 16px; border-radius: 50%;
+          border: 2px solid rgba(255,255,255,0.4); border-top-color: #fff;
+          animation: cpSpin 0.7s linear infinite;
         }
-        .cp-reward.available { background: rgba(254,85,2,0.08); border: 1px solid rgba(254,85,2,0.25); }
-        .cp-reward.locked { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); opacity: 0.6; }
-        .cp-reward-name { color: #fff; font-weight: 600; font-size: 0.92rem; margin: 0; }
-        .cp-reward-points { color: #fdb27a; font-size: 0.78rem; margin: 0.15rem 0 0; }
-        .cp-reward-desc { color: #6b7280; font-size: 0.75rem; margin: 0.15rem 0 0; }
-        .cp-lock { display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; flex-shrink: 0; }
+
+        .cp-empty {
+          text-align: center; padding: 1.75rem 1rem; border-radius: 1rem;
+          border: 1px dashed rgba(255,255,255,0.14); color: #9b9ac0; font-size: 0.88rem;
+        }
+        .cp-empty p { margin: 0.6rem 0 0; }
+        .cp-empty-icon {
+          width: 52px; height: 52px; margin: 0 auto; border-radius: 50%;
+          display: flex; align-items: center; justify-content: center;
+          background: rgba(255,255,255,0.05); color: #7c7aa0;
+        }
+
+        @media (max-width: 420px) {
+          .cp-card { padding: 1.4rem 1.1rem 1.2rem; }
+          .cp-reward { flex-wrap: wrap; }
+          .cp-btn { width: 100%; }
+        }
       `}</style>
     </div>
   );
