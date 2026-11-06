@@ -604,7 +604,7 @@ function BonusModal({ action, pointsValue, primaryColor, textColor, cardBg, onSt
     if (!file.type.startsWith("image/")) { setImgError("Choisissez une image."); return; }
     const reader = new FileReader();
     reader.onload = () => {
-      const img = new Image();
+      const img = new window.Image();
       img.onload = () => {
         const scale = Math.min(1, 1280 / Math.max(img.width, img.height));
         const canvas = document.createElement("canvas");
