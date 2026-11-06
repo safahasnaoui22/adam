@@ -6,7 +6,7 @@ tags:
 - git
 - hotspot
 created: 2026-10-30
-updated: 2026-11-02
+updated: 2026-11-03
 filenames:
 - app/dashboard/loyalty-program/page.tsx
 links: []
@@ -14,7 +14,7 @@ kind: code
 status: proposed
 superseded_by: null
 deprecated_at: null
-review_after: 2026-11-02
+review_after: 2026-11-03
 source_chat_id: null
 created_at: 2026-10-30T10:11:07.230564700+00:00
 summary: null

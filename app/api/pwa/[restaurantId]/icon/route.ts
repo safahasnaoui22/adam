@@ -1,29 +1,10 @@
-// app/api/pwa/[restaurantId]/icon/route.ts
-//
-// Turns the logo the owner uploaded under "Logo du commerce" (stored as a
-// base64 data URL) into a real, square, opaque PNG that phones accept as an
-// app icon.
-//
-//   /api/pwa/<id>/icon?size=192                      -> normal icon
-//   /api/pwa/<id>/icon?size=512&purpose=maskable     -> extra padding, so
-//                                                       Android's round/
-//                                                       squircle mask won't
-//                                                       crop the logo
-//   add &v=<timestamp> to cache-bust after a logo change
-//   add &debug=1 to see which renderer was used (or why it fell back)
-//
-// This route must NEVER answer with a server error: Chrome refuses to offer
-// "Install app" if the manifest's icons fail. So every step is guarded:
-//   1. sharp (fast, high quality)          — loaded lazily, in case the native
-//                                            module is missing on the server
-//   2. next/og (no native dependency)      — used if sharp is unavailable
-//   3. the default Adam icon (redirect)    — used if both fail or no logo
-//
-// The failure that prompted this: both icons returned HTTP 500 on Vercel.
+
 
 import { NextRequest, NextResponse } from "next/server";
 import { ImageResponse } from "next/og";
 import { createElement } from "react";
+import { readFile } from "fs/promises";
+import path from "path";
 import { prisma } from "@/app/lib/prisma";
 
 export const runtime = "nodejs";
@@ -57,10 +38,19 @@ function pngResponse(icon: Buffer, versioned: boolean) {
   });
 }
 
-function fallback(size: number, req: NextRequest) {
-  const path =
-    size === 180 ? "/icons/apple-touch-icon.png" : `/icons/icon-${size}x${size}.png`;
-  return NextResponse.redirect(new URL(path, req.url), 302);
+// Serve the default icon directly (no redirect): Google's WebAPK service
+// fetches manifest icons itself and can reject a redirected icon, which makes
+// Chrome say "installed" without ever adding the app to the phone.
+async function fallback(size: number, req: NextRequest) {
+  const file = size === 180 ? "apple-touch-icon.png" : `icon-${size}x${size}.png`;
+  try {
+    const buf = await readFile(path.join(process.cwd(), "public", "icons", file));
+    return new NextResponse(new Uint8Array(buf), {
+      headers: { "Content-Type": "image/png", "Cache-Control": "public, max-age=3600, s-maxage=3600" },
+    });
+  } catch {
+    return NextResponse.redirect(new URL(`/icons/${file}`, req.url), 302);
+  }
 }
 
 // Only data URLs are supported (that is how the personalize page saves the
@@ -210,7 +200,7 @@ export async function GET(
     });
   }
 
-  if (!icon) return fallback(size, req);
+  if (!icon) return await fallback(size, req);
 
   if (versioned) remember(cacheKey, icon);
   return pngResponse(icon, versioned);
