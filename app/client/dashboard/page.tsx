@@ -12,7 +12,7 @@ import CelebrationCard from "@/components/CelebrationCard";
 // beforeinstallprompt is now captured app-wide in app/providers.tsx
 // (see lib/pwaInstall.ts) so it isn't missed when it fires on an earlier
 // page, before the customer ever reaches this dashboard.
-import { getDeferredPrompt, promptInstall, onPwaStateChange, waitForInstallPrompt, isPwaInstalled } from "@/lib/pwaInstall";
+import { getDeferredPrompt, promptInstall, onPwaStateChange, waitForInstallPrompt } from "@/lib/pwaInstall";
 import PwaDebug from "@/components/PwaDebug";
 
 // ── useScrollReveal hook ───────────────────────────────────────────────
@@ -1109,13 +1109,7 @@ export default function ClientDashboard() {
     if (ready) {
       try {
         const outcome = await promptInstall();
-        // "accepted" only means the user tapped Install. Android then builds the
-        // app in the background (WebAPK) and fires `appinstalled` when it is
-        // really on the phone, so only flip to "installed" on that event.
-        if (outcome === "accepted") {
-          setInstallHint("Installation en cours… L'icône va apparaître dans quelques secondes sur votre écran d'accueil ou dans la liste de vos applications.");
-          setTimeout(() => setInstallHint(null), 15000);
-        }
+        if (outcome === "accepted") setPwaInstalled(true);
       } catch (err) {
         console.error("[install] prompt failed:", err);
       }
@@ -1133,11 +1127,6 @@ export default function ClientDashboard() {
   const [, forceInstallStateRefresh] = useState(0);
 useEffect(() => {
   const unsubscribe = onPwaStateChange(() => {
-    if (isPwaInstalled()) {
-      setPwaInstalled(true);
-      setInstallHint("Application installée ✓ Cherchez son icône sur votre écran d'accueil ou dans la liste de vos applications.");
-      setTimeout(() => setInstallHint(null), 15000);
-    }
     forceInstallStateRefresh((n) => n + 1);
   });
 

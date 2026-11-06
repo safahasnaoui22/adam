@@ -3,8 +3,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ImageResponse } from "next/og";
 import { createElement } from "react";
-import { readFile } from "fs/promises";
-import path from "path";
 import { prisma } from "@/app/lib/prisma";
 
 export const runtime = "nodejs";
@@ -38,19 +36,10 @@ function pngResponse(icon: Buffer, versioned: boolean) {
   });
 }
 
-// Serve the default icon directly (no redirect): Google's WebAPK service
-// fetches manifest icons itself and can reject a redirected icon, which makes
-// Chrome say "installed" without ever adding the app to the phone.
-async function fallback(size: number, req: NextRequest) {
-  const file = size === 180 ? "apple-touch-icon.png" : `icon-${size}x${size}.png`;
-  try {
-    const buf = await readFile(path.join(process.cwd(), "public", "icons", file));
-    return new NextResponse(new Uint8Array(buf), {
-      headers: { "Content-Type": "image/png", "Cache-Control": "public, max-age=3600, s-maxage=3600" },
-    });
-  } catch {
-    return NextResponse.redirect(new URL(`/icons/${file}`, req.url), 302);
-  }
+function fallback(size: number, req: NextRequest) {
+  const path =
+    size === 180 ? "/icons/apple-touch-icon.png" : `/icons/icon-${size}x${size}.png`;
+  return NextResponse.redirect(new URL(path, req.url), 302);
 }
 
 // Only data URLs are supported (that is how the personalize page saves the
@@ -200,7 +189,7 @@ export async function GET(
     });
   }
 
-  if (!icon) return await fallback(size, req);
+  if (!icon) return fallback(size, req);
 
   if (versioned) remember(cacheKey, icon);
   return pngResponse(icon, versioned);
